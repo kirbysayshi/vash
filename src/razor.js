@@ -44,8 +44,6 @@
 
 (function(root){
 	
-
-// taken from : http://urazor.com/Scripts/uRazor-classes.js
 var TKS = {
     AT:     		/@/,
     PARENSTART:    	/\(/,
@@ -379,7 +377,7 @@ function parse(str){
 function generateTemplate(buffers){
 	var  i
 		,current
-		,generated = 'out = "";\n';
+		,generated = 'var out = "";\n';
 	
 	for(i = 0; i < buffers.length; i++){
 		current = buffers[i];
