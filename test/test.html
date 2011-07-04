@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>razor-js</title>
+		
+	</head>
+	<body id="" onload="">
+		<script src="../src/razor.js" type="text/javascript" charset="utf-8"></script>
+		<script id="test-exp" type="text/razor-js" charset="utf-8">
+			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
+		</script>
+		<script id="test-for" type="text/razor-js" charset="utf-8">
+			@for(var i = 0; i < somearr.length; i++){
+				<li class="@(i % 2 === 0 ? 'even' : '')">Some element, number @i</li>
+			}
+		</script>
+		<script id="test-for-for" type="text/razor-js" charset="utf-8">
+			@for(var i = 0; i < somearr.length; i++){
+				<li class="@(i % 2 === 0 ? 'even' : 'odd')">Some element, number @i, value @somearr[i]</li>
+				@for(var j = 0; j < anotherarr.length; j++){
+					<li class="@j-what">some text, @( (j+2) % 2 === 0 ? 'even' : 'odd' ), value @anotherarr[j]</li>
+				}
+			}
+		</script>
+		<script id="test-block" type="text/razor-js" charset="utf-8">
+			@{
+				var a = 'what?';
+				var b = function(){
+					return 'how!?';
+				}
+			}
+		</script>
+		
+		<script type="text/javascript" charset="utf-8">
+			
+			//var tmpl = parse( document.querySelectorAll('#test-block')[0].innerHTML );
+			//console.log(tmpl);
+			
+			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
+			//console.log(tmpl);
+			
+			var tokens = razor._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
+			//var tokens = razor._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
+			
+			console.log(tokens);
+			var tmpl = razor.tpl(tokens)
+			console.log(tmpl);
+			
+			console.log( tmpl({
+				somearr: ['a', 'b', 'c', 'd']
+				,anotherarr: ['z', 'y', 'x', 'w']
+			}) )
+			
+			//console.log( tmpl({
+			//	somearr: ['a', 'b', 'c', 'd']
+			//	,i: 2
+			//}) )
+			
+		</script>
+	</body>
+</html>
