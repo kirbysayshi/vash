@@ -7,6 +7,10 @@
 	</head>
 	<body id="" onload="">
 		<script src="../src/razor.js" type="text/javascript" charset="utf-8"></script>
+		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li>
+} 
+testFunc();
+}</script>
 		<script id="test-exp" type="text/razor-js" charset="utf-8">
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
@@ -40,15 +44,21 @@
 			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
 			//console.log(tmpl);
 			
-			var tokens = razor._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
+			var tokens = razor._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
+			//var tokens = razor._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
 			//var tokens = razor._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
 			
 			console.log(tokens);
-			var tmpl = razor.tpl(tokens)
+			var tmpl = razor._generate(tokens)
 			console.log(tmpl);
 			
 			console.log( tmpl({
-				somearr: ['a', 'b', 'c', 'd']
+				 i: 2
+				,title: "Mr"
+				,name: "Doob"
+				,className: 'blue'
+				,itemName: 'the item is blue'
+				,somearr: ['a', 'b', 'c', 'd']
 				,anotherarr: ['z', 'y', 'x', 'w']
 			}) )
 			

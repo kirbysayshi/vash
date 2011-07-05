@@ -60,7 +60,8 @@ var TKS = {
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
 	EMAILCHARS: 	/[a-zA-Z0-9\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~]/,
 	IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
-	RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
+	RESERVED: /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
+	//RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
 	
 	// these are used for template generation, not parsing
     QUOTE:      	/[\"']/gi,
@@ -93,7 +94,9 @@ function parse(str){
 		if(mode === modes.MKP){
 			// current character is @
 			if(TKS.AT.test(curr) === true){
-				if(TKS.EMAILCHARS.test(prev) === true){
+				if(i > 0 && TKS.EMAILCHARS.test(prev) === true && TKS.EMAILCHARS.test(next)){
+					// this test is invalid on the first character of the str
+					// before and after @ are valid e-mail address chars
 					// assume it's an e-mail address and continue
 					markupBuffer += curr;
 				} else {
@@ -106,7 +109,14 @@ function parse(str){
 						buffers.push( { type: modes.MKP, value: markupBuffer } );
 						markupBuffer = ''; // blank out markup buffer;
 						codeBuffer = ''; // blank out just in case
-						codeNestLevel += 1;
+						//codeNestLevel += 1;
+						mode = modes.BLK;
+						continue;
+					} else if(TKS.BRACEEND.test(next) === true){
+						// found }, assume explicit closing of block
+						buffers.push( { type: modes.MKP, value: markupBuffer } );
+						markupBuffer = ''; // blank out markup buffer;
+						codeBuffer = ''; // blank out just in case
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.PARENSTART.test(next) === true){
@@ -115,7 +125,7 @@ function parse(str){
 						buffers.push( { type: modes.MKP, value: markupBuffer } );
 						markupBuffer = ''; // blank out markup buffer;
 						codeBuffer = ''; // blank out just in case					
-						j = i+2; // j is index of char after (
+						j = i+1; // j is index of ( / next
 						
 						groupLevel = 1;
 						while( groupLevel > 0 ){
@@ -158,7 +168,7 @@ function parse(str){
 								markupBuffer = ''; // blank out markup buffer;
 								codeBuffer = identifierMatch[0];
 								mode = modes.BLK;
-								codeNestLevel += 1;
+								//codeNestLevel += 1;
 								i += codeBuffer.length; // skip identifier and continue in block mode
 								continue;
 							} else {
@@ -197,7 +207,7 @@ function parse(str){
 						buffers.push( { type: modes.BLK, value: codeBuffer } );
 						codeBuffer = '';
 						markupBuffer = '';
-						mode = modes.MKP;
+						//mode = modes.MKP; // stay in BLK mode, might be more js to come
 					}
 				}
 				
@@ -241,18 +251,23 @@ function parse(str){
 					continue;
 				}
 			
-			} else if(TKS.BRACEEND.test(curr) === true) {
+			} else if(TKS.BRACESTART.test(curr) === true) {
 				codeBuffer += curr;
+				codeNestLevel += 1;
+				continue;
+
+			} else if(TKS.BRACEEND.test(curr) === true) {
+				//codeBuffer += curr;
 				codeNestLevel -= 1;
 				if(codeNestLevel === 0){
-					
+					codeBuffer += curr;
 					buffers.push( { type: modes.BLK, value: codeBuffer } );
 					codeBuffer = '';
 					markupBuffer = '';
-					mode = modes.MKP;
+					// stay in block mode, since more JS could follow
+					//mode = modes.MKP;
 					continue;
 				}
-				
 			} 
 			
 			codeBuffer += curr;
@@ -346,7 +361,7 @@ function parse(str){
 				} else if(TKS.PERIOD.test(next) === true){
 					// next char is a .
 				
-					if( i+2 < str.length && TKS.IDENTIFIER.test( str[i+2] ) ){
+					if( j+1 < str.length && TKS.IDENTIFIER.test( str[j+1] ) ){
 						// char after the . is a valid identifier
 						// consume ., continue in EXP mode
 						codeBuffer += next;
@@ -358,9 +373,14 @@ function parse(str){
 						markupBuffer = next; // consume . in markup buffer
 						codeBuffer = ''; // blank out 
 						mode = modes.MKP;
+						
+						i = j; // update i to .
 						continue;
 					}
 				
+				} else {
+					// just advance i to last char of found identifier
+					i = j - 1;
 				}
 			}
 		}
@@ -396,12 +416,24 @@ function generateTemplate(buffers){
 		}
 	}
 	
-	return new Function("model", "with(model){" + generated + "}\nreturn out;");
+	return new Function("model", "with(model || {}){" + generated + "}\nreturn out;");
 }
 
-root.razor = {
+function tpl(str){
+	var buffs = parse(str);
+	return generateTemplate(buffs);
+}
+
+var razor = {
 	 _parse: parse
-	,tpl: generateTemplate
+	,_generate: generateTemplate
+	,tpl: tpl
 };
+
+if(typeof module !== 'undefined' && module.exports){
+	module.exports = razor;
+} else {
+	root.razor = razor;
+}
 
 })(this);
