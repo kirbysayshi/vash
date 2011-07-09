@@ -174,7 +174,7 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'empty anonymous block with same-line markup': {
 		topic: function(){
-			var str = "@{ @<li>list item</li> @}";
+			var str = "@{ <li>list item</li> @}";
 			return vash.tpl(str);
 		}
 		,'outputs markup': function(topic){
@@ -224,6 +224,15 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'outputs non-function defined markup': function(topic){
 			assert.equal( topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> \n ' );
+		}
+	}
+	,'anonymous block and while loop with manual increment': {
+		topic: function(){
+			var str = "@{ var countNum = 0; while(countNum < 1){ \n countNum += 1; \n <p>Line #@countNum</p> \n } }";
+			return vash.tpl(str);
+		}
+		,'outputs 1 line': function(topic){
+			assert.equal( topic(), '<p>Line #1</p> \n ');
 		}
 	}
 	,'mixing code and plain text, <text> escape': {

@@ -16,7 +16,7 @@ var TKS = {
 	PERIOD: 		/\./,
 	LBBRACEEND: 	/[\n\r]{1,}[^\S\r\n]*\}$/, // newline + optional whitespace + BRACEEND
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
-	EMAILCHARS: 	/[a-zA-Z0-9\!\#\$\%\&\'\*\+\-\/\=\?\^\_\`\{\|\}\~]/,
+	EMAILCHARS: 	/[a-zA-Z0-9\-\_]/,
 	IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
 	RESERVED: /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
 	//RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
