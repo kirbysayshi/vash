@@ -82,7 +82,7 @@ function parse(str){
 			// current character is @
 			if(TKS.AT.test(curr) === true){
 				if(i > 0 && TKS.EMAILCHARS.test(prev) === true && TKS.EMAILCHARS.test(next)){
-					// this test is invalid on the first character of the str
+					// this test is invalid if the first character of the str
 					// before and after @ are valid e-mail address chars
 					// assume it's an e-mail address and continue
 					buffer += curr;
@@ -106,18 +106,11 @@ function parse(str){
 						continue;
 					} else if(TKS.PARENSTART.test(next) === true){
 					
-						// consume until next matched ) as mode.EXP, enter markup mode
+						// end of markup mode, switch to EXP
 						buffers.push( { type: modes.MKP, value: buffer } );
-						buffer = ''; // blank out markup buffer;				
-						
-						i = j = i+1; // j is index of ( / next
-						consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
-
-						buffers.push( { type: modes.EXP, value: buffer } );
-						buffer = ''; // blank out 
-						mode = modes.MKP;
-
-						i = j; // advance i to current char
+						buffer = ''; // blank out markup buffer;
+					
+						mode = modes.EXP;
 						continue;
 						
 					} else {
@@ -162,18 +155,15 @@ function parse(str){
 					buffer += curr;
 				} else {
 					// is a } on a new line, assume it's code related to close a block
-					buffers.push( { type: modes.MKP, value: buffer } );
-
-					buffer = curr; // start new code buffer with }
-					// switch to block mode
-					mode = modes.BLK;
+					// push current markup buffer, exit markup mode, 
+					// and let block mode handle it
 					
-					codeNestLevel -= 1;
-					if(codeNestLevel === 0){
-						
-						buffers.push( { type: modes.BLK, value: buffer } );
-						buffer = '';
-					}
+					// rollback cursor to point at char immediately before },
+					// to trigger } to be caught in block mode
+					i = i - 1;
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = '';
+					mode = modes.BLK;
 				}
 				
 				continue;
@@ -241,6 +231,9 @@ function parse(str){
 			identifierMatch = identifier.match( TKS.IDENTIFIER );
 		
 			if(identifierMatch === null){
+				// this is not a variable/property
+				// check for @ switch, ( to indicate function call, and [ to indicate indexing
+				// if none, must be the end of the expression
 				
 				if(TKS.AT.test(curr) === true){
 					// must just be standalone @, switch to markup mode
@@ -249,13 +242,16 @@ function parse(str){
 					buffers.push( { type: modes.MPK, value: buffer } );
 					buffer = ''; // blank out markup buffer;
 					mode = modes.MKP;
-				} 
-				// TODO: add tests for [, (, ., to allow for infinite nesting of each
-				else {
+				} else if( TKS.HARDPARENSTART.test(curr) === true ){
+					j = i; // update future cursor in prep for consumption
+					consumeUntilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
+				} else if( TKS.PARENSTART.test(curr) === true ){
+					j = i; // update future cursor in prep for consumption
+					consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
+				} else {
 					// this is probably the end of the expression
 					
 					// end of expression, switch to markup mode
-				
 					buffers.push( { type: modes.EXP, value: buffer } );
 					buffer = curr;
 					mode = modes.MKP;
