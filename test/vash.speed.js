@@ -55,8 +55,8 @@ var  Benchmark = require('benchmark')
 
 	,suite;
 
-console.log(mediumDTpl.toString());
-console.log(mediumVTplNoWith.toString());
+//console.log(mediumDTpl.toString());
+//console.log(mediumVTplNoWith.toString());
 
 function logSuiteName(suite){
 	
