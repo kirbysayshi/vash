@@ -35,7 +35,7 @@ function parse(str){
 	// current mode
 	var mode = modes.MKP, modeStack = [modes.MKP];
 
-	var markupBuffer = '', codeBuffer = '', buffers = [];
+	var buffer = '', buffers = [];
 
 	// characters
 	var prev, curr, next, i, j;
@@ -43,6 +43,11 @@ function parse(str){
 	var identifier = '', identifierMatch = null, groupLevel = 0;
 
 	var codeNestLevel = 0;
+
+	function consumeUntilMatched(sRe, eRe){
+		
+	}
+
 
 	for(i = 0; i < str.length; i++){
 		if(i > 0) prev = str[i-1];
@@ -56,33 +61,30 @@ function parse(str){
 					// this test is invalid on the first character of the str
 					// before and after @ are valid e-mail address chars
 					// assume it's an e-mail address and continue
-					markupBuffer += curr;
+					buffer += curr;
 				} else {
 					if(TKS.AT.test(next) === true){
 						// escaped @. continue, but ignore one @
-						markupBuffer += curr;
+						buffer += curr;
 						i += 1; // skip next @
 					} else if(TKS.BRACESTART.test(next) === true){
 						// found {, enter block mode
-						buffers.push( { type: modes.MKP, value: markupBuffer } );
-						markupBuffer = ''; // blank out markup buffer;
-						codeBuffer = ''; // blank out just in case
+						buffers.push( { type: modes.MKP, value: buffer } );
+						buffer = ''; // blank out markup buffer;
 						//codeNestLevel += 1;
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.BRACEEND.test(next) === true){
 						// found }, assume explicit closing of block
-						buffers.push( { type: modes.MKP, value: markupBuffer } );
-						markupBuffer = ''; // blank out markup buffer;
-						codeBuffer = ''; // blank out just in case
+						buffers.push( { type: modes.MKP, value: buffer } );
+						buffer = ''; // blank out markup buffer;
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.PARENSTART.test(next) === true){
 					
 						// consume until next matched ) as mode.EXP, enter markup mode
-						buffers.push( { type: modes.MKP, value: markupBuffer } );
-						markupBuffer = ''; // blank out markup buffer;
-						codeBuffer = ''; // blank out just in case					
+						buffers.push( { type: modes.MKP, value: buffer } );
+						buffer = ''; // blank out markup buffer;				
 						j = i+1; // j is index of ( / next
 						
 						groupLevel = 1;
@@ -97,12 +99,11 @@ function parse(str){
 							if(j >= str.length) throw new Error('Syntax Error, unmatched PARENSTART');
 						}
 						
-						// add ( something something (something something) ) to codeBuffer, without @
-						codeBuffer += str.substring(i+1, j+1);
+						// add ( something something (something something) ) to buffer, without @
+						buffer += str.substring(i+1, j+1);
 
-						buffers.push( { type: modes.EXP, value: codeBuffer } );
-						markupBuffer = '';
-						codeBuffer = ''; // blank out 
+						buffers.push( { type: modes.EXP, value: buffer } );
+						buffer = ''; // blank out 
 						mode = modes.MKP;
 
 						i = j; // advance i to current char
@@ -115,26 +116,24 @@ function parse(str){
 					
 						if(identifierMatch === null){
 							// stay in content mode?
-							markupBuffer += curr;
+							buffer += curr;
 						} else {
 							// found either a reserved word or a valid JS identifier
 						
 							if(TKS.RESERVED.test(identifierMatch[0]) === true){
 								// found a reserved word, like while
 								// switch to JS Block mode
-								buffers.push( { type: modes.MKP, value: markupBuffer } );
-								markupBuffer = ''; // blank out markup buffer;
-								codeBuffer = identifierMatch[0];
+								buffers.push( { type: modes.MKP, value: buffer } );
+								buffer = identifierMatch[0];
 								mode = modes.BLK;
 								//codeNestLevel += 1;
-								i += codeBuffer.length; // skip identifier and continue in block mode
+								i += buffer.length; // skip identifier and continue in block mode
 								continue;
 							} else {
 								// we have a valid identifier
 								// switch to implicit expression mode: @myvar().dosomethingelse().prop
-								buffers.push( { type: modes.MKP, value: markupBuffer } );
-								markupBuffer = ''; // blank out markup buffer;
-								codeBuffer = ''; // blank out just in case
+								buffers.push( { type: modes.MKP, value: buffer } );
+								buffer = ''; // blank out markup buffer;
 								mode = modes.EXP;
 								continue;
 							}
@@ -149,22 +148,20 @@ function parse(str){
 				
 				if(identifierMatch == null){
 					// just a content }, nothing to worry about
-					markupBuffer += curr;
+					buffer += curr;
 				} else {
 					// is a } on a new line, assume it's code related to close a block
-					buffers.push( { type: modes.MKP, value: markupBuffer } );
-					markupBuffer = ''; // blank out markup buffer;
+					buffers.push( { type: modes.MKP, value: buffer } );
 
-					codeBuffer = curr; // add } to code buffer
+					buffer = curr; // add } to code buffer
 					// switch to block mode
 					mode = modes.BLK;
 					
 					codeNestLevel -= 1;
 					if(codeNestLevel === 0){
 						
-						buffers.push( { type: modes.BLK, value: codeBuffer } );
-						codeBuffer = '';
-						markupBuffer = '';
+						buffers.push( { type: modes.BLK, value: buffer } );
+						buffer = '';
 						//mode = modes.MKP; // stay in BLK mode, might be more js to come
 					}
 				}
@@ -172,7 +169,7 @@ function parse(str){
 				continue;
 				
 			} else {
-				markupBuffer += curr;
+				buffer += curr;
 				continue;
 			}
 		}
@@ -184,13 +181,12 @@ function parse(str){
 			
 				if(TKS.AT.test(next) === true){
 					// escaped @, continue, but ignore one @
-					codeBuffer += curr;
+					buffer += curr;
 					i += 1; // skip next @
 				} else {
 				
-					buffers.push( { type: modes.BLK, value: codeBuffer } );
-					codeBuffer = '';
-					markupBuffer = '';
+					buffers.push( { type: modes.BLK, value: buffer } );
+					buffer = '';
 					mode = modes.MKP;
 					continue;
 				}
@@ -202,33 +198,30 @@ function parse(str){
 					// we have a markup tag
 					// switch to markup mode
 				
-					buffers.push( { type: modes.BLK, value: codeBuffer } );
-					codeBuffer = '';
-					markupBuffer = curr;
+					buffers.push( { type: modes.BLK, value: buffer } );
+					buffer = curr;
 					mode = modes.MKP;
 					continue;
 				}
 			
 			} else if(TKS.BRACESTART.test(curr) === true) {
-				codeBuffer += curr;
+				buffer += curr;
 				codeNestLevel += 1;
 				continue;
 
 			} else if(TKS.BRACEEND.test(curr) === true) {
-				//codeBuffer += curr;
+				//buffer += curr;
 				codeNestLevel -= 1;
 				if(codeNestLevel === 0){
-					codeBuffer += curr;
-					buffers.push( { type: modes.BLK, value: codeBuffer } );
-					codeBuffer = '';
-					markupBuffer = '';
+					buffer += curr;
+					buffers.push( { type: modes.BLK, value: buffer } );
+					buffer = '';
 					// stay in block mode, since more JS could follow
-					//mode = modes.MKP;
 					continue;
 				}
 			} 
 			
-			codeBuffer += curr;
+			buffer += curr;
 			continue;		
 		}
 	
@@ -241,20 +234,18 @@ function parse(str){
 				
 				if(TKS.AT.test(curr) === true){
 					// must just be standalone @, switch to markup mode
-					markupBuffer += curr;
+					buffer += curr;
 
-					buffers.push( { type: modes.MPK, value: markupBuffer } );
-					markupBuffer = ''; // blank out markup buffer;
-					codeBuffer = ''; // blank out just in case
+					buffers.push( { type: modes.MPK, value: buffer } );
+					buffer = ''; // blank out markup buffer;
 					mode = modes.MKP;
 				} else {
 					// this is probably the end of the expression
 					
 					// end of expression, switch to markup mode
 				
-					buffers.push( { type: modes.EXP, value: codeBuffer } );
-					codeBuffer = '';
-					markupBuffer = curr;
+					buffers.push( { type: modes.EXP, value: buffer } );
+					buffer = curr;
 					mode = modes.MKP;
 				}
 				
@@ -263,7 +254,7 @@ function parse(str){
 			} else {
 				// found a valid JS identifier
 			
-				codeBuffer += identifierMatch[0];
+				buffer += identifierMatch[0];
 				j = i + identifierMatch[0].length;
 				//j = i += identifierMatch[0].length; // set i and j to next char after identifier for next iteration
 				next = str[j]; // set next to the actual next char after identifier
@@ -285,9 +276,8 @@ function parse(str){
 						if(j >= str.length) throw new Error('Syntax Error, unmatched PARENSTART');
 					}
 				
-					// add ( something something (something something) ) to codeBuffer
-					// TODO: may need to substring j+1
-					codeBuffer += str.substring(i, j);
+					// add ( something something (something something) ) to buffer
+					buffer += str.substring(i, j);
 				
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to )
@@ -311,9 +301,8 @@ function parse(str){
 						if(j >= str.length) throw new Error('Syntax Error, unmatched HARDPARENSTART');
 					}
 				
-					// add [ something something [something something] ] to codeBuffer
-					// TODO: may need to substring j+1
-					codeBuffer += str.substring(i, j+1);
+					// add [ something something [something something] ] to buffer
+					buffer += str.substring(i, j+1);
 				
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to ]
@@ -326,16 +315,15 @@ function parse(str){
 					if( j+1 < str.length && TKS.IDENTIFIER.test( str[j+1] ) ){
 						// char after the . is a valid identifier
 						// consume ., continue in EXP mode
-						codeBuffer += next;
+						buffer += next;
 						i = j; // update i to .
 						continue;
 					} else {
 						// do not consume . in code, but in markup
 						// end EXP block, continue in markup mode 
 					
-						buffers.push( { type: modes.EXP, value: codeBuffer } );
-						markupBuffer = next; // consume . in markup buffer
-						codeBuffer = ''; // blank out 
+						buffers.push( { type: modes.EXP, value: buffer } );
+						buffer = next; // consume . in markup buffer
 						mode = modes.MKP;
 						
 						i = j; // update i to .
@@ -350,9 +338,8 @@ function parse(str){
 		}
 	}
 
-	buffers.push( { type: mode, value: mode === modes.MKP ? markupBuffer : codeBuffer } );
-	markupBuffer = ''; // blank out markup buffer;
-	codeBuffer = ''; // blank out just in case
+	buffers.push( { type: mode, value: buffer } );
+	buffer = ''; // blank out buffer;
 	mode = modes.MKP;
 	return buffers;
 
