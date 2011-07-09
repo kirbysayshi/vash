@@ -1,0 +1,43 @@
+this is a little out of date at this point, but was the starting point.
+
+markup mode:
+	found @
+		is email address?
+			keep going
+		not email address?
+			is followed by @?
+				keep going, ignore one @
+			is followed by { ?
+				consume until matching } as JS
+			is followed by keyword?
+				switch to JS block mode
+			is followed by valid identifier?
+				switch to implicit expression mode
+
+JS block mode:
+	found @
+		is followed by @?
+			keep going, ignore one @
+		not followed by @?
+			switch to markup mode
+	found < ?
+		is followed by / or [a-zA-Z] ?
+			switch to markup mode
+		is not followed by [\/a-zA-Z] ?
+			keep going
+	may need rules for @: here and newlines
+		
+JS implicit expression mode:
+	read single "word" (identifier)
+	A: is the next character a ( or [ ?
+		read matching, and go to A
+	not A: continue
+	is the next character a . ?
+		continue
+	not .:
+		end expression, switch to markup mode
+	is the character after . a valid start char for identifier?
+		read the ., go to start of implicit mode
+	not valid start:
+		end expression without including .
+		switch to markup mode

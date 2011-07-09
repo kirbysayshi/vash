@@ -2,15 +2,12 @@
 <html lang="en">
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-		<title>razor-js</title>
+		<title>vash</title>
 		
 	</head>
 	<body id="" onload="">
-		<script src="../src/razor.js" type="text/javascript" charset="utf-8"></script>
-		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li>
-} 
-testFunc();
-}</script>
+		<script src="../src/vash.js" type="text/javascript" charset="utf-8"></script>
+		<script id="test-exp-simple" type="text/razor-js" charset="utf-8"><li>@model.name</li></script>
 		<script id="test-exp" type="text/razor-js" charset="utf-8">
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
@@ -44,18 +41,21 @@ testFunc();
 			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
 			//console.log(tmpl);
 			
-			var tokens = razor._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
-			//var tokens = razor._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
-			//var tokens = razor._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
+			var tokens = vash._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
 			
 			console.log(tokens);
-			var tmpl = razor._generate(tokens)
+			var tmpl = vash._generate(tokens)
 			console.log(tmpl);
 			
 			console.log( tmpl({
 				 i: 2
 				,title: "Mr"
 				,name: "Doob"
+				,model: {
+					name: "what"
+				}
 				,className: 'blue'
 				,itemName: 'the item is blue'
 				,somearr: ['a', 'b', 'c', 'd']

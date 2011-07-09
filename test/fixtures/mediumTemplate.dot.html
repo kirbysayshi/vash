@@ -1,0 +1,13 @@
+<div>
+	<h1 class='header'>{{= it.header }}</h1>
+	<h2 class='header2'>{{= it.header2 }}</h2>
+	<h3 class='header3'>{{= it.header3 }}</h3>
+	<h4 class='header4'>{{= it.header4 }}</h4>
+	<h5 class='header5'>{{= it.header5 }}</h5>
+	<h6 class='header6'>{{= it.header6 }}</h6>
+	<ul class='list'>
+	{{ for (var i = 0, l = it.list.length; i < l; i++) { }}
+		<li class='item'>{{= it.list[i] }}</li>
+	{{ } }}
+	</ul>
+</div>

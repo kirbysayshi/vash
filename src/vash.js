@@ -1,46 +1,4 @@
-
-// markup mode:
-	// found @
-		// is email address?
-			//keep going
-		// not email address?
-			// is followed by @?
-				// keep going, ignore one @
-			// is followed by { ?
-				// consume until matching } as JS
-			// is followed by keyword?
-				// switch to JS block mode
-			// is followed by valid identifier?
-				// switch to implicit expression mode
-
-// JS block mode:
-	// found @
-		// is followed by @?
-			// keep going, ignore one @
-		// not followed by @?
-			// switch to markup mode
-	// found < ?
-		// is followed by / or [a-zA-Z] ?
-			// switch to markup mode
-		// is not followed by [\/a-zA-Z] ?
-			// keep going
-	// may need rules for @: here and newlines
-		
-// JS implicit expression mode:
-	// read single "word" (identifier)
-	// A: is the next character a ( or [ ?
-		// read matching, and go to A
-	// not A: continue
-	// is the next character a . ?
-		// continue
-	// not .:
-		// end expression, switch to markup mode
-	// is the character after . a valid start char for identifier?
-		// read the ., go to start of implicit mode
-	// not valid start:
-		// end expression without including .
-		// switch to markup mode
-		
+	
 
 (function(root){
 	
@@ -289,7 +247,6 @@ function parse(str){
 					markupBuffer = ''; // blank out markup buffer;
 					codeBuffer = ''; // blank out just in case
 					mode = modes.MKP;
-					continue;
 				} else {
 					// this is probably the end of the expression
 					
@@ -299,8 +256,9 @@ function parse(str){
 					codeBuffer = '';
 					markupBuffer = curr;
 					mode = modes.MKP;
-					continue;
 				}
+				
+				continue;
 				
 			} else {
 				// found a valid JS identifier
@@ -334,6 +292,8 @@ function parse(str){
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to )
 					if(i < str.length - 1) next = str[i+1];
+					continue; 
+
 				} else if(TKS.HARDPARENSTART.test(next) === true){
 					// found [, consume until next matching
 					
@@ -358,6 +318,8 @@ function parse(str){
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to ]
 					if(i < str.length - 1) next = str[i+1];
+					continue;
+
 				} else if(TKS.PERIOD.test(next) === true){
 					// next char is a .
 				
@@ -365,6 +327,8 @@ function parse(str){
 						// char after the . is a valid identifier
 						// consume ., continue in EXP mode
 						codeBuffer += next;
+						i = j; // update i to .
+						continue;
 					} else {
 						// do not consume . in code, but in markup
 						// end EXP block, continue in markup mode 
@@ -394,7 +358,7 @@ function parse(str){
 
 }
 
-function generateTemplate(buffers){
+function generateTemplate(buffers, useWith){
 	var  i
 		,current
 		,generated = 'var out = "";\n';
@@ -415,25 +379,35 @@ function generateTemplate(buffers){
 			generated += 'out += (' + current.value.replace(TKS.QUOTE, '\"').replace(TKS.LINEBREAK, '\\n') + ');\n';
 		}
 	}
-	
-	return new Function("model", "with(model || {}){" + generated + "}\nreturn out;");
+
+	return new Function("model", 
+		(useWith === true 
+			? "with(model || {}){" + generated + "}" 
+			: generated ) + "\nreturn out;");
 }
 
-function tpl(str){
-	var buffs = parse(str);
-	return generateTemplate(buffs);
-}
+// public interface. keys are quoted to allow for proper export when compressed
 
-var razor = {
-	 _parse: parse
-	,_generate: generateTemplate
-	,tpl: tpl
+var vash = {
+	 "_parse": parse
+	,"_generate": generateTemplate
+	// useWith is optional, defaults to value of vash.config.useWith
+	,"tpl": function tpl(str, useWith){
+		useWith = (useWith === true || useWith === false)
+			? useWith
+			: vash.config.useWith;
+		var buffs = parse(str);
+		return generateTemplate(buffs, useWith);
+	}
+	,"config": {
+		"useWith": true
+	}
 };
 
 if(typeof module !== 'undefined' && module.exports){
-	module.exports = razor;
+	module["exports"] = vash;
 } else {
-	root.razor = razor;
+	root["vash"] = vash;
 }
 
 })(this);

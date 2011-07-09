@@ -1,0 +1,13 @@
+<div>
+	<h1 class='header'>@model.header</h1>
+	<h2 class='header2'>@model.header2</h2>
+	<h3 class='header3'>@model.header3</h3>
+	<h4 class='header4'>@model.header4</h4>
+	<h5 class='header5'>@model.header5</h5>
+	<h6 class='header6'>@model.header6</h6>
+	<ul class='list'>
+	@for (var i = 0, l = model.list.length; i < l; i++) {
+		<li class='item'>@model.list[i]</li>
+	}
+	</ul>
+</div>
