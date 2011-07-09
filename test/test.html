@@ -7,7 +7,7 @@
 	</head>
 	<body id="" onload="">
 		<script src="../src/vash.js" type="text/javascript" charset="utf-8"></script>
-		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">@i</script>
+		<script id="test-exp-simple" type="text/razor-js" charset="utf-8"><a href="@what.how()[0]"></a></script>
 		<script id="test-exp" type="text/razor-js" charset="utf-8">
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
@@ -51,6 +51,7 @@
 			
 			console.log( tmpl({
 				 i: 2
+				,what: { how: function() { return 'G'; } }
 				,title: "Mr"
 				,name: "Doob"
 				,model: {

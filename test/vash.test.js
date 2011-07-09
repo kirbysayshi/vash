@@ -145,6 +145,24 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(), '<a href="red"></a>');
 		}
 	}
+	,'expression with indexed properties': {
+		topic: function(){
+			var str = '<a href="@what.how[0]"></a>';
+			return vash.tpl(str);
+		}
+		,'outputs G': function(topic){
+			assert.equal( topic({ what: { how: 'G' }}), '<a href="G"></a>');
+		}
+	}
+	,'expression with indexed properties and method call': {
+		topic: function(){
+			var str = '<a href="@what.how()[0]"></a>';
+			return vash.tpl(str);
+		}
+		,'outputs G': function(topic){
+			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="G"></a>');
+		}
+	}
 	,'empty anonymous block': {
 		topic: function(){
 			var str = "@{ }";

@@ -239,7 +239,9 @@ function parse(str){
 					buffers.push( { type: modes.MPK, value: buffer } );
 					buffer = ''; // blank out markup buffer;
 					mode = modes.MKP;
-				} else {
+				} 
+				// TODO: add tests for [, (, ., to allow for infinite nesting of each
+				else {
 					// this is probably the end of the expression
 					
 					// end of expression, switch to markup mode
@@ -277,7 +279,7 @@ function parse(str){
 					}
 				
 					// add ( something something (something something) ) to buffer
-					buffer += str.substring(i, j);
+					buffer += str.substring(i, j+1);
 				
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to )
