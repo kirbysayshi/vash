@@ -350,7 +350,7 @@ function parse(str){
 		}
 	}
 
-	buffers.push( { type: modes.MKP, value: markupBuffer } );
+	buffers.push( { type: mode, value: mode === modes.MKP ? markupBuffer : codeBuffer } );
 	markupBuffer = ''; // blank out markup buffer;
 	codeBuffer = ''; // blank out just in case
 	mode = modes.MKP;

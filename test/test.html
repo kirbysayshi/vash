@@ -7,7 +7,7 @@
 	</head>
 	<body id="" onload="">
 		<script src="../src/vash.js" type="text/javascript" charset="utf-8"></script>
-		<script id="test-exp-simple" type="text/razor-js" charset="utf-8"><li>@model.name</li></script>
+		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">@i</script>
 		<script id="test-exp" type="text/razor-js" charset="utf-8">
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
@@ -46,7 +46,7 @@
 			//var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
 			
 			console.log(tokens);
-			var tmpl = vash._generate(tokens)
+			var tmpl = vash._generate(tokens, true)
 			console.log(tmpl);
 			
 			console.log( tmpl({
