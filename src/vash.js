@@ -37,18 +37,42 @@ function parse(str){
 
 	var buffer = '', buffers = [];
 
-	// characters
+	// characters. i = cursor, j = future cursor, if needed
 	var prev, curr, next, i, j;
 
-	var identifier = '', identifierMatch = null, groupLevel = 0;
+	var identifier = '', identifierMatch = null;
 
+	// this is a hack, currently, to allow for closing of { } blocks simply
 	var codeNestLevel = 0;
 
+	// adds characters, including the current, to the buffer until 
+	// a matched character is found. For example: curr == (, so it
+	// would consume until a matching ) is found, being sure they 
+	// actually match in case of nested characters.
+	// This is defined here to allow it to access parser state.
 	function consumeUntilMatched(sRe, eRe){
+		var groupLevel = 1;
+		while( groupLevel > 0 ){
+			j += 1;
+			curr = str[j];
+			if(j < str.length - 1) next = str[j+1];
 		
+			if(sRe.test(curr) === true) groupLevel += 1;
+			if(eRe.test(curr) === true) groupLevel -= 1;
+		
+			if(j >= str.length) throw new Error('Syntax Error, unmatched ' + sRe);
+		}
+	
+		// add ( something something (something something) ) to buffer
+		buffer += str.substring(i, j+1);
+	
+		i = j; // advance i to current char
+		curr = str[i]; // curr will be equal to )
+		if(i < str.length - 1) next = str[i+1];
 	}
 
 
+	// the main parser loop/entry point
 	for(i = 0; i < str.length; i++){
 		if(i > 0) prev = str[i-1];
 		curr = str[i];
@@ -85,22 +109,9 @@ function parse(str){
 						// consume until next matched ) as mode.EXP, enter markup mode
 						buffers.push( { type: modes.MKP, value: buffer } );
 						buffer = ''; // blank out markup buffer;				
-						j = i+1; // j is index of ( / next
 						
-						groupLevel = 1;
-						while( groupLevel > 0 ){
-							j += 1;
-							curr = str[j];
-							if(j < str.length - 1) next = str[j+1];
-
-							if(TKS.PARENSTART.test(curr) === true) groupLevel += 1;
-							if(TKS.PARENEND.test(curr) === true) groupLevel -= 1;
-
-							if(j >= str.length) throw new Error('Syntax Error, unmatched PARENSTART');
-						}
-						
-						// add ( something something (something something) ) to buffer, without @
-						buffer += str.substring(i+1, j+1);
+						i = j = i+1; // j is index of ( / next
+						consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
 
 						buffers.push( { type: modes.EXP, value: buffer } );
 						buffer = ''; // blank out 
@@ -153,7 +164,7 @@ function parse(str){
 					// is a } on a new line, assume it's code related to close a block
 					buffers.push( { type: modes.MKP, value: buffer } );
 
-					buffer = curr; // add } to code buffer
+					buffer = curr; // start new code buffer with }
 					// switch to block mode
 					mode = modes.BLK;
 					
@@ -162,7 +173,6 @@ function parse(str){
 						
 						buffers.push( { type: modes.BLK, value: buffer } );
 						buffer = '';
-						//mode = modes.MKP; // stay in BLK mode, might be more js to come
 					}
 				}
 				
@@ -263,52 +273,15 @@ function parse(str){
 			
 				if(TKS.PARENSTART.test(next) === true){
 					// found (, consume until next matching
-						
 					i = j; // move i forward
-					
-					groupLevel = 1;
-					while( groupLevel > 0 ){
-						j += 1;
-						curr = str[j];
-						if(j < str.length - 1) next = str[j+1];
-					
-						if(TKS.PARENSTART.test(curr) === true) groupLevel += 1;
-						if(TKS.PARENEND.test(curr) === true) groupLevel -= 1;
-					
-						if(j >= str.length) throw new Error('Syntax Error, unmatched PARENSTART');
-					}
-				
-					// add ( something something (something something) ) to buffer
-					buffer += str.substring(i, j+1);
-				
-					i = j; // advance i to current char
-					curr = str[i]; // curr will be equal to )
-					if(i < str.length - 1) next = str[i+1];
+					consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
 					continue; 
 
 				} else if(TKS.HARDPARENSTART.test(next) === true){
 					// found [, consume until next matching
 					
 					i = j; // move i forward
-					
-					groupLevel = 1;
-					while( groupLevel > 0 ){
-						j += 1;
-						curr = str[j];
-						if(j < str.length - 1) next = str[j+1];
-					
-						if(TKS.HARDPARENSTART.test(curr) === true) groupLevel += 1;
-						if(TKS.HARDPARENEND.test(curr) === true) groupLevel -= 1;
-					
-						if(j >= str.length) throw new Error('Syntax Error, unmatched HARDPARENSTART');
-					}
-				
-					// add [ something something [something something] ] to buffer
-					buffer += str.substring(i, j+1);
-				
-					i = j; // advance i to current char
-					curr = str[i]; // curr will be equal to ]
-					if(i < str.length - 1) next = str[i+1];
+					consumeUntilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
 					continue;
 
 				} else if(TKS.PERIOD.test(next) === true){
