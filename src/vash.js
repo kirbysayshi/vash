@@ -247,7 +247,9 @@ function parse(str){
 					markupBuffer = ''; // blank out markup buffer;
 					codeBuffer = ''; // blank out just in case
 					mode = modes.MKP;
-				} else {
+				} 
+				// TODO: add tests for [, (, ., to allow for infinite nesting of each
+				else {
 					// this is probably the end of the expression
 					
 					// end of expression, switch to markup mode
@@ -287,7 +289,7 @@ function parse(str){
 				
 					// add ( something something (something something) ) to codeBuffer
 					// TODO: may need to substring j+1
-					codeBuffer += str.substring(i, j);
+					codeBuffer += str.substring(i, j+1);
 				
 					i = j; // advance i to current char
 					curr = str[i]; // curr will be equal to )
