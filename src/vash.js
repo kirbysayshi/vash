@@ -135,57 +135,55 @@ function parse(str){
 					// before and after @ are valid e-mail address chars
 					// assume it's an e-mail address and continue
 					buffer += curr;
+				} else if(TKS.AT.test(next) === true){
+					// escaped @. continue, but ignore one @
+					buffer += curr;
+					i += 1; // skip next @
+					continue;
+				} else if(TKS.BRACESTART.test(next) === true){
+					// found {, enter block mode
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = ''; // blank out markup buffer;
+					mode = modes.BLK;
+					continue;
+				} else if(TKS.BRACEEND.test(next) === true){
+					// found @}, assume explicit closing of block, let block mode take over
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = ''; // blank out markup buffer;
+					mode = modes.BLK;
+					continue;
+				} else if(TKS.PARENSTART.test(next) === true){
+					// end of markup mode, switch to EXP
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = ''; // blank out markup buffer;
+					mode = modes.EXP;
+					continue;
 				} else {
-					if(TKS.AT.test(next) === true){
-						// escaped @. continue, but ignore one @
+					// test for identifier
+					identifier = str.substring(i+1); // everything after @
+					identifierMatch = identifier.match( TKS.IDENTIFIER );
+				
+					if(identifierMatch === null){
+						// stay in content mode?
 						buffer += curr;
-						i += 1; // skip next @
-						continue;
-					} else if(TKS.BRACESTART.test(next) === true){
-						// found {, enter block mode
-						buffers.push( { type: modes.MKP, value: buffer } );
-						buffer = ''; // blank out markup buffer;
-						mode = modes.BLK;
-						continue;
-					} else if(TKS.BRACEEND.test(next) === true){
-						// found @}, assume explicit closing of block, let block mode take over
-						buffers.push( { type: modes.MKP, value: buffer } );
-						buffer = ''; // blank out markup buffer;
-						mode = modes.BLK;
-						continue;
-					} else if(TKS.PARENSTART.test(next) === true){
-						// end of markup mode, switch to EXP
-						buffers.push( { type: modes.MKP, value: buffer } );
-						buffer = ''; // blank out markup buffer;
-						mode = modes.EXP;
-						continue;
 					} else {
-						// test for identifier
-						identifier = str.substring(i+1); // everything after @
-						identifierMatch = identifier.match( TKS.IDENTIFIER );
+						// found either a reserved word or a valid JS identifier
 					
-						if(identifierMatch === null){
-							// stay in content mode?
-							buffer += curr;
+						if(TKS.RESERVED.test(identifierMatch[0]) === true){
+							// found a reserved word, like while
+							// switch to JS Block mode
+							buffers.push( { type: modes.MKP, value: buffer } );
+							buffer = identifierMatch[0];
+							mode = modes.BLK;
+							i += buffer.length; // skip identifier and continue in block mode
+							continue;
 						} else {
-							// found either a reserved word or a valid JS identifier
-						
-							if(TKS.RESERVED.test(identifierMatch[0]) === true){
-								// found a reserved word, like while
-								// switch to JS Block mode
-								buffers.push( { type: modes.MKP, value: buffer } );
-								buffer = identifierMatch[0];
-								mode = modes.BLK;
-								i += buffer.length; // skip identifier and continue in block mode
-								continue;
-							} else {
-								// we have a valid identifier
-								// switch to implicit expression mode: @myvar().dosomethingelse().prop
-								buffers.push( { type: modes.MKP, value: buffer } );
-								buffer = ''; // blank out markup buffer;
-								mode = modes.EXP;
-								continue;
-							}
+							// we have a valid identifier
+							// switch to implicit expression mode: @myvar().dosomethingelse().prop
+							buffers.push( { type: modes.MKP, value: buffer } );
+							buffer = ''; // blank out markup buffer;
+							mode = modes.EXP;
+							continue;
 						}
 					}
 				}
@@ -202,7 +200,7 @@ function parse(str){
 				
 					// we're within a code block
 					// push markup and switch to BLK mode.
-					// {} blocks have an implied context switch when newlines are found
+					// {} blocks have an implied context switch from MKP to BLK when newlines are found
 					
 					buffers.push( { type: modes.MKP, value: buffer } );
 					buffer = ''; // blank out markup buffer;
