@@ -15,6 +15,7 @@ var TKS = {
     HARDPARENEND:  	/\]/,
 	PERIOD: 		/\./,
 	LINEBREAK:  	/[\n\r]/gi,
+	WHITESPACE: 	/\s/,
 	LBBRACEEND: 	/[\n\r]{1,}[^\S\r\n]*\}$/, // newline + optional whitespace + BRACEEND
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
 	EMAILCHARS: 	/[a-zA-Z0-9\-\_]/,
@@ -91,10 +92,31 @@ function parse(str){
 		buffer += str.substring(i, j+1);
 	
 		i = j; // advance i to current char
-		curr = str[i]; // curr will be equal to )
+		curr = str[i]; // curr will be equal to eRe
 		if(i < str.length - 1) next = str[i+1];
 	}
 
+	// consumes all characters, including the current, through the char 
+	// before the char that evaluates to false.
+	// begins testing from curr + 1, and exits leaving i/curr == the 
+	// character before the char that evaluated as true
+	function consumeUntil(stopRe){
+		j = i; // update future cursor
+		
+		while(stopRe.test(curr) === true){	
+			j += 1; 
+			curr = str[j];
+			if(j < str.length - 1) next = str[j+1];
+		}
+		
+		// consume, including current char through char before char that evaluated as true
+		buffer += str.substring(i, j);
+		
+		// cleanup: 
+		i = j - 1; // advance i to char before char that evaluated as false
+		curr = str[i]; // curr will be equal to char before stopRe
+		if(i < str.length - 1) next = str[i+1];
+	}
 
 	// the main parser loop/entry point
 	for(i = 0; i < str.length; i++){
@@ -126,8 +148,7 @@ function parse(str){
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.BRACEEND.test(next) === true){
-						// TODO: is this ever even hit!?
-						// found }, assume explicit closing of block, let block mode take over
+						// found @}, assume explicit closing of block, let block mode take over
 						buffers.push( { type: modes.MKP, value: buffer } );
 						buffer = ''; // blank out markup buffer;
 						mode = modes.BLK;
@@ -170,7 +191,11 @@ function parse(str){
 				}
 			} else if(TKS.LINEBREAK.test(curr) === true){
 			
-				// found line break
+				// found line break, which is only significant if 
+				// code succeeds it, i.e. inside @{}, @for, etc
+				
+				// consume all characters until a non-whitespace char is found
+				consumeUntil(TKS.WHITESPACE);
 				
 				block = blockStack.peek();
 				if(block !== null && block === modes.BLK){
@@ -179,36 +204,10 @@ function parse(str){
 					// push markup and switch to BLK mode.
 					// {} blocks have an implied context switch when newlines are found
 					
-					// TODO: should this consume all whitespace automatically?
-					buffer += curr;
 					buffers.push( { type: modes.MKP, value: buffer } );
 					buffer = ''; // blank out markup buffer;
 					mode = modes.BLK;
-					continue;
 				}
-				
-			} else if(TKS.BRACEEND.test(curr) === true) {
-				// found } in markup mode, 
-				
-				identifier = str.substring(0, i+1); // grab from beginning, including }
-				identifierMatch = identifier.match(TKS.LBBRACEEND);
-				
-				if(identifierMatch == null){
-					// just a content }, nothing to worry about
-					buffer += curr;
-				} else {
-					// is a } on a new line, assume it's code related to close a block
-					// push current markup buffer, exit markup mode, 
-					// and let block mode handle it
-					
-					// rollback cursor to point at char immediately before },
-					// to trigger } to be caught in block mode
-					i = i - 1;
-					buffers.push( { type: modes.MKP, value: buffer } );
-					buffer = '';
-					mode = modes.BLK;
-				}
-				
 				continue;
 				
 			} else {
