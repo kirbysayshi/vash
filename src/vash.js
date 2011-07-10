@@ -16,7 +16,6 @@ var TKS = {
 	PERIOD: 		/\./,
 	LINEBREAK:  	/[\n\r]/gi,
 	WHITESPACE: 	/\s/,
-	LBBRACEEND: 	/[\n\r]{1,}[^\S\r\n]*\}$/, // newline + optional whitespace + BRACEEND
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
 	EMAILCHARS: 	/[a-zA-Z0-9\-\_]/,
 	IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
