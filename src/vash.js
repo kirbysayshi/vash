@@ -14,6 +14,7 @@ var TKS = {
     HARDPARENSTART:	/\[/,
     HARDPARENEND:  	/\]/,
 	PERIOD: 		/\./,
+	LINEBREAK:  	/[\n\r]/gi,
 	LBBRACEEND: 	/[\n\r]{1,}[^\S\r\n]*\}$/, // newline + optional whitespace + BRACEEND
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
 	EMAILCHARS: 	/[a-zA-Z0-9\-\_]/,
@@ -22,9 +23,32 @@ var TKS = {
 	//RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
 	
 	// these are used for template generation, not parsing
-    QUOTE:      	/[\"']/gi,
-	LINEBREAK:  	/[\n\r]/gi
+    QUOTE:      	/[\"']/gi
 };
+
+function BlockStack(){
+	this._stack = []
+}
+
+BlockStack.prototype = {
+	push: function(obj){
+		this._stack.push(obj);
+		return this;
+	}
+	,pop: function(){
+		if(this._stack.length > 0)
+			return this._stack.pop();
+		else 
+			throw new Error('Stack Underflow on BlockStack');
+	}
+	,peek: function(){
+		if(this._stack.length > 0){
+			return this._stack[ this._stack.length - 1 ]
+		} else {
+			return null;
+		}
+	}
+}
 
 
 // markup, js block, implicit js expression
@@ -33,7 +57,7 @@ var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 function parse(str){
 
 	// current mode
-	var mode = modes.MKP, modeStack = [modes.MKP];
+	var mode = modes.MKP, blockStack = new BlockStack(), block = null;
 
 	var buffer = '', buffers = [];
 
@@ -79,6 +103,9 @@ function parse(str){
 		if(i < str.length - 1) next = str[i+1];
 	
 		if(mode === modes.MKP){
+			// TODO: make MKP mode if statements less... tricky. as little fall-through as possible?
+			// i.e. each choice should have one entry/exit, and be very obvious what happens next
+			
 			// current character is @
 			if(TKS.AT.test(curr) === true){
 				if(i > 0 && TKS.EMAILCHARS.test(prev) === true && TKS.EMAILCHARS.test(next)){
@@ -91,28 +118,26 @@ function parse(str){
 						// escaped @. continue, but ignore one @
 						buffer += curr;
 						i += 1; // skip next @
+						continue;
 					} else if(TKS.BRACESTART.test(next) === true){
 						// found {, enter block mode
 						buffers.push( { type: modes.MKP, value: buffer } );
 						buffer = ''; // blank out markup buffer;
-						//codeNestLevel += 1;
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.BRACEEND.test(next) === true){
-						// found }, assume explicit closing of block
+						// TODO: is this ever even hit!?
+						// found }, assume explicit closing of block, let block mode take over
 						buffers.push( { type: modes.MKP, value: buffer } );
 						buffer = ''; // blank out markup buffer;
 						mode = modes.BLK;
 						continue;
 					} else if(TKS.PARENSTART.test(next) === true){
-					
 						// end of markup mode, switch to EXP
 						buffers.push( { type: modes.MKP, value: buffer } );
 						buffer = ''; // blank out markup buffer;
-					
 						mode = modes.EXP;
 						continue;
-						
 					} else {
 						// test for identifier
 						identifier = str.substring(i+1); // everything after @
@@ -130,7 +155,6 @@ function parse(str){
 								buffers.push( { type: modes.MKP, value: buffer } );
 								buffer = identifierMatch[0];
 								mode = modes.BLK;
-								//codeNestLevel += 1;
 								i += buffer.length; // skip identifier and continue in block mode
 								continue;
 							} else {
@@ -144,6 +168,25 @@ function parse(str){
 						}
 					}
 				}
+			} else if(TKS.LINEBREAK.test(curr) === true){
+			
+				// found line break
+				
+				block = blockStack.peek();
+				if(block !== null && block === modes.BLK){
+				
+					// we're within a code block
+					// push markup and switch to BLK mode.
+					// {} blocks have an implied context switch when newlines are found
+					
+					// TODO: should this consume all whitespace automatically?
+					buffer += curr;
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = ''; // blank out markup buffer;
+					mode = modes.BLK;
+					continue;
+				}
+				
 			} else if(TKS.BRACEEND.test(curr) === true) {
 				// found } in markup mode, 
 				
@@ -184,7 +227,7 @@ function parse(str){
 					buffer += curr;
 					i += 1; // skip next @
 				} else {
-				
+					// explicit exit out of block mode. this might be contrary to spec
 					buffers.push( { type: modes.BLK, value: buffer } );
 					buffer = '';
 					mode = modes.MKP;
@@ -206,19 +249,21 @@ function parse(str){
 			
 			} else if(TKS.BRACESTART.test(curr) === true) {
 				buffer += curr;
-				codeNestLevel += 1;
+				//codeNestLevel += 1;
+				blockStack.push(modes.BLK)
 				continue;
 
 			} else if(TKS.BRACEEND.test(curr) === true) {
 				//buffer += curr;
-				codeNestLevel -= 1;
-				if(codeNestLevel === 0){
+				//codeNestLevel -= 1;
+				blockStack.pop();
+				//if(codeNestLevel === 0){
 					buffer += curr;
 					buffers.push( { type: modes.BLK, value: buffer } );
 					buffer = '';
 					// stay in block mode, since more JS could follow
 					continue;
-				}
+				//}
 			} 
 			
 			buffer += curr;
