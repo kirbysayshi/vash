@@ -20,7 +20,6 @@
 * implement @: text escape
 * implement mode stack for @{} blocks, to avoid extra {} in code generation?
 * refactor to remove repeated code
-* probably only need one buffer
 * change regexes to straight string compares where possible for speed
 * add modelPropertyName/modelName config option
 * add possiblity for useWith configuration from within template? special keyword?
