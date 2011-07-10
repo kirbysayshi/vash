@@ -235,6 +235,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<p>Line #1</p> \n ');
 		}
 	}
+	,'anonymous block and while loop with manual increment post': {
+		topic: function(){
+			var str = "@{ var countNum = 0; while(countNum < 2){ \n countNum += 1; \n <p>Line #@countNum</p> \n countNum += 1; \n } }";
+			return vash.tpl(str);
+		}
+		,'outputs 1 line': function(topic){
+			assert.equal( topic(), '<p>Line #1</p> \n ');
+		}
+	}
 	,'mixing code and plain text, <text> escape': {
 		topic: function(){
 			var str = '@if (true) { \n'
