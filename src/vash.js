@@ -15,11 +15,13 @@ var TKS = {
     HARDPARENEND:  	/\]/,
 	PERIOD: 		/\./,
 	LINEBREAK:  	/[\n\r]/gi,
-	WHITESPACE: 	/\s/,
+	NONWHITESPACE: 	/\S/,
 	TAGOC: 			/\/|[a-zA-Z]/, // tag open or close, minus <
 	EMAILCHARS: 	/[a-zA-Z0-9\-\_]/,
 	IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
 	RESERVED: /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
+	ATSTARSTART: /@\*/,
+	ATSTAREND: /\*@/, 
 	//RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
 	
 	// these are used for template generation, not parsing
@@ -73,8 +75,12 @@ function parse(str){
 	// a matched character is found. For example: curr == (, so it
 	// would consume until a matching ) is found, being sure they 
 	// actually match in case of nested characters.
+	// if consume arg === false, then does not consume, and only moves
+	// the cursor (i) ahead.
 	// This is defined here to allow it to access parser state.
-	function consumeUntilMatched(sRe, eRe){
+	function untilMatched(sRe, eRe, consume){
+		consume = consume || true;
+		
 		var groupLevel = 1;
 		while( groupLevel > 0 ){
 			j += 1;
@@ -88,7 +94,7 @@ function parse(str){
 		}
 	
 		// add ( something something (something something) ) to buffer
-		buffer += str.substring(i, j+1);
+		if(consume === true) buffer += str.substring(i, j+1);
 	
 		i = j; // advance i to current char
 		curr = str[i]; // curr will be equal to eRe
@@ -99,20 +105,41 @@ function parse(str){
 	// before the char that evaluates to false.
 	// begins testing from curr + 1, and exits leaving i/curr == the 
 	// character before the char that evaluated as true
-	function consumeUntil(stopRe){
-		j = i; // update future cursor
+	// if consume arg === false, then does not consume, and only moves
+	// the cursor (i) ahead.
+	// if includeNext === true, tests stopRe against curr + next
+	function until(stopRe, consume, includeNext){
+		var toTest;
 		
-		while(stopRe.test(curr) === true){	
+		if(consume !== false && consume !== true) {
+			consume = true;
+		}
+		if(includeNext !== false && includeNext !== true) {
+			includeNext = false;
+		}
+		
+		j = i; // update future cursor
+		toTest = includeNext === true && next !== null ? curr + next : curr;
+		
+		while(stopRe.test(toTest) === false){	
 			j += 1; 
 			curr = str[j];
-			if(j < str.length - 1) next = str[j+1];
+			if(j < str.length - 1) {
+				next = str[j+1];
+			} else {
+				next = null;
+				break;
+			}
+			if(includeNext === true && next !== null) toTest = curr + next;
+			else toTest = curr;
 		}
 		
 		// consume, including current char through char before char that evaluated as true
-		buffer += str.substring(i, j);
+		if(consume === true) buffer += str.substring(i, j);
 		
 		// cleanup: 
 		i = j - 1; // advance i to char before char that evaluated as false
+		if(includeNext === true) i += 2; // need to account for next being included in test
 		curr = str[i]; // curr will be equal to char before stopRe
 		if(i < str.length - 1) next = str[i+1];
 	}
@@ -122,6 +149,15 @@ function parse(str){
 		if(i > 0) prev = str[i-1];
 		curr = str[i];
 		if(i < str.length - 1) next = str[i+1];
+		else next = null;
+	
+		// before any mode checks, do global check for current + next to be @* comment
+		if(next !== null && TKS.ATSTARSTART.test(curr + next)){
+			// current + next = @*
+			// advance i until character immediately after *@ and skip this iteration
+			until(TKS.ATSTAREND, false, true);
+			continue;
+		}
 	
 		if(mode === modes.MKP){
 			// TODO: make MKP mode if statements less... tricky. as little fall-through as possible?
@@ -192,7 +228,7 @@ function parse(str){
 				// code succeeds it, i.e. inside @{}, @for, etc
 				
 				// consume all characters until a non-whitespace char is found
-				consumeUntil(TKS.WHITESPACE);
+				until(TKS.NONWHITESPACE);
 				
 				block = blockStack.peek();
 				if(block !== null && block === modes.BLK){
@@ -289,10 +325,10 @@ function parse(str){
 					mode = modes.MKP;
 				} else if( TKS.HARDPARENSTART.test(curr) === true ){
 					j = i; // update future cursor in prep for consumption
-					consumeUntilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
+					untilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
 				} else if( TKS.PARENSTART.test(curr) === true ){
 					j = i; // update future cursor in prep for consumption
-					consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
+					untilMatched(TKS.PARENSTART, TKS.PARENEND);
 				} else {
 					// this is probably the end of the expression
 					
@@ -314,14 +350,14 @@ function parse(str){
 				if(TKS.PARENSTART.test(next) === true){
 					// found (, consume until next matching
 					i = j; // move i forward
-					consumeUntilMatched(TKS.PARENSTART, TKS.PARENEND);
+					untilMatched(TKS.PARENSTART, TKS.PARENEND);
 					continue; 
 
 				} else if(TKS.HARDPARENSTART.test(next) === true){
 					// found [, consume until next matching
 					
 					i = j; // move i forward
-					consumeUntilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
+					untilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
 					continue;
 
 				} else if(TKS.PERIOD.test(next) === true){
