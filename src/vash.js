@@ -79,9 +79,11 @@ function parse(str){
 	// the cursor (i) ahead.
 	// This is defined here to allow it to access parser state.
 	function untilMatched(sRe, eRe, consume){
-		consume = consume || true;
 		
 		var groupLevel = 1;
+		
+		if(consume !== false && consume !== true) { consume = true; }
+		
 		while( groupLevel > 0 ){
 			j += 1;
 			curr = str[j];
@@ -107,31 +109,16 @@ function parse(str){
 	// character before the char that evaluated as true
 	// if consume arg === false, then does not consume, and only moves
 	// the cursor (i) ahead.
-	// if includeNext === true, tests stopRe against curr + next
-	function until(stopRe, consume, includeNext){
-		var toTest;
-		
-		if(consume !== false && consume !== true) {
-			consume = true;
-		}
-		if(includeNext !== false && includeNext !== true) {
-			includeNext = false;
-		}
+	function until(stopRe, consume){
+
+		if(consume !== false && consume !== true) { consume = true; }
 		
 		j = i; // update future cursor
-		toTest = includeNext === true && next !== null ? curr + next : curr;
 		
-		while(stopRe.test(toTest) === false){	
+		while(stopRe.test(curr) === false){	
 			j += 1; 
 			curr = str[j];
-			if(j < str.length - 1) {
-				next = str[j+1];
-			} else {
-				next = null;
-				break;
-			}
-			if(includeNext === true && next !== null) toTest = curr + next;
-			else toTest = curr;
+			if(curr === undefined) break; // out of string to test against!	
 		}
 		
 		// consume, including current char through char before char that evaluated as true
@@ -139,7 +126,6 @@ function parse(str){
 		
 		// cleanup: 
 		i = j - 1; // advance i to char before char that evaluated as false
-		if(includeNext === true) i += 2; // need to account for next being included in test
 		curr = str[i]; // curr will be equal to char before stopRe
 		if(i < str.length - 1) next = str[i+1];
 	}
@@ -151,11 +137,13 @@ function parse(str){
 		if(i < str.length - 1) next = str[i+1];
 		else next = null;
 	
-		// before any mode checks, do global check for current + next to be @* comment
+		// before any mode checks, do special check for current + next to be @* comment
 		if(next !== null && TKS.ATSTARSTART.test(curr + next)){
 			// current + next = @*
-			// advance i until character immediately after *@ and skip this iteration
-			until(TKS.ATSTAREND, false, true);
+			identifier = str.substring(i);
+			j = identifier.match(TKS.ATSTAREND);
+			if(j === -1) throw new Error('Unmatched @* *@ comment');
+			i = i + j + 1; // advance i to @ of *@
 			continue;
 		}
 	

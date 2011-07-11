@@ -305,6 +305,17 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '' )
 		}
 	}
+	,'unclosed "server-side" comment': {
+		topic: function(){
+			var str = '@* \n'
+				+ 'This is a server side \n'
+				+ 'multiline comment \n';
+			return vash.tpl(str);
+		}
+		,'throws exception': function(topic){
+			assert.throws( topic(), Error )
+		}
+	}
 	,'mixing expressions and text': {
 		topic: function(){
 			var str = 'Hello @title. @name.';
