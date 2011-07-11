@@ -91,6 +91,25 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(), '<li class="blue">list item</li> \n <li class="blue">list item</li> \n ');
 		}
 	}
+	,'nested for blocks on new lines with markup and even more complex interpolation/expressions': {
+		topic: function(){
+			var str = "@for(var i = 0; i < somearr.length; i++){ \n"
+				+ "	<li class=\"@(i % 2 === 0 ? 'even' : 'odd')\">Some element, number @i, value @somearr[i]</li> \n"
+				+ "	@for(var j = 0; j < anotherarr.length; j++){"
+				+ "		<li class=\"@j-what\">some text, @( (j+2) % 2 === 0 ? 'even' : 'odd' ), value @anotherarr[j]</li> \n"
+				+ "	}"
+			+ "}";
+			return vash.tpl(str);
+		}
+		,'output markup': function(topic){
+			var model = {
+				somearr: ['a', 'b', 'c', 'd']
+				,anotherarr: ['z', 'y', 'x', 'w']
+			};
+			
+			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="odd">Some element, number 1, value b</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="even">Some element, number 2, value c</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="odd">Some element, number 3, value d</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011');
+		}
+	}
 	,'empty try/catch block': {
 		topic: function(){
 			var str = "@try { var i = 0; } catch(e){  }";
