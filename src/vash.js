@@ -142,7 +142,7 @@ function parse(str){
 			// current + next = @*
 			identifier = str.substring(i);
 			j = identifier.match(TKS.ATSTAREND);
-			if(j === -1) throw new Error('Unmatched @* *@ comment');
+			if(j === null) throw new Error('Unmatched @* *@ comment');
 			i = i + j + 1; // advance i to @ of *@
 			continue;
 		}

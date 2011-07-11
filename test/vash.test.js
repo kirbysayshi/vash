@@ -284,6 +284,24 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({isbnNumber: 10101}), '<span>ISBN10101</span>' )
 		}
 	}
+	,'explicit expression with unmatched parenthesis': {
+		topic: function(){
+			var str = '<span>ISBN@(isbnNumber</span>';
+			return str;
+		}
+		,'throws syntax error': function(topic){
+			var fail = true;
+			try{
+				vash.tpl(topic);
+			} catch(e){
+				fail = false;
+			}
+			
+			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
+			
+			//assert.throws( vash.tpl, Error );
+		}
+	}
 	,'escaping the @ symbol': {
 		topic: function(){
 			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
@@ -310,10 +328,19 @@ vows.describe('vash templating library').addBatch({
 			var str = '@* \n'
 				+ 'This is a server side \n'
 				+ 'multiline comment \n';
-			return vash.tpl(str);
+			return str;
 		}
 		,'throws exception': function(topic){
-			assert.throws( topic(), Error )
+			var fail = true;
+			try{
+				vash.tpl(topic);
+			} catch(e){
+				fail = false;
+			}
+			
+			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
+			
+			//assert.throws( vash.tpl, Error, 'what what' );
 		}
 	}
 	,'mixing expressions and text': {
