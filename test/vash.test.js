@@ -91,6 +91,25 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(), '<li class="blue">list item</li> \n <li class="blue">list item</li> \n ');
 		}
 	}
+	,'nested for blocks on new lines with markup and even more complex interpolation/expressions': {
+		topic: function(){
+			var str = "@for(var i = 0; i < somearr.length; i++){ \n"
+				+ "	<li class=\"@(i % 2 === 0 ? 'even' : 'odd')\">Some element, number @i, value @somearr[i]</li> \n"
+				+ "	@for(var j = 0; j < anotherarr.length; j++){"
+				+ "		<li class=\"@j-what\">some text, @( (j+2) % 2 === 0 ? 'even' : 'odd' ), value @anotherarr[j]</li> \n"
+				+ "	}"
+			+ "}";
+			return vash.tpl(str);
+		}
+		,'output markup': function(topic){
+			var model = {
+				somearr: ['a', 'b', 'c', 'd']
+				,anotherarr: ['z', 'y', 'x', 'w']
+			};
+			
+			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="odd">Some element, number 1, value b</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="even">Some element, number 2, value c</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011<li class="odd">Some element, number 3, value d</li> \n\011<li class="0-what">some text, even, value z</li> \n\011<li class="1-what">some text, odd, value y</li> \n\011<li class="2-what">some text, even, value x</li> \n\011<li class="3-what">some text, odd, value w</li> \n\011');
+		}
+	}
 	,'empty try/catch block': {
 		topic: function(){
 			var str = "@try { var i = 0; } catch(e){  }";
@@ -174,7 +193,7 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'empty anonymous block with same-line markup': {
 		topic: function(){
-			var str = "@{ @<li>list item</li> @}";
+			var str = "@{ <li>list item</li> @}";
 			return vash.tpl(str);
 		}
 		,'outputs markup': function(topic){
@@ -226,6 +245,24 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> \n ' );
 		}
 	}
+	,'anonymous block and while loop with manual increment': {
+		topic: function(){
+			var str = "@{ var countNum = 0; while(countNum < 1){ \n countNum += 1; \n <p>Line #@countNum</p> \n } }";
+			return vash.tpl(str);
+		}
+		,'outputs 1 line': function(topic){
+			assert.equal( topic(), '<p>Line #1</p> \n ');
+		}
+	}
+	,'anonymous block and while loop with manual increment post': {
+		topic: function(){
+			var str = "@{ var countNum = 0; while(countNum < 2){ \n countNum += 1; \n <p>Line #@countNum</p> \n countNum += 1; \n } }";
+			return vash.tpl(str);
+		}
+		,'outputs 1 line': function(topic){
+			assert.equal( topic(), '<p>Line #1</p> \n ');
+		}
+	}
 	,'mixing code and plain text, <text> escape': {
 		topic: function(){
 			var str = '@if (true) { \n'
@@ -266,6 +303,24 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({isbnNumber: 10101}), '<span>ISBN10101</span>' )
 		}
 	}
+	,'explicit expression with unmatched parenthesis': {
+		topic: function(){
+			var str = '<span>ISBN@(isbnNumber</span>';
+			return str;
+		}
+		,'throws syntax error': function(topic){
+			var fail = true;
+			try{
+				vash.tpl(topic);
+			} catch(e){
+				fail = false;
+			}
+			
+			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
+			
+			//assert.throws( vash.tpl, Error );
+		}
+	}
 	,'escaping the @ symbol': {
 		topic: function(){
 			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
@@ -285,6 +340,26 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'output nothing': function(topic){
 			assert.equal( topic(), '' )
+		}
+	}
+	,'unclosed "server-side" comment': {
+		topic: function(){
+			var str = '@* \n'
+				+ 'This is a server side \n'
+				+ 'multiline comment \n';
+			return str;
+		}
+		,'throws exception': function(topic){
+			var fail = true;
+			try{
+				vash.tpl(topic);
+			} catch(e){
+				fail = false;
+			}
+			
+			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
+			
+			//assert.throws( vash.tpl, Error, 'what what' );
 		}
 	}
 	,'mixing expressions and text': {
@@ -307,6 +382,29 @@ vows.describe('vash templating library').addBatch({
 		,'ensures it is not there': function(topic){
 			assert.equal( topic({name: 'what'}), "<li>what</li>" );
 			assert.equal( topic.toString().indexOf("with"), -1 );
+		}
+	}
+	,'model name': {
+		topic: function(){
+			var str = '<li>@it.name</li>'
+				,tpl;
+			
+			vash.config.modelName = 'it';
+			tpl = vash.tpl(str, false);
+			vash.config.modelName = 'model';
+			return tpl;
+		}
+		,'is configurable': function(topic){
+			assert.equal( topic({name: 'what'}), "<li>what</li>" );
+		}
+	}
+	,'explicit @}': {
+		topic: function(){
+			var str = '@{ var a = 0; a += 1; <span>text</span> @}<span>text</span>';
+			return vash.tpl(str);
+		}
+		,'triggers markup mode exit': function(topic){
+			assert.equal( topic(), '<span>text</span> <span>text</span>' );
 		}
 	}
 	//,'putting markup into a property': {

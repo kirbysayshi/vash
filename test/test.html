@@ -7,7 +7,7 @@
 	</head>
 	<body id="" onload="">
 		<script src="../src/vash.js" type="text/javascript" charset="utf-8"></script>
-		<script id="test-exp-simple" type="text/razor-js" charset="utf-8"><a href="@what.how()[0]"></a></script>
+		<script id="test-exp-simple" type="text/razor-js" charset="utf-8"><li>@model.name</li></script>
 		<script id="test-exp" type="text/razor-js" charset="utf-8">
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
@@ -25,25 +25,22 @@
 			}
 		</script>
 		<script id="test-block" type="text/razor-js" charset="utf-8">
-			@{
-				var a = 'what?';
-				var b = function(){
-					return 'how!?';
-				}
-			}
+			@*
+			This is a server side
+			multiline comment
 		</script>
 		
 		<script type="text/javascript" charset="utf-8">
 			
-			//var tmpl = parse( document.querySelectorAll('#test-block')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-block')[0].innerHTML );
 			//console.log(tmpl);
 			
 			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
 			//console.log(tmpl);
 			
-			var tokens = vash._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
 			//var tokens = vash._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
+			var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
 			
 			console.log(tokens);
 			var tmpl = vash._generate(tokens, true)
