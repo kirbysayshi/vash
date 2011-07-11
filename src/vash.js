@@ -351,7 +351,7 @@ function parse(str){
 
 }
 
-function generateTemplate(buffers, useWith){
+function generateTemplate(buffers, useWith, modelName){
 	var  i
 		,current
 		,generated = 'var out = "";\n';
@@ -383,9 +383,9 @@ function generateTemplate(buffers, useWith){
 		}
 	}
 
-	return new Function("model", 
+	return new Function(modelName, 
 		(useWith === true 
-			? "with(model || {}){" + generated + "}" 
+			? "with(" + modelName + " || {}){" + generated + "}" 
 			: generated ) + "\nreturn out;");
 }
 
@@ -400,10 +400,11 @@ var vash = {
 			? useWith
 			: vash.config.useWith;
 		var buffs = parse(str);
-		return generateTemplate(buffs, useWith);
+		return generateTemplate(buffs, useWith, vash.config.modelName);
 	}
 	,"config": {
-		"useWith": true
+		 "useWith": true
+		,"modelName": "model"
 	}
 };
 

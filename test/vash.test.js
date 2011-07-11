@@ -327,6 +327,20 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic.toString().indexOf("with"), -1 );
 		}
 	}
+	,'model name': {
+		topic: function(){
+			var str = '<li>@it.name</li>'
+				,tpl;
+			
+			vash.config.modelName = 'it';
+			tpl = vash.tpl(str, false);
+			vash.config.modelName = 'model';
+			return tpl;
+		}
+		,'is configurable': function(topic){
+			assert.equal( topic({name: 'what'}), "<li>what</li>" );
+		}
+	}
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
