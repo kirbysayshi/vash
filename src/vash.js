@@ -6,7 +6,7 @@ var TKS = {
     AT:     		/@/,
     PARENSTART:    	/\(/,
     PARENEND:      	/\)/,
-    //COLON:      	/:/,
+    COLON:      	/:/,
     BRACESTART:    	/\{/,
     BRACEEND:      	/\}/, 
     LT:         	/</,
@@ -222,8 +222,17 @@ function parse(str){
 					// escaped @, continue, but ignore one @
 					buffer += curr;
 					i += 1; // skip next @
+				} else if(TKS.COLON.test(next) === true){
+					// found @:, explicit escape into markup mode
+					buffers.push( { type: modes.BLK, value: buffer } );
+					buffer = '';
+					mode = modes.MKP;
+					i += 1; // advance i to skip :
+					continue;
 				} else {
-					// explicit exit out of block mode. this might be contrary to spec
+					// explicit exit out of block mode. this might be contrary to spec,
+					// and is probably never hit
+					console.log('explicit block mode exit hit')
 					buffers.push( { type: modes.BLK, value: buffer } );
 					buffer = '';
 					mode = modes.MKP;

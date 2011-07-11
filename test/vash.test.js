@@ -341,6 +341,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({name: 'what'}), "<li>what</li>" );
 		}
 	}
+	,'explicit @}': {
+		topic: function(){
+			var str = '@{ var a = 0; a += 1; <span>text</span> @}<span>text</span>';
+			return vash.tpl(str);
+		}
+		,'triggers markup mode exit': function(topic){
+			assert.equal( topic(), '<span>text</span> <span>text</span>' );
+		}
+	}
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
