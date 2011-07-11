@@ -33,7 +33,7 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 	console.log(vash)
 	
 	vash
-		tpl: function(string){}
+		tpl: function(string, useWith){}
 		config: {
 			useWith: true
 			modelName: "model"
@@ -41,7 +41,11 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 		_generate: function(){} // internal, only public to aid testing
 		_parse: function(){} // internal, only public to aid testing
 
-Vash has one public method, `vash.tpl()`. It accepts a string template as its only parameter, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template. `vash.config` has a few options, see below.
+### vash.tpl(templateString, [useWith])
+
+Vash has one public method, `vash.tpl()`. It accepts a string template, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template. 
+
+`useWith` is an optional parameter that can be used to override the global `vash.config.useWith`.
 
 ## OPTIONS
 
