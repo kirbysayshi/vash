@@ -285,6 +285,22 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), 'Plain Text\n' );
 		}
 	}
+	,'markup within a code block': {
+		topic: function(){
+			var str = '@if(true){ \n'
+				+ '<span>this is text \n'
+				+ 'that spans multiple lines</span> \n'
+				+ '}';
+			return str;
+		}
+		,'disregards newline re-entry into BLK mode': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error );
+			try {
+				var tpl = vash.tpl(topic);
+				assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span> \n');
+			} catch(e){}
+		}
+	}
 	,'including email address in markup': {
 		topic: function(){
 			var str = 'Hi philha@example.com';
@@ -309,16 +325,16 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws syntax error': function(topic){
-			var fail = true;
-			try{
-				vash.tpl(topic);
-			} catch(e){
-				fail = false;
-			}
+			//var fail = true;
+			//try{
+			//	vash.tpl(topic);
+			//} catch(e){
+			//	fail = false;
+			//}
+			//
+			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
 			
-			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
-			
-			//assert.throws( vash.tpl, Error );
+			assert.throws( function(){ vash.tpl(topic) }, Error );
 		}
 	}
 	,'escaping the @ symbol': {
@@ -350,16 +366,16 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws exception': function(topic){
-			var fail = true;
-			try{
-				vash.tpl(topic);
-			} catch(e){
-				fail = false;
-			}
+			//var fail = true;
+			//try{
+			//	vash.tpl(topic);
+			//} catch(e){
+			//	fail = false;
+			//}
+			//
+			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
 			
-			if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
-			
-			//assert.throws( vash.tpl, Error, 'what what' );
+			assert.throws( function(){ vash.tpl(topic) }, Error );
 		}
 	}
 	,'mixing expressions and text': {
