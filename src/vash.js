@@ -245,21 +245,16 @@ function parse(str){
 			
 			} else if(TKS.BRACESTART.test(curr) === true) {
 				buffer += curr;
-				//codeNestLevel += 1;
 				blockStack.push(modes.BLK)
 				continue;
 
 			} else if(TKS.BRACEEND.test(curr) === true) {
-				//buffer += curr;
-				//codeNestLevel -= 1;
 				blockStack.pop();
-				//if(codeNestLevel === 0){
-					buffer += curr;
-					buffers.push( { type: modes.BLK, value: buffer } );
-					buffer = '';
-					// stay in block mode, since more JS could follow
-					continue;
-				//}
+				buffer += curr;
+				buffers.push( { type: modes.BLK, value: buffer } );
+				buffer = '';
+				// stay in block mode, since more JS could follow
+				continue;
 			} 
 			
 			buffer += curr;
@@ -305,7 +300,6 @@ function parse(str){
 			
 				buffer += identifierMatch[0];
 				j = i + identifierMatch[0].length;
-				//j = i += identifierMatch[0].length; // set i and j to next char after identifier for next iteration
 				next = str[j]; // set next to the actual next char after identifier
 			
 				if(TKS.PARENSTART.test(next) === true){
@@ -366,16 +360,26 @@ function generateTemplate(buffers, useWith){
 		current = buffers[i];
 		
 		if(current.type === modes.MKP){
-			generated += 'out += \'' + current.value.replace(TKS.QUOTE, '\"').replace(TKS.LINEBREAK, '\\n') + '\';\n';
+			generated += 'out += \'' 
+				+ current.value
+					.replace(TKS.QUOTE, '\"')
+					.replace(TKS.LINEBREAK, '\\n') 
+				+ '\';\n';
 		}
 		
 		if(current.type === modes.BLK){
 			// nuke new lines, otherwise causes parse error
-			generated += current.value.replace(TKS.QUOTE, '\"').replace(TKS.LINEBREAK, '') + '\n';
+			generated += current.value
+				.replace(TKS.QUOTE, '\"')
+				.replace(TKS.LINEBREAK, '') + '\n';
 		}
 		
 		if(current.type === modes.EXP){
-			generated += 'out += (' + current.value.replace(TKS.QUOTE, '\"').replace(TKS.LINEBREAK, '\\n') + ');\n';
+			generated += 'out += (' 
+				+ current.value
+					.replace(TKS.QUOTE, '\"')
+					.replace(TKS.LINEBREAK, '\\n') 
+				+ ');\n';
 		}
 	}
 
