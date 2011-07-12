@@ -42,7 +42,9 @@ var TKS = {
     IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
     RESERVED: /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
     ATSTARSTART: /@\*/,
-    ATSTAREND: /\*@/, 
+    ATSTAREND: /\*@/,
+    TXTSTART: /<text>/,
+    TXTEND: /<\/text>/,
     //RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
     
     // these are used for template generation, not parsing
@@ -151,6 +153,11 @@ function parse(str){
         if(i < str.length - 1) next = str[i+1];
     }
 
+    // looks ahead of and including the cursor, returns true/false
+    function testAhead(testRe, amount){
+        return testRe.test(str.substring(i, i + amount));
+    }
+
     // the main parser loop/entry point
     for(i = 0; i < str.length; i++){
         if(i > 0) prev = str[i-1];
@@ -252,6 +259,26 @@ function parse(str){
                 }
                 continue;
                 
+            } else if(testAhead(TKS.TXTEND, 7) === true){
+                
+                block = blockStack.peek();
+                if(block !== null && block === modes.MKP){
+                    // we're within a <text> escape block
+                    // pop the markup block, push markup to buffers
+                    // advance cursor (i) passed the </text>, to >
+                    // go to next iteration in BLK mode
+
+                    blockStack.pop();
+                    buffers.push( { type: modes.MKP, value: buffer } );
+                    buffer = '';
+                    mode = modes.BLK;
+                    i += 6;
+                    continue;
+
+                } else {
+                    throw new Error('Code blocks cannot be nested inside <text> nodes');
+                }
+
             } else {
                 buffer += curr;
                 continue;
@@ -286,7 +313,7 @@ function parse(str){
             
             } else if(TKS.LT.test(curr) === true){
                 // current character is <
-            
+  
                 if(TKS.TAGOC.test(next) === true){
                     // we have a markup tag
                     // switch to markup mode
@@ -294,6 +321,16 @@ function parse(str){
                     buffers.push( { type: modes.BLK, value: buffer } );
                     buffer = curr;
                     mode = modes.MKP;
+                    
+                    if(testAhead(TKS.TXTSTART, 6) === true){
+                        // found the opening of a <text> block
+                        // disable block-mode newline context switch
+                        blockStack.push(modes.MKP);
+                        i += 5; // manually advance i passed <text>
+                        buffer = ''; // blank out buffer, removing < that was just added
+                        // this is a bit tricky. 
+                    }
+                    
                     continue;
                 }
             
