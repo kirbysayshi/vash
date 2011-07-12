@@ -52,6 +52,33 @@ var TKS = {
     QUOTE:          /[\"']/gi
 };
 
+var ERR = {
+    SYNTAX: function(msg, cursorPos){
+        this.message = msg;
+        this.lineNumber = 0;
+        this.name = "SyntaxError";
+        this.stack = '';
+    }
+    ,UNMATCHED: function(msg, cursorPos){
+        this.message = msg;
+        this.lineNumber = 0;
+        this.name = "UnmatchedCharacterError";
+        this.stack = '';
+    }
+    ,INVALIDTAG: function(msg, cursorPos){
+        this.message = msg;
+        this.lineNumber = 0;
+        this.name = "InvalidTagError";
+        this.stack = '';
+    }
+    ,MALFORMEDHTML: function(msg, cursorPos){
+        this.message = msg;
+        this.lineNumber = 0;
+        this.name = "MalformedHtmlError";
+        this.stack = '';
+    }
+}
+
 function Stack(){
     this._stack = []
 }
@@ -93,7 +120,6 @@ function parse(str){
     var  mode = modes.MKP // current mode
         ,blockStack = new Stack()
         ,block = null
-        ,tagStack = new Stack()
         ,tag = null;
 
     var buffer = '', buffers = [];
@@ -127,7 +153,7 @@ function parse(str){
             if(sRe.test(curr) === true) groupLevel += 1;
             if(eRe.test(curr) === true) groupLevel -= 1;
         
-            if(j >= str.length) throw new Error('Syntax Error, unmatched ' + sRe);
+            if(j >= str.length) throw new ERR.UNMATCHED('unmatched ' + sRe, i+j);
         }
     
         // add ( something something (something something) ) to buffer
@@ -182,7 +208,7 @@ function parse(str){
             // current + next = @*
             identifier = str.substring(i);
             j = identifier.match(TKS.ATSTAREND);
-            if(j === null) throw new Error('Unmatched @* *@ comment');
+            if(j === null) throw new ERR.UNMATCHED('Unmatched @* *@ comment');
             i = i + j + 1; // advance i to @ of *@
             continue;
         }
@@ -374,7 +400,7 @@ function parse(str){
                         // disable block-mode newline context switch
                         blockStack.push({ type: modes.MKP, tag: tag[1] });
                     } else {
-                        throw new Error('Invalid tag name within code block');
+                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
                     }
                     
                     if(TKS.TXT.test(tag[1]) === true){
@@ -541,7 +567,8 @@ function generateTemplate(buffers, useWith, modelName){
 // public interface. keys are quoted to allow for proper export when compressed
 
 var vash = {
-     "_parse": parse
+     "_err": ERR
+    ,"_parse": parse
     ,"_generate": generateTemplate
     // useWith is optional, defaults to value of vash.config.useWith
     ,"tpl": function tpl(str, useWith){

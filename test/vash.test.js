@@ -334,7 +334,7 @@ vows.describe('vash templating library').addBatch({
 			//
 			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
 			
-			assert.throws( function(){ vash.tpl(topic) }, Error );
+			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
 		}
 	}
 	,'escaping the @ symbol': {
@@ -375,7 +375,7 @@ vows.describe('vash templating library').addBatch({
 			//
 			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
 			
-			assert.throws( function(){ vash.tpl(topic) }, Error );
+			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
 		}
 	}
 	,'mixing expressions and text': {
@@ -421,6 +421,15 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'triggers markup mode exit': function(topic){
 			assert.equal( topic(), '<span>text</span> <span>text</span>' );
+		}
+	}
+	,'misnested html tags in block': {
+		topic: function(){
+			var str = '@if(true) { <li><p></li></p> \n}';
+			return str;
+		}
+		,'throws "Malformed HTML" exception': function(topic){
+			assert.throws( function(){ vash.tpl(topic) }, function(){} /*vash._err.MALFORMEDHTML*/ );
 		}
 	}
 	//,'putting markup into a property': {
