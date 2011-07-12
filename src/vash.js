@@ -37,25 +37,26 @@ var TKS = {
     PERIOD:         /\./,
     LINEBREAK:      /[\n\r]/gi,
     NONWHITESPACE:  /\S/,
-    TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <
+    TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <,
+    TAGSTART:       /^<([a-zA-Z\-\:]*)[\b]?/i,
+    TAGEND:         /^<\/(\S*)\b[^>]?/i,
     EMAILCHARS:     /[a-zA-Z0-9\-\_]/,
-    IDENTIFIER: /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
-    RESERVED: /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
-    ATSTARSTART: /@\*/,
-    ATSTAREND: /\*@/,
-    TXTSTART: /<text>/,
-    TXTEND: /<\/text>/,
+    IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
+    RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
+    ATSTARSTART:    /@\*/,
+    ATSTAREND:      /\*@/,
+    TXT:            /^text/,
     //RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
     
     // these are used for template generation, not parsing
     QUOTE:          /[\"']/gi
 };
 
-function BlockStack(){
+function Stack(){
     this._stack = []
 }
 
-BlockStack.prototype = {
+Stack.prototype = {
     push: function(obj){
         this._stack.push(obj);
         return this;
@@ -64,11 +65,18 @@ BlockStack.prototype = {
         if(this._stack.length > 0)
             return this._stack.pop();
         else 
-            throw new Error('Stack Underflow on BlockStack');
+            throw new Error('Stack Underflow');
     }
     ,peek: function(){
         if(this._stack.length > 0){
             return this._stack[ this._stack.length - 1 ]
+        } else {
+            return null;
+        }
+    }
+    ,doublePeek: function(){
+        if(this._stack.length > 1){
+            return this._stack[ this._stack.length - 2 ]
         } else {
             return null;
         }
@@ -81,8 +89,12 @@ var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 
 function parse(str){
 
-    // current mode
-    var mode = modes.MKP, blockStack = new BlockStack(), block = null;
+    
+    var  mode = modes.MKP // current mode
+        ,blockStack = new Stack()
+        ,block = null
+        ,tagStack = new Stack()
+        ,tag = null;
 
     var buffer = '', buffers = [];
 
@@ -247,7 +259,7 @@ function parse(str){
                 until(TKS.NONWHITESPACE);
                 
                 block = blockStack.peek();
-                if(block !== null && block === modes.BLK){
+                if(block !== null && block.type === modes.BLK){
                 
                     // we're within a code block
                     // push markup and switch to BLK mode.
@@ -259,26 +271,54 @@ function parse(str){
                 }
                 continue;
                 
-            } else if(testAhead(TKS.TXTEND, 7) === true){
+            } else if(TKS.LT.test(curr) === true){
+                // found <
+                // if current block is of type MKP, then test for matching closing tag
+                // to determine if this markup block should be considered closed,
+                // allowing newlines to switch MKP mode to BLK while within a code block.
+                // if not, just continue on your way...
                 
-                block = blockStack.peek();
-                if(block !== null && block === modes.MKP){
-                    // we're within a <text> escape block
-                    // pop the markup block, push markup to buffers
-                    // advance cursor (i) passed the </text>, to >
-                    // go to next iteration in BLK mode
-
-                    blockStack.pop();
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = '';
-                    mode = modes.BLK;
-                    i += 6;
-                    continue;
-
-                } else {
-                    throw new Error('Code blocks cannot be nested inside <text> nodes');
+                block = blockStack.doublePeek();
+                if(block !== null && block.type === modes.BLK){
+                    // second to last block is a BLK...
+                    block = blockStack.peek();
+                    
+                    if(block !== null && block.type === modes.MKP){
+                        // we're in a markup block, test if this is a matching closing tag
+                        tag = str.substring(i).match( TKS.TAGEND );
+                        
+                        if(tag !== null && tag.length > 0){
+                        
+                            // tag[0] is matching string
+                            // tag[1] is capture group === tag name
+                            
+                            if(TKS.TXT.test(tag[1]) === true){
+                                // SPECIAL CASE: 
+                                // tag is a closing </text> tag, which is not meant to be consumed
+                                // update i to >
+                                i += 6;
+                                // blank out curr, to prevent consumption of < or >
+                                curr = '';
+                            }
+                            
+                            if(tag[1] === block.tag){
+                                // this tag matches a tag that triggered 
+                                // multiline markup mode with a code block.
+                                // pop the markup block off the block stack
+                                blockStack.pop();
+                            }
+                        
+                        }
+                        
+                        // cleanup
+                        tag = null;
+                    }
                 }
-
+                
+                // consume < or '' (empty string), continue
+                // empty string is only if a </text> tag was encountered
+                buffer += curr;
+                continue;
             } else {
                 buffer += curr;
                 continue;
@@ -317,26 +357,43 @@ function parse(str){
                 if(TKS.TAGOC.test(next) === true){
                     // we have a markup tag
                     // switch to markup mode
+                    // push a markup block onto the block stack, to allow for multiline plain text
                 
                     buffers.push( { type: modes.BLK, value: buffer } );
                     buffer = curr;
                     mode = modes.MKP;
                     
-                    if(testAhead(TKS.TXTSTART, 6) === true){
-                        // found the opening of a <text> block
+                    // attempt to extract tag name
+                    tag = str.substring(i).match( TKS.TAGSTART );
+
+                    if(tag !== null && tag.length > 0){
+                        // captured a tag name
+                        // tag[0] is matching string
+                        // tag[1] is capture group === tag name
+                        
                         // disable block-mode newline context switch
-                        blockStack.push(modes.MKP);
+                        blockStack.push({ type: modes.MKP, tag: tag[1] });
+                    } else {
+                        throw new Error('Invalid tag name within code block');
+                    }
+                    
+                    if(TKS.TXT.test(tag[1]) === true){
+                        // SPECIAL CASE:
+                        // found the opening of a <text> block
                         i += 5; // manually advance i passed <text>
                         buffer = ''; // blank out buffer, removing < that was just added
                         // this is a bit tricky. 
                     }
                     
+                    // cleanup
+                    tag = null;
+
                     continue;
                 }
             
             } else if(TKS.BRACESTART.test(curr) === true) {
                 buffer += curr;
-                blockStack.push(modes.BLK)
+                blockStack.push({ type: modes.BLK })
                 continue;
 
             } else if(TKS.BRACEEND.test(curr) === true) {
@@ -380,8 +437,9 @@ function parse(str){
                     
                     // end of expression, switch to markup mode
                     buffers.push( { type: modes.EXP, value: buffer } );
-                    buffer = curr;
+                    buffer = ''; // blank out buffer
                     mode = modes.MKP;
+                    i -= 1; // roll cursor back one to allow markup mode to handle 
                 }
                 
                 continue;
@@ -473,7 +531,7 @@ function generateTemplate(buffers, useWith, modelName){
                 + ');\n';
         }
     }
-
+    
     return new Function(modelName, 
         (useWith === true 
             ? "with(" + modelName + " || {}){" + generated + "}" 

@@ -271,7 +271,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.tpl(str);
 		}
 		,'outputs plain text': function(topic){
-			assert.equal( topic(), 'Plain Text' );
+			assert.equal( topic(), 'Plain Text\n' );
 		}
 	}
 	,'mixing code and plain text, @: escape': {
