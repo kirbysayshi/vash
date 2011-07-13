@@ -43,7 +43,7 @@ var TKS = {
     TAGSELFCLOSE:   /^<[^>]+?\/>/i,
     EMAILCHARS:     /[a-zA-Z0-9\-\_]/,
     IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
-    RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
+    RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with/,
     ATSTARSTART:    /@\*/,
     ATSTAREND:      /\*@/,
     TXT:            /^text/,
@@ -54,29 +54,31 @@ var TKS = {
 };
 
 var ERR = {
-    SYNTAX: function(msg, cursorPos){
-        this.message = msg;
+	BASE: function(msg, cursorPos, str){
+		this.message = msg 
+			+ ' at character ' 
+			+ str[cursorPos] 
+			+ ' at position ' 
+			+ cursorPos + ' in ' 
+			+ str;
         this.lineNumber = 0;
+		this.stack = '';
+	}
+    ,SYNTAX: function(msg, cursorPos, str){
+		ERR.BASE.apply(this, arguments)
         this.name = "SyntaxError";
-        this.stack = '';
     }
-    ,UNMATCHED: function(msg, cursorPos){
-        this.message = msg;
-        this.lineNumber = 0;
+    ,UNMATCHED: function(msg, cursorPos, str){
+		ERR.BASE.apply(this, arguments)
         this.name = "UnmatchedCharacterError";
-        this.stack = '';
     }
-    ,INVALIDTAG: function(msg, cursorPos){
-        this.message = msg;
-        this.lineNumber = 0;
+    ,INVALIDTAG: function(msg, cursorPos, str){
+		ERR.BASE.apply(this, arguments)
         this.name = "InvalidTagError";
-        this.stack = '';
     }
-    ,MALFORMEDHTML: function(msg, cursorPos){
-        this.message = msg;
-        this.lineNumber = 0;
+    ,MALFORMEDHTML: function(msg, cursorPos, str){
+		ERR.BASE.apply(this, arguments)
         this.name = "MalformedHtmlError";
-        this.stack = '';
     }
 };
 
@@ -167,7 +169,7 @@ function parse(str){
             if(sRe.test(curr) === true) groupLevel += 1;
             if(eRe.test(curr) === true) groupLevel -= 1;
         
-            if(j >= str.length) throw new ERR.UNMATCHED('unmatched ' + sRe, i+j);
+            if(j >= str.length) throw new ERR.UNMATCHED('unmatched ' + sRe, j, str);
         }
     
         // add ( something something (something something) ) to buffer
@@ -219,14 +221,14 @@ function parse(str){
                 entry = blockStack.pop();
 
                 if(entry.type === modes.MKP){
-                    throw new ERR.MALFORMEDHTML("Missing closing " 
-                        + entry.tag 
-                        + ' at character ' 
-                        + entry.pos + ' of ' + str, entry.pos);
+                    throw new ERR.MALFORMEDHTML(
+						"Missing closing " + entry.tag
+						,entry.pos
+						,str);
                 }
 
                 if(entry.type === modes.BLK){
-                    throw new ERR.SYNTAX("Unclosed code block", entry.pos);
+                    throw new ERR.SYNTAX("Unclosed code block", entry.pos, str);
                 }
             }
         }
@@ -243,9 +245,11 @@ function parse(str){
         if(next !== null && TKS.ATSTARSTART.test(curr + next)){
             // current + next = @*
             identifier = str.substring(i);
-            j = identifier.match(TKS.ATSTAREND);
-            if(j === null) throw new ERR.UNMATCHED('Unmatched @* *@ comment');
-            i = i + j + 1; // advance i to @ of *@
+            identifierMatch = identifier.match(TKS.ATSTAREND);
+            if(identifierMatch === null) {
+				throw new ERR.UNMATCHED('Unmatched @* *@ comment', identifierMatch, str);
+			}
+            i = i + identifierMatch.index + 1; // advance i to @ of *@
             continue;
         }
     
@@ -333,7 +337,16 @@ function parse(str){
                 }
                 continue;
                 
-            } else if(TKS.LT.test(curr) === true){
+            } else if(TKS.BRACEEND.test(curr) === true){
+	
+				// found } assume it's a block closer. switch to BLK
+				buffers.push( { type: modes.MKP, value: buffer } );
+				buffer = '';
+				mode = modes.BLK;
+				i -= 1; // rollback cursor to character before found }
+				continue;
+	
+			} else if(TKS.LT.test(curr) === true){
                 // found <
                 // if current block is of type MKP, then test for matching closing tag
                 // to determine if this markup block should be considered closed,
@@ -397,7 +410,7 @@ function parse(str){
 	                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
 	                        }
 	                    } else {
-	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
+	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i, str);
 	                    }
 
 	                    if(TKS.TXT.test(tag[1]) === true){
@@ -473,7 +486,7 @@ function parse(str){
 				block = blockStack.peek();
 				
 				if(block === null || block.type !== modes.BLK){
-					throw new ERR.UNMATCHED('Found closing }, missing opening {', i);
+					throw new ERR.UNMATCHED('Found closing }, missing opening {', i, str);
 				}
 				
                 blockStack.pop();
@@ -482,8 +495,26 @@ function parse(str){
                 buffer = '';
                 // stay in block mode, since more JS could follow
                 continue;
-            } 
+            } /*else {
+				// found a non-transition character. test if it's the beginning of a
+				// code statement, like: 
+				//   var a = 'what';
+				// or
+				//   for(var i = 0...
+				// if it's not, assume it's content and switch to markup mode
+				identifier = str.substring(i);
+				identifierMatch = identifier.match( TKS.IDENTIFIER );
+				
+				if(identifierMatch === null){
+					// not a keyword, assume it's content and switch to markup mode
+					buffers.push( { type: modes.BLK, value: buffer } );
+					mode = modes.MKP;
+					buffer = '';
+					continue;
+				}
+			}*/
             
+			// the default
             buffer += curr;
             continue;       
         }

@@ -359,11 +359,11 @@ vows.describe('vash templating library').addBatch({
 			var str = '@* \n'
 				+ 'This is a server side \n'
 				+ 'multiline comment \n'
-				+ '*@';
+				+ '*@ and this content should be';
 			return vash.tpl(str);
 		}
 		,'output nothing': function(topic){
-			assert.equal( topic(), '' )
+			assert.equal( topic(), ' and this content should be' )
 		}
 	}
 	,'unclosed "server-side" comment': {
@@ -414,6 +414,7 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'explicit @}': {
+		// TODO: are you even allowed to do this in razor? Is it actually necessary?
 		topic: function(){
 			var str = '@{ var a = 0; a += 1; <span>text</span> @}<span>text</span>';
 			return vash.tpl(str);
@@ -437,7 +438,7 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'misnested html tags in block': {
 		topic: function(){
-			var str = '@if(true) { <li><p></li></p> \n}';
+			var str = '@if(true) { <li><p></li></p> }';
 			return str;
 		}
 		,'throws "Malformed HTML" exception': function(topic){
