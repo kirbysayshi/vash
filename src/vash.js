@@ -39,7 +39,7 @@ var TKS = {
     NONWHITESPACE:  /\S/,
     TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <,
     TAGSTART:       /^<[^\/]{0,0}([a-zA-Z\-\:]*)[\b]?/i,
-    TAGEND:         /^<\/(\S*)\b[^>]?/i,
+    TAGEND:         /^<\/(\S*?[^>])>/i,
     TAGSELFCLOSE:   /^<[^>]+?\/>/i,
     EMAILCHARS:     /[a-zA-Z0-9\-\_]/,
     IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
@@ -365,7 +365,7 @@ function parse(str){
                         //test if this is a matching closing tag
                         tag = str.substring(i).match( TKS.TAGEND );
                         
-                        if(tag !== null && tag.length > 0){
+                        if(tag !== null && tag.length === 2 && tag[1] !== ""){
                         
                             // tag[0] is matching string
                             // tag[1] is capture group === tag name
@@ -398,7 +398,7 @@ function parse(str){
 						// attempt to extract tag name
 	                    tag = str.substring(i).match( TKS.TAGSTART );
 
-	                    if(tag !== null && tag.length > 0){
+	                    if(tag !== null && tag.length === 2 && tag[1] !== ""){
 	                        // captured a tag name
 	                        // tag[0] is matching string
 	                        // tag[1] is capture group === tag name
@@ -410,7 +410,8 @@ function parse(str){
 	                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
 	                        }
 	                    } else {
-	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i, str);
+	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' 
+								+ str.substring( i, i + str.substring(i).indexOf('>') + 1 ), i, str);
 	                    }
 
 	                    if(TKS.TXT.test(tag[1]) === true){

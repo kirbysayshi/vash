@@ -441,8 +441,9 @@ vows.describe('vash templating library').addBatch({
 			var str = '@if(true) { <li><p></li></p> }';
 			return str;
 		}
-		,'throws "Malformed HTML" exception': function(topic){
-			assert.throws( function(){ vash.tpl(topic) }, vash._err.MALFORMEDHTML );
+		,'throws "Invalid Tag" exception': function(topic){
+			//vash.tpl(topic);
+			assert.throws( function(){ vash.tpl(topic) }, vash._err.INVALIDTAG );
 		}
 	}
 	,'self closing html tag inside block': {
