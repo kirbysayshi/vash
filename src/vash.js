@@ -31,7 +31,7 @@ var TKS = {
     BRACESTART:     /\{/,
     BRACEEND:       /\}/, 
     LT:             /</,
-    //GT:           />/,
+    GT: 			/>/,
     HARDPARENSTART: /\[/,
     HARDPARENEND:   /\]/,
     PERIOD:         /\./,
@@ -316,27 +316,6 @@ function parse(str){
                         }
                     }
                 }
-            } else if(TKS.LINEBREAK.test(curr) === true){
-            
-                // found line break, which is only significant if 
-                // code succeeds it, i.e. inside @{}, @for, etc
-                
-                // consume all characters until a non-whitespace char is found
-                until(TKS.NONWHITESPACE);
-                
-                block = blockStack.peek();
-                if(block !== null && block.type === modes.BLK){
-                
-                    // we're within a code block
-                    // push markup and switch to BLK mode.
-                    // {} blocks have an implied context switch from MKP to BLK when newlines are found
-                    
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = ''; // blank out markup buffer;
-                    mode = modes.BLK;
-                }
-                continue;
-                
             } else if(TKS.BRACEEND.test(curr) === true){
 	
 				// found } assume it's a block closer. switch to BLK
@@ -431,7 +410,23 @@ function parse(str){
                 // empty string is only if a </text> tag was encountered
                 buffer += curr;
                 continue;
-            } else {
+            } else if(TKS.GT.test(curr) === true){
+				// found a >, signifying the end of a tag
+				// if we're within a code block, switch to BLK mode.
+				// if there is more markup, the following < will cause 
+				// BLK mode to switch back to MKP
+				
+				buffer += curr;
+				
+				block = blockStack.peek();
+				if(block !== null && block.type === modes.BLK){
+					buffers.push( { type: modes.MKP, value: buffer } );
+					buffer = '';
+					mode = modes.BLK;
+					continue;
+				}
+				
+			} else {
                 buffer += curr;
                 continue;
             }
@@ -492,12 +487,12 @@ function parse(str){
 				
                 blockStack.pop();
                 buffer += curr;
-                buffers.push( { type: modes.BLK, value: buffer } );
-                buffer = '';
                 
 				block = blockStack.peek();
 				if(block !== null && block.type === modes.MKP){
 					// the previous block was markup. switch to that mode implicitly
+					buffers.push( { type: modes.BLK, value: buffer } );
+	                buffer = '';
 					mode = modes.MKP;
 				}
 
