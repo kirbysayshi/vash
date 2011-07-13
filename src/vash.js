@@ -494,26 +494,15 @@ function parse(str){
                 buffer += curr;
                 buffers.push( { type: modes.BLK, value: buffer } );
                 buffer = '';
-                // stay in block mode, since more JS could follow
-                continue;
-            } /*else {
-				// found a non-transition character. test if it's the beginning of a
-				// code statement, like: 
-				//   var a = 'what';
-				// or
-				//   for(var i = 0...
-				// if it's not, assume it's content and switch to markup mode
-				identifier = str.substring(i);
-				identifierMatch = identifier.match( TKS.IDENTIFIER );
-				
-				if(identifierMatch === null){
-					// not a keyword, assume it's content and switch to markup mode
-					buffers.push( { type: modes.BLK, value: buffer } );
+                
+				block = blockStack.peek();
+				if(block !== null && block.type === modes.MKP){
+					// the previous block was markup. switch to that mode implicitly
 					mode = modes.MKP;
-					buffer = '';
-					continue;
 				}
-			}*/
+
+                continue;
+            }
             
 			// the default
             buffer += curr;
