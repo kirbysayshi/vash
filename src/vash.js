@@ -77,7 +77,16 @@ var ERR = {
         this.name = "MalformedHtmlError";
         this.stack = '';
     }
-}
+};
+
+(function(){
+    // custom errors inherit Error
+    for(var e in ERR){
+        if(ERR.hasOwnProperty(e)){
+            ERR[e].prototype = new Error();
+        }
+    }
+})()
 
 function Stack(){
     this._stack = []
@@ -107,6 +116,9 @@ Stack.prototype = {
         } else {
             return null;
         }
+    }
+    ,count: function(){
+        return this._stack.length;
     }
 }
 
@@ -194,6 +206,28 @@ function parse(str){
     // looks ahead of and including the cursor, returns true/false
     function testAhead(testRe, amount){
         return testRe.test(str.substring(i, i + amount));
+    }
+
+    function finalErrorCheck(){
+        var entry;
+
+        if(blockStack.count() > 0){
+            // there were unclosed tags and/or blocks
+            while(blockStack.count() > 0){
+                entry = blockStack.pop();
+
+                if(entry.type === modes.MKP){
+                    throw new ERR.MALFORMEDHTML("Missing closing " 
+                        + entry.tag 
+                        + ' at character ' 
+                        + entry.pos + ' of ' + str, entry.pos);
+                }
+
+                if(entry.type === modes.BLK){
+                    throw new ERR.SYNTAX("Unclosed code block", entry.pos);
+                }
+            }
+        }
     }
 
     // the main parser loop/entry point
@@ -304,9 +338,8 @@ function parse(str){
                 // allowing newlines to switch MKP mode to BLK while within a code block.
                 // if not, just continue on your way...
                 
-                block = blockStack.doublePeek();
-                if(block !== null && block.type === modes.BLK){
-                    // second to last block is a BLK...
+                if(blockStack.count() > 0){
+					// we have some sort of block active, be safe and test markup
                     block = blockStack.peek();
                     
                     if(block !== null && block.type === modes.MKP){
@@ -324,7 +357,7 @@ function parse(str){
                                 // update i to >
                                 i += 6;
                                 // blank out curr, to prevent consumption of < or >
-                                curr = '';
+                                curr = ''; // tricky
                             }
                             
                             if(tag[1] === block.tag){
@@ -398,7 +431,7 @@ function parse(str){
                         // tag[1] is capture group === tag name
                         
                         // disable block-mode newline context switch
-                        blockStack.push({ type: modes.MKP, tag: tag[1] });
+                        blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
                     } else {
                         throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
                     }
@@ -419,7 +452,7 @@ function parse(str){
             
             } else if(TKS.BRACESTART.test(curr) === true) {
                 buffer += curr;
-                blockStack.push({ type: modes.BLK })
+                blockStack.push({ type: modes.BLK, pos: i })
                 continue;
 
             } else if(TKS.BRACEEND.test(curr) === true) {
@@ -518,6 +551,8 @@ function parse(str){
             }
         }
     }
+
+    finalErrorCheck();
 
     buffers.push( { type: mode, value: buffer } );
     buffer = ''; // blank out buffer;

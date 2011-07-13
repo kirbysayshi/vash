@@ -429,7 +429,17 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws "Malformed HTML" exception': function(topic){
-			assert.throws( function(){ vash.tpl(topic) }, function(){} /*vash._err.MALFORMEDHTML*/ );
+			assert.throws( function(){ vash.tpl(topic) }, vash._err.MALFORMEDHTML );
+		}
+	}
+	,'self closing html tags': {
+		topic: function(){
+			var str = '@if(true) { <li><img src="" /></li> \n}';
+			return str;
+		}
+		,'does not bork the block stack': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
+			assert.equal( vash.tpl(topic)(), '<li><img src="" /></li> \n' );
 		}
 	}
 	//,'putting markup into a property': {
