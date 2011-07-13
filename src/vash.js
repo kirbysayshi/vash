@@ -38,7 +38,7 @@ var TKS = {
     LINEBREAK:      /[\n\r]/gi,
     NONWHITESPACE:  /\S/,
     TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <,
-    TAGSTART:       /^<([a-zA-Z\-\:]*)[\b]?/i,
+    TAGSTART:       /^<[^\/]{0,0}([a-zA-Z\-\:]*)[\b]?/i,
     TAGEND:         /^<\/(\S*)\b[^>]?/i,
     TAGSELFCLOSE:   /^<[^>]+?\/>/i,
     EMAILCHARS:     /[a-zA-Z0-9\-\_]/,
@@ -345,7 +345,9 @@ function parse(str){
                     block = blockStack.peek();
                     
                     if(block !== null && block.type === modes.MKP){
-                        // we're in a markup block
+                        // we're in a markup block, test to see if this < is the 
+						// beginning of a closing tag that would also close this
+						// markup block
 
                         //test if this is a matching closing tag
                         tag = str.substring(i).match( TKS.TAGEND );
@@ -375,7 +377,40 @@ function parse(str){
                         
                         // cleanup
                         tag = null;
-                    }
+                    } else if(block !== null && block.type === modes.BLK){
+						// the last block was BLK, meaning that if this opening tag is
+						// not a self-closing html tag, then we should disable newline-triggered
+						// context switching
+						
+						// attempt to extract tag name
+	                    tag = str.substring(i).match( TKS.TAGSTART );
+
+	                    if(tag !== null && tag.length > 0){
+	                        // captured a tag name
+	                        // tag[0] is matching string
+	                        // tag[1] is capture group === tag name
+
+	                        if(TKS.TAGSELFCLOSE.test(str.substring(i)) === true){
+	                            // this is a self closing tag, do not disable newline context switch
+	                        } else {
+	                            // disable block-mode newline context switch
+	                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
+	                        }
+	                    } else {
+	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
+	                    }
+
+	                    if(TKS.TXT.test(tag[1]) === true){
+	                        // SPECIAL CASE:
+	                        // found the opening of a <text> block
+	                        i += 5; // manually advance i passed <text>
+							curr = ''; // blank out curr so it's not added to the buffer by default
+	                        // this is a bit tricky. 
+	                    }
+
+	                    // cleanup
+	                    tag = null;
+					}
                 }
                 
                 // consume < or '' (empty string), continue
@@ -420,40 +455,11 @@ function parse(str){
                 if(TKS.TAGOC.test(next) === true){
                     // we have a markup tag
                     // switch to markup mode
-                    // push a markup block onto the block stack, to allow for multiline plain text
                 
                     buffers.push( { type: modes.BLK, value: buffer } );
-                    buffer = curr;
+					buffer = '';
                     mode = modes.MKP;
-                    
-                    // attempt to extract tag name
-                    tag = str.substring(i).match( TKS.TAGSTART );
-
-                    if(tag !== null && tag.length > 0){
-                        // captured a tag name
-                        // tag[0] is matching string
-                        // tag[1] is capture group === tag name
-                        
-                        if(TKS.TAGSELFCLOSE.test(str.substring(i)) === true){
-                            // this is a self closing tag, do not disable newline context switch
-                        } else {
-                            // disable block-mode newline context switch
-                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
-                        }
-                    } else {
-                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
-                    }
-                    
-                    if(TKS.TXT.test(tag[1]) === true){
-                        // SPECIAL CASE:
-                        // found the opening of a <text> block
-                        i += 5; // manually advance i passed <text>
-                        buffer = ''; // blank out buffer, removing < that was just added
-                        // this is a bit tricky. 
-                    }
-                    
-                    // cleanup
-                    tag = null;
+					i -= 1; // rollback i to character before < to let markup mode handle <
 
                     continue;
                 }
@@ -464,6 +470,12 @@ function parse(str){
                 continue;
 
             } else if(TKS.BRACEEND.test(curr) === true) {
+				block = blockStack.peek();
+				
+				if(block === null || block.type !== modes.BLK){
+					throw new ERR.UNMATCHED('Found closing }, missing opening {', i);
+				}
+				
                 blockStack.pop();
                 buffer += curr;
                 buffers.push( { type: modes.BLK, value: buffer } );
