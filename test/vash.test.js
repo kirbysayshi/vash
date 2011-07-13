@@ -301,6 +301,23 @@ vows.describe('vash templating library').addBatch({
 			} catch(e){}
 		}
 	}
+	,'markup within a code block within markup within a code block': {
+		topic: function(){
+			var str = '@if(true){ \n'
+				+ '<span>this is text \n'
+				+ '@if(true){ <b>important</b> \n }'
+				+ 'that spans multiple lines</span> \n'
+				+ '}';
+			return str;
+		}
+		,'nests properly': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error );
+			try {
+				var tpl = vash.tpl(topic);
+				assert.equal(tpl(), '<span>this is text \n<b>important</b> \nthat spans multiple lines</span> \n');
+			} catch(e){}
+		}
+	}
 	,'including email address in markup': {
 		topic: function(){
 			var str = 'Hi philha@example.com';
@@ -325,15 +342,6 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws syntax error': function(topic){
-			//var fail = true;
-			//try{
-			//	vash.tpl(topic);
-			//} catch(e){
-			//	fail = false;
-			//}
-			//
-			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
-			
 			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
 		}
 	}
@@ -366,15 +374,6 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws exception': function(topic){
-			//var fail = true;
-			//try{
-			//	vash.tpl(topic);
-			//} catch(e){
-			//	fail = false;
-			//}
-			//
-			//if(fail === true) assert.isTrue(false, 'did not throw Syntax Exception');
-			
 			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
 		}
 	}
@@ -423,6 +422,19 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<span>text</span> <span>text</span>' );
 		}
 	}
+	,'same line } in block after markup': {
+		topic: function(){
+			var str = '@{ var a = 0; a += 1; <span>text</span> } <span>text</span>';
+			return str;
+		}
+		,'closes block without neccessity of newline': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error )
+			try {
+				var tpl = vash.tpl(topic);
+				assert.equal( tpl(), '<span>text</span> <span>text</span>' );
+			} catch(e){}
+		}
+	}
 	,'misnested html tags in block': {
 		topic: function(){
 			var str = '@if(true) { <li><p></li></p> \n}';
@@ -432,7 +444,17 @@ vows.describe('vash templating library').addBatch({
 			assert.throws( function(){ vash.tpl(topic) }, vash._err.MALFORMEDHTML );
 		}
 	}
-	,'self closing html tags': {
+	,'self closing html tag inside block': {
+		topic: function(){
+			var str = '@if(true) { <img src="" /> \n}';
+			return str;
+		}
+		,'does not bork the block stack': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
+			assert.equal( vash.tpl(topic)(), '<img src="" /> \n' );
+		}
+	}
+	,'nested self closing html tag inside block': {
 		topic: function(){
 			var str = '@if(true) { <li><img src="" /></li> \n}';
 			return str;

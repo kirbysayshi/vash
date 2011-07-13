@@ -40,6 +40,7 @@ var TKS = {
     TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <,
     TAGSTART:       /^<([a-zA-Z\-\:]*)[\b]?/i,
     TAGEND:         /^<\/(\S*)\b[^>]?/i,
+    TAGSELFCLOSE:   /^<[^>]+?\/>/i,
     EMAILCHARS:     /[a-zA-Z0-9\-\_]/,
     IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
     RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|while|with/,
@@ -84,6 +85,7 @@ var ERR = {
     for(var e in ERR){
         if(ERR.hasOwnProperty(e)){
             ERR[e].prototype = new Error();
+            ERR[e].constructor = ERR[e];
         }
     }
 })()
@@ -339,11 +341,13 @@ function parse(str){
                 // if not, just continue on your way...
                 
                 if(blockStack.count() > 0){
-					// we have some sort of block active, be safe and test markup
+                    // we have some sort of block active, be safe and test markup
                     block = blockStack.peek();
                     
                     if(block !== null && block.type === modes.MKP){
-                        // we're in a markup block, test if this is a matching closing tag
+                        // we're in a markup block
+
+                        //test if this is a matching closing tag
                         tag = str.substring(i).match( TKS.TAGEND );
                         
                         if(tag !== null && tag.length > 0){
@@ -430,8 +434,12 @@ function parse(str){
                         // tag[0] is matching string
                         // tag[1] is capture group === tag name
                         
-                        // disable block-mode newline context switch
-                        blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
+                        if(TKS.TAGSELFCLOSE.test(str.substring(i)) === true){
+                            // this is a self closing tag, do not disable newline context switch
+                        } else {
+                            // disable block-mode newline context switch
+                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
+                        }
                     } else {
                         throw new ERR.INVALIDTAG('Invalid tag in code block: ' + str.substring(i, 50), i);
                     }
