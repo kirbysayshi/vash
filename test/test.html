@@ -12,9 +12,8 @@
 			<li class="@i-what">Some element, number @i, value @somearr[i]</li>
 		</script>
 		<script id="test-for" type="text/razor-js" charset="utf-8">
-			@for(var i = 0; i < somearr.length; i++){
-				<li class="@(i % 2 === 0 ? 'even' : '')">Some element, number @i</li>
-			}
+			@for(var i = 0; i < 1; i++){ <li class="">list item</li> 
+}
 		</script>
 		<script id="test-for-for" type="text/razor-js" charset="utf-8">
 			@for(var i = 0; i < somearr.length; i++){
@@ -24,23 +23,25 @@
 				}
 			}
 		</script>
-		<script id="test-block" type="text/razor-js" charset="utf-8">
-			@*
-			This is a server side
-			multiline comment
+		<script id="test-block" type="text/razor-js" charset="utf-8">@if(true) { <li> } </li> }</script>
+		<script id="test-textescape" type="text/vash-template">
+			@* this is text *@
 		</script>
-		
+
 		<script type="text/javascript" charset="utf-8">
 			
-			//var tokens = vash._parse( document.querySelectorAll('#test-block')[0].innerHTML );
+			
 			//console.log(tmpl);
 			
 			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
 			//console.log(tmpl);
 			
+			var tokens = vash._parse( document.querySelectorAll('#test-block')[0].innerHTML );
 			//var tokens = vash._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
 			//var tokens = vash._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
-			var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-for')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
+			//var tokens = vash._parse( document.querySelectorAll('#test-textescape')[0].innerHTML );
 			
 			console.log(tokens);
 			var tmpl = vash._generate(tokens, true)

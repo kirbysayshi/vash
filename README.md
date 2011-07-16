@@ -96,20 +96,13 @@ Since this is JavaScript and not C#, there are a few superfluous aspects of Razo
 
 * `@foreach`: this is not a JavaScript keyword, and while some code generation could take place, it's tough. Deal. `:)`
 * `@helper`: this keyword's existence is a consequence of a typed language, and is not needed in JS. The same functionality can be gained by just defining a function within a template!
-* `<text>`: this normally causes plain text to be interpreted as just text, instead of code while inside a `{}` block. Implementing this requires a more complicated parser than I'd like to build, but this might be supported in the future. This can be subbed for in a few ways: wrap the code in `<span>` tags, or use `@:` to escape the plain text.
-* There could be others, but if so they are rarely if ever encountered in everyday use.
 
 # Current Test Results
 
 	node test/vash.test.js 
-	····························✗··········· 
+	··············································· 
+	✓ OK » 47 honored (0.017s)
 
-	  mixing code and plain text, <text> escape
-	    ✗ outputs plain text
-	      » expected 'Plain Text\n',
-		got	 '<text>Plain Text</text>\n' (==) // vash.test.js:274
-
-	✗ Broken » 39 honored ∙ 1 broken (0.021s)
 
 # Why Vash?
 
@@ -133,8 +126,6 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 # TODO
 
 * make npm package
-* better syntax error reporting
-* implement <text> text escape
 * implement mode stack for @{} blocks, to avoid extra {} in code generation?
 * for each mode, encapsulate into constructor function, each with own buffer, each gets pushed onto master stack
 * refactor to remove repeated code (mode switches, mostly)
