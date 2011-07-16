@@ -477,6 +477,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( vash.tpl(topic)(), '<img src="" />} ');
 		}
 	}
+	,'markup followed by for loop': {
+		topic: function(){
+			var str = '<div class="how"> @for(var i = 0; i < 1; i++){ <div class="item-@i">I be an item!</div> } </div>';
+			return vash.tpl(str);
+		}
+		,'renders': function(topic){
+			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div></div>' );
+		}
+	}
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
