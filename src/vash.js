@@ -660,18 +660,24 @@ function parse(str){
 
 function generateTemplate(buffers, useWith, modelName){
     var  i
-        ,current
+		,previous = null
+        ,current = null
         ,generated = 'var out = "";\n';
     
     for(i = 0; i < buffers.length; i++){
+		previous = current;
         current = buffers[i];
         
         if(current.type === modes.MKP){
-            generated += 'out += \'' 
+            generated += 
+				(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
+					? '+' 
+					: 'out += ') 
+				+ '\'' 
                 + current.value
                     .replace(TKS.QUOTE, '\"')
                     .replace(TKS.LINEBREAK, '\\n') 
-                + '\';\n';
+                + '\'\n';
         }
         
         if(current.type === modes.BLK){
@@ -682,11 +688,15 @@ function generateTemplate(buffers, useWith, modelName){
         }
         
         if(current.type === modes.EXP){
-            generated += 'out += (' 
+            generated += 
+				(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
+					? '+' 
+					: 'out +=') 
+				+ ' (' 
                 + current.value
                     .replace(TKS.QUOTE, '\"')
                     .replace(TKS.LINEBREAK, '\\n') 
-                + ');\n';
+                + ')\n';
         }
     }
     
