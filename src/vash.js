@@ -132,8 +132,14 @@ var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 
 function parse(str){
 
-    
-    var  mode = modes.MKP // current mode
+    var // current immediate, local mode
+		mode = modes.MKP 
+		// specifies what the current and past contexts are.
+		// a new context is added under two conditions:
+		// 1) A BRACESTART ({) is encountered while the parser is in BLK (block)
+		// mode. This most often happens with @{}, @for(...){}, @if(...){} etc.
+		// 2) A non self-closing HTML tag is encountered while in MKP (markup)
+		// mode, and the current block scope is BLK 
         ,blockStack = new Stack()
         ,block = null
         ,tag = null;
@@ -144,9 +150,6 @@ function parse(str){
     var prev, curr, next, i, j;
 
     var identifier = '', identifierMatch = null;
-
-    // this is a hack, currently, to allow for closing of { } blocks simply
-    var codeNestLevel = 0;
 
     // adds characters, including the current, to the buffer until 
     // a matched character is found. For example: curr == (, so it
@@ -207,11 +210,8 @@ function parse(str){
         if(i < str.length - 1) next = str[i+1];
     }
 
-    // looks ahead of and including the cursor, returns true/false
-    function testAhead(testRe, amount){
-        return testRe.test(str.substring(i, i + amount));
-    }
-
+	// looks at the block stack and throws errors if there are any blocks
+	// in the stack. this should only be run at the end of the parse.
     function finalErrorCheck(){
         var entry;
 
@@ -275,12 +275,6 @@ function parse(str){
                     buffer = ''; // blank out markup buffer;
                     mode = modes.BLK;
                     continue;
-                } else if(TKS.BRACEEND.test(next) === true){
-                    // found @}, assume explicit closing of block, let block mode take over
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = ''; // blank out markup buffer;
-                    mode = modes.BLK;
-                    continue;
                 } else if(TKS.PARENSTART.test(next) === true){
                     // end of markup mode, switch to EXP
                     buffers.push( { type: modes.MKP, value: buffer } );
@@ -288,13 +282,17 @@ function parse(str){
                     mode = modes.EXP;
                     continue;
                 } else {
-                    // test for identifier
+                    // test for valid JS var identifier
                     identifier = str.substring(i+1); // everything after @
                     identifierMatch = identifier.match( TKS.IDENTIFIER );
                 
                     if(identifierMatch === null){
-                        // stay in content mode?
-                        buffer += curr;
+                        // stay in markup mode
+						// this is an @escape, for example, a content }
+						// add next char to buffer
+                        buffer += next;
+						// advance cursor to next char
+						i += 1;
                     } else {
                         // found either a reserved word or a valid JS identifier
                     
@@ -318,6 +316,8 @@ function parse(str){
                 }
             } else if(TKS.BRACEEND.test(curr) === true){
 	
+				// TODO: test if markup is the current block. if so, auto-accept this as content
+	
 				// found } assume it's a block closer. switch to BLK
 				buffers.push( { type: modes.MKP, value: buffer } );
 				buffer = '';
@@ -327,10 +327,10 @@ function parse(str){
 	
 			} else if(TKS.LT.test(curr) === true){
                 // found <
-                // if current block is of type MKP, then test for matching closing tag
+                // if current block is of type MKP, then test for a closing tag
                 // to determine if this markup block should be considered closed,
-                // allowing newlines to switch MKP mode to BLK while within a code block.
-                // if not, just continue on your way...
+				// if current block is of type BLK, then test for opening non-selfclosing
+				// tag, and if found, create a new MKP block context
                 
                 if(blockStack.count() > 0){
                     // we have some sort of block active, be safe and test markup
@@ -371,8 +371,7 @@ function parse(str){
                         tag = null;
                     } else if(block !== null && block.type === modes.BLK){
 						// the last block was BLK, meaning that if this opening tag is
-						// not a self-closing html tag, then we should disable newline-triggered
-						// context switching
+						// not a self-closing html tag, then we should create a new block context
 						
 						// attempt to extract tag name
 	                    tag = str.substring(i).match( TKS.TAGSTART );
