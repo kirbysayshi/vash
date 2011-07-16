@@ -660,20 +660,20 @@ function parse(str){
 
 function generateTemplate(buffers, useWith, modelName){
     var  i
-		,previous = null
+        ,previous = null
         ,current = null
         ,generated = 'var out = "";\n';
     
     for(i = 0; i < buffers.length; i++){
-		previous = current;
+        previous = current;
         current = buffers[i];
         
         if(current.type === modes.MKP){
             generated += 
-				(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
-					? '+' 
-					: 'out += ') 
-				+ '\'' 
+                (previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
+                    ? '+' 
+                    : 'out += ') 
+                + '\'' 
                 + current.value
                     .replace(TKS.QUOTE, '\"')
                     .replace(TKS.LINEBREAK, '\\n') 
@@ -689,10 +689,10 @@ function generateTemplate(buffers, useWith, modelName){
         
         if(current.type === modes.EXP){
             generated += 
-				(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
-					? '+' 
-					: 'out +=') 
-				+ ' (' 
+                (previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
+                    ? '+' 
+                    : 'out +=') 
+                + ' (' 
                 + current.value
                     .replace(TKS.QUOTE, '\"')
                     .replace(TKS.LINEBREAK, '\\n') 
