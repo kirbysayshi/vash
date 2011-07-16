@@ -413,16 +413,6 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({name: 'what'}), "<li>what</li>" );
 		}
 	}
-	,'explicit @}': {
-		// TODO: are you even allowed to do this in razor? Is it actually necessary?
-		topic: function(){
-			var str = '@{ var a = 0; a += 1; <span>text</span> @}<span>text</span>';
-			return vash.tpl(str);
-		}
-		,'triggers markup mode exit': function(topic){
-			assert.equal( topic(), '<span>text</span><span>text</span>' );
-		}
-	}
 	,'same line } in block after markup': {
 		topic: function(){
 			var str = '@{ var a = 0; a += 1; <span>text</span> } <span>text</span>';
@@ -464,6 +454,27 @@ vows.describe('vash templating library').addBatch({
 		,'does not bork the block stack': function(topic){
 			assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
 			assert.equal( vash.tpl(topic)(), '<li><img src="" /></li>' );
+		}
+	}
+	,'content } in closed markup': {
+		topic: function(){
+			var str = '@if(true) { <li> } </li> }';
+			return str;
+		}
+		,'does not need to be escaped': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error);
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			assert.equal( vash.tpl(topic)(), '<li> } </li>');
+		}
+	}
+	,'content } in open markup': {
+		topic: function(){
+			var str = '@if(true) { <img src="" /> @} }';
+			return str;
+		}
+		,'can be escaped with @': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			assert.equal( vash.tpl(topic)(), '<img src="" />} ');
 		}
 	}
 	//,'putting markup into a property': {

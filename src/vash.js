@@ -22,7 +22,8 @@
  */
 
 (function(root){
-    
+
+// Various tokens that make up a Razor template
 var TKS = {
     AT:             /@/,
     PARENSTART:     /\(/,
@@ -31,7 +32,7 @@ var TKS = {
     BRACESTART:     /\{/,
     BRACEEND:       /\}/, 
     LT:             /</,
-    GT: 			/>/,
+    GT:             />/,
     HARDPARENSTART: /\[/,
     HARDPARENEND:   /\]/,
     PERIOD:         /\./,
@@ -47,43 +48,43 @@ var TKS = {
     ATSTARSTART:    /@\*/,
     ATSTAREND:      /\*@/,
     TXT:            /^text/,
-    //RESERVED: /^abstract|as|boolean|break|byte|case|catch|char|class|continue|const|debugger|default|delete|do|double|else|enum|export|extends|false|final|finally|float|for|function|goto|if|implements|import|in|instanceof|int|interface|is|long|namespace|native|new|null|package|private|protected|public|return|short|static|super|switch|synchronized|this|throw|throws|transient|true|try|typeof|use|var|void|volatile|while|with/,
-    
-    // these are used for template generation, not parsing
+
+    // This is used for template generation, not parsing
     QUOTE:          /[\"']/gi
 };
 
+// Custom exceptions, to allow for more specific testing
 var ERR = {
-	BASE: function(msg, cursorPos, str){
-		this.message = msg 
-			+ ' at character ' 
-			+ str[cursorPos] 
-			+ ' at position ' 
-			+ cursorPos + ' in ' 
-			+ str;
+    BASE: function(msg, cursorPos, str){
+        this.message = msg 
+            + ' at character ' 
+            + str[cursorPos] 
+            + ' at position ' 
+            + cursorPos + ' in ' 
+            + str;
         this.lineNumber = 0;
-		this.stack = '';
-	}
+        this.stack = '';
+    }
     ,SYNTAX: function(msg, cursorPos, str){
-		ERR.BASE.apply(this, arguments)
+        ERR.BASE.apply(this, arguments)
         this.name = "SyntaxError";
     }
     ,UNMATCHED: function(msg, cursorPos, str){
-		ERR.BASE.apply(this, arguments)
+        ERR.BASE.apply(this, arguments)
         this.name = "UnmatchedCharacterError";
     }
     ,INVALIDTAG: function(msg, cursorPos, str){
-		ERR.BASE.apply(this, arguments)
+        ERR.BASE.apply(this, arguments)
         this.name = "InvalidTagError";
     }
     ,MALFORMEDHTML: function(msg, cursorPos, str){
-		ERR.BASE.apply(this, arguments)
+        ERR.BASE.apply(this, arguments)
         this.name = "MalformedHtmlError";
     }
 };
 
+// custom errors inherit Error
 (function(){
-    // custom errors inherit Error
     for(var e in ERR){
         if(ERR.hasOwnProperty(e)){
             ERR[e].prototype = new Error();
@@ -92,6 +93,9 @@ var ERR = {
     }
 })()
 
+// A very simple stack implementation.
+// Yes, a JS array is basically a stack, but this one
+// has automatic underflow and null handling.
 function Stack(){
     this._stack = []
 }
@@ -127,35 +131,52 @@ Stack.prototype = {
 }
 
 
-// markup, js block, implicit js expression
+// Mode Contants: markup, js block, implicit js expression
 var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 
+// The bulk of Vash. Accepts a string, returns an array of tokens.
 function parse(str){
 
-    var // current immediate, local mode
-		mode = modes.MKP 
-		// specifies what the current and past contexts are.
-		// a new context is added under two conditions:
-		// 1) A BRACESTART ({) is encountered while the parser is in BLK (block)
-		// mode. This most often happens with @{}, @for(...){}, @if(...){} etc.
-		// 2) A non self-closing HTML tag is encountered while in MKP (markup)
-		// mode, and the current block scope is BLK 
+    // Parser state
+    var
+        // Current immediate, local mode
+        mode = modes.MKP 
+        // Specifies what the current and past contexts are.
+        // A new context is added under two conditions:
+        // 1) A BRACESTART ({) is encountered while the parser is in BLK (block)
+        // mode. This most often happens with @{}, @for(...){}, @if(...){} etc.
+        // 2) A non self-closing HTML tag is encountered while in MKP (markup)
+        // mode, and the current block scope is BLK 
         ,blockStack = new Stack()
+        // References the current block when needed
         ,block = null
-        ,tag = null;
+        // Holds the result of a regex testing for a tag name 
+        ,tag = null
 
-    var buffer = '', buffers = [];
+        // Contains the current in-progress buffer
+        ,buffer = ''
+        // Contains each separate buffer as contexts are switched
+        ,buffers = []
 
-    // characters. i = cursor, j = future cursor, if needed
-    var prev, curr, next, i, j;
+        // Previous, Current, Next characters of the template string
+        ,prev
+        ,curr
+        ,next
+        // Cursor, pointing at the current character of the template string
+        ,i
+        // Future cursor, if needed
+        ,j
+        
+        // Contains a substring of the template string if necessary
+        ,identifier = ''
+        // Holds the result of a more than single character regex test
+        ,identifierMatch = null;
 
-    var identifier = '', identifierMatch = null;
-
-    // adds characters, including the current, to the buffer until 
+    // Adds characters, including the current, to the buffer until 
     // a matched character is found. For example: curr == (, so it
     // would consume until a matching ) is found, being sure they 
     // actually match in case of nested characters.
-    // if consume arg === false, then does not consume, and only moves
+    // If consume arg === false, then does not consume, and only moves
     // the cursor (i) ahead.
     // This is defined here to allow it to access parser state.
     function untilMatched(sRe, eRe, consume){
@@ -175,19 +196,23 @@ function parse(str){
             if(j >= str.length) throw new ERR.UNMATCHED('unmatched ' + sRe, j, str);
         }
     
-        // add ( something something (something something) ) to buffer
+        // Add matched contents to buffer
         if(consume === true) buffer += str.substring(i, j+1);
     
-        i = j; // advance i to current char
-        curr = str[i]; // curr will be equal to eRe
+        // Advance i to current char
+        i = j; 
+        // curr will be equal to eRe
+        curr = str[i]; 
+        // Next will equal to the next, if it's not the end of the template
         if(i < str.length - 1) next = str[i+1];
+        else next = null;
     }
 
-    // consumes all characters, including the current, through the char 
+    // Consumes all characters, including the current, through the char 
     // before the char that evaluates to false.
-    // begins testing from curr + 1, and exits leaving i/curr == the 
-    // character before the char that evaluated as true
-    // if consume arg === false, then does not consume, and only moves
+    // Begins testing from curr + 1, and exits leaving i/curr == the 
+    // character before the char that evaluated as true.
+    // If consume arg === false, then does not consume, and only moves
     // the cursor (i) ahead.
     function until(stopRe, consume){
 
@@ -204,14 +229,17 @@ function parse(str){
         // consume, including current char through char before char that evaluated as true
         if(consume === true) buffer += str.substring(i, j);
         
-        // cleanup: 
-        i = j - 1; // advance i to char before char that evaluated as false
-        curr = str[i]; // curr will be equal to char before stopRe
+        // cleanup:
+        // advance i to char before char that evaluated as false 
+        i = j - 1; 
+        // curr will be equal to char before stopRe
+        curr = str[i]; 
         if(i < str.length - 1) next = str[i+1];
+        else next = null;
     }
 
-	// looks at the block stack and throws errors if there are any blocks
-	// in the stack. this should only be run at the end of the parse.
+    // Looks at the block stack and throws errors if there are any blocks
+    // in the stack. This should only be run at the end of the parse.
     function finalErrorCheck(){
         var entry;
 
@@ -222,9 +250,9 @@ function parse(str){
 
                 if(entry.type === modes.MKP){
                     throw new ERR.MALFORMEDHTML(
-						"Missing closing " + entry.tag
-						,entry.pos
-						,str);
+                        "Missing closing " + entry.tag
+                        ,entry.pos
+                        ,str);
                 }
 
                 if(entry.type === modes.BLK){
@@ -234,198 +262,221 @@ function parse(str){
         }
     }
 
-    // the main parser loop/entry point
+    // The main parser loop/entry point
     for(i = 0; i < str.length; i++){
         if(i > 0) prev = str[i-1];
         curr = str[i];
         if(i < str.length - 1) next = str[i+1];
         else next = null;
     
-        // before any mode checks, do special check for current + next to be @* comment
-        if(next !== null && TKS.ATSTARSTART.test(curr + next)){
-            // current + next = @*
-            identifier = str.substring(i);
-            identifierMatch = identifier.match(TKS.ATSTAREND);
-            if(identifierMatch === null) {
-				throw new ERR.UNMATCHED('Unmatched @* *@ comment', identifierMatch, str);
-			}
-            i = i + identifierMatch.index + 1; // advance i to @ of *@
-            continue;
-        }
-    
         if(mode === modes.MKP){
-            // TODO: make MKP mode if statements less... tricky. as little fall-through as possible?
-            // i.e. each choice should have one entry/exit, and be very obvious what happens next
             
-            // current character is @
+            // Do special check for current + next to be @* comment. @* comments
+            // are only possible inside of markup blocks, apparently.
+            if(next !== null && TKS.ATSTARSTART.test(curr + next)){
+                // current + next = @*
+                identifier = str.substring(i);
+                identifierMatch = identifier.match(TKS.ATSTAREND);
+                if(identifierMatch === null) {
+                    throw new ERR.UNMATCHED('Unmatched @* *@ comment', identifierMatch, str);
+                }
+                // Advance i to @ of *@
+                i = i + identifierMatch.index + 1; 
+                continue;
+            }
+
+            // Current character is @
             if(TKS.AT.test(curr) === true){
                 if(i > 0 && TKS.EMAILCHARS.test(prev) === true && TKS.EMAILCHARS.test(next)){
-                    // this test is invalid if the first character of the str
-                    // before and after @ are valid e-mail address chars
-                    // assume it's an e-mail address and continue
+                    // This test is invalid if the first character of the str
+                    // before and after @ are valid e-mail address chars.
+                    // Assume it's an e-mail address and continue.
                     buffer += curr;
                 } else if(TKS.AT.test(next) === true){
-                    // escaped @. continue, but ignore one @
+                    // Escaped @. Continue, but ignore one @
                     buffer += curr;
-                    i += 1; // skip next @
+                    // Skip next @
+                    i += 1; 
                     continue;
                 } else if(TKS.BRACESTART.test(next) === true){
-                    // found {, enter block mode
+                    // Found {, enter block mode
                     buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = ''; // blank out markup buffer;
+                    // Blank out markup buffer;
+                    buffer = '';
                     mode = modes.BLK;
                     continue;
                 } else if(TKS.PARENSTART.test(next) === true){
-                    // end of markup mode, switch to EXP
+                    // End of markup mode, switch to EXP
                     buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = ''; // blank out markup buffer;
+                    // Blank out markup buffer
+                    buffer = ''; 
                     mode = modes.EXP;
                     continue;
                 } else {
-                    // test for valid JS var identifier
+                    // Test for valid JS var identifier
                     identifier = str.substring(i+1); // everything after @
                     identifierMatch = identifier.match( TKS.IDENTIFIER );
                 
                     if(identifierMatch === null){
-                        // stay in markup mode
-						// this is an @escape, for example, a content }
-						// add next char to buffer
+                        // Stay in markup mode.
+                        // This is an @escape, for example, a content }.
+                        
+                        // Add next char to buffer.
                         buffer += next;
-						// advance cursor to next char
-						i += 1;
+                        
+                        // Advance cursor to next char
+                        i += 1;
                     } else {
-                        // found either a reserved word or a valid JS identifier
+                        // Found either a reserved word or a valid JS identifier
                     
                         if(TKS.RESERVED.test(identifierMatch[0]) === true){
-                            // found a reserved word, like while
-                            // switch to JS Block mode
+                            // Found a reserved word, like while.
+
+                            // Switch to JS Block mode.
                             buffers.push( { type: modes.MKP, value: buffer } );
                             buffer = identifierMatch[0];
                             mode = modes.BLK;
-                            i += buffer.length; // skip identifier and continue in block mode
+
+                            // Skip identifier and continue in block mode
+                            i += buffer.length; 
                             continue;
                         } else {
-                            // we have a valid identifier
-                            // switch to implicit expression mode: @myvar().dosomethingelse().prop
+                            // We have a valid identifier
+
+                            // Switch to implicit expression mode: @myvar().dosomethingelse().prop
                             buffers.push( { type: modes.MKP, value: buffer } );
-                            buffer = ''; // blank out markup buffer;
+                            
+                            // Blank out markup buffer;
+                            buffer = ''; 
                             mode = modes.EXP;
                             continue;
                         }
                     }
                 }
-            } else if(TKS.BRACEEND.test(curr) === true){
-	
-				// TODO: test if markup is the current block. if so, auto-accept this as content
-	
-				// found } assume it's a block closer. switch to BLK
-				buffers.push( { type: modes.MKP, value: buffer } );
-				buffer = '';
-				mode = modes.BLK;
-				i -= 1; // rollback cursor to character before found }
-				continue;
-	
-			} else if(TKS.LT.test(curr) === true){
-                // found <
-                // if current block is of type MKP, then test for a closing tag
-                // to determine if this markup block should be considered closed,
-				// if current block is of type BLK, then test for opening non-selfclosing
-				// tag, and if found, create a new MKP block context
-                
-                if(blockStack.count() > 0){
-                    // we have some sort of block active, be safe and test markup
-                    block = blockStack.peek();
-                    
-                    if(block !== null && block.type === modes.MKP){
-                        // we're in a markup block, test to see if this < is the 
-						// beginning of a closing tag that would also close this
-						// markup block
 
-                        //test if this is a matching closing tag
-                        tag = str.substring(i).match( TKS.TAGEND );
+            } else if(TKS.BRACEEND.test(curr) === true){
+    
+                block = blockStack.peek();
+                
+                if(block !== null && block.type === modes.MKP){
+                    // We're in a markup block, assume } is content
+                    buffer += curr;
+                    
+                } else {
+                    // Found } when not in a markup block, assume it's a block closer. switch to BLK
+                    buffers.push( { type: modes.MKP, value: buffer } );
+                    buffer = '';
+                    mode = modes.BLK;
+                    
+                    // rollback cursor to character before found }
+                    i -= 1; 
+                }
+
+                continue;
+    
+            } else if(TKS.LT.test(curr) === true){
+                // Found <.
+                // If current block is of type MKP, then test for a closing tag
+                // to determine if this markup block should be considered closed.
+                // If current block is of type BLK, then test for opening non-selfclosing
+                // tag, and if found, create a new MKP block context.
+                
+                block = blockStack.peek();
+                
+                if(block !== null && block.type === modes.MKP){
+                    // We're in a markup block, test to see if this < is the 
+                    // beginning of a closing tag that would also close this
+                    // markup block.
+
+                    // Test if this is a matching closing tag
+                    tag = str.substring(i).match( TKS.TAGEND );
+                    
+                    if(tag !== null && tag.length === 2 && tag[1] !== ""){
+                    
+                        // tag[0] is matching string.
+                        // tag[1] is capture group === tag name.
                         
-                        if(tag !== null && tag.length === 2 && tag[1] !== ""){
-                        
-                            // tag[0] is matching string
-                            // tag[1] is capture group === tag name
+                        // SPECIAL CASE:
+                        if(TKS.TXT.test(tag[1]) === true){ 
+                            // tag is a closing </text> tag, which is not meant to be consumed
                             
-                            if(TKS.TXT.test(tag[1]) === true){
-                                // SPECIAL CASE: 
-                                // tag is a closing </text> tag, which is not meant to be consumed
-                                // update i to >
-                                i += 6;
-                                // blank out curr, to prevent consumption of < or >
-                                curr = ''; // tricky
-                            }
-                            
-                            if(tag[1] === block.tag){
-                                // this tag matches a tag that triggered 
-                                // multiline markup mode with a code block.
-                                // pop the markup block off the block stack
-                                blockStack.pop();
-                            }
-                        
+                            // Update i to >
+                            i += 6;
+
+                            // Blank out curr, to prevent consumption of < or >
+                            curr = ''; // tricky
                         }
                         
-                        // cleanup
-                        tag = null;
-                    } else if(block !== null && block.type === modes.BLK){
-						// the last block was BLK, meaning that if this opening tag is
-						// not a self-closing html tag, then we should create a new block context
-						
-						// attempt to extract tag name
-	                    tag = str.substring(i).match( TKS.TAGSTART );
+                        if(tag[1] === block.tag){
+                            // This tag matches a tag that triggered a markup mode block.
+                            // Pop the markup block off the block stack.
+                            blockStack.pop();
+                        }
+                    
+                    }
+                    
+                    // cleanup
+                    tag = null;
 
-	                    if(tag !== null && tag.length === 2 && tag[1] !== ""){
-	                        // captured a tag name
-	                        // tag[0] is matching string
-	                        // tag[1] is capture group === tag name
+                } else if(block !== null && block.type === modes.BLK){
+                    // The last block was BLK, meaning that if this opening tag is
+                    // not a self-closing html tag, then we should create a new block context.
+        
+                    // Attempt to extract tag name
+                    tag = str.substring(i).match( TKS.TAGSTART );
 
-	                        if(TKS.TAGSELFCLOSE.test(str.substring(i)) === true){
-	                            // this is a self closing tag, do not disable newline context switch
-	                        } else {
-	                            // disable block-mode newline context switch
-	                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
-	                        }
-	                    } else {
-	                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' 
-								+ str.substring( i, i + str.substring(i).indexOf('>') + 1 ), i, str);
-	                    }
+                    if(tag !== null && tag.length === 2 && tag[1] !== ""){
+                        // Captured a tag name.
+                    
+                        // tag[0] is matching string.
+                        // tag[1] is capture group === tag name.
 
-	                    if(TKS.TXT.test(tag[1]) === true){
-	                        // SPECIAL CASE:
-	                        // found the opening of a <text> block
-	                        i += 5; // manually advance i passed <text>
-							curr = ''; // blank out curr so it's not added to the buffer by default
-	                        // this is a bit tricky. 
-	                    }
+                        if(TKS.TAGSELFCLOSE.test(str.substring(i)) === false){
+                            // This is not a self-closing tag, create a new markup context
+                            blockStack.push({ type: modes.MKP, tag: tag[1], pos: i });
+                        }
+                    } else {
+                        throw new ERR.INVALIDTAG('Invalid tag in code block: ' 
+                            + str.substring( i, i + str.substring(i).indexOf('>') + 1 ), i, str);
+                    }
 
-	                    // cleanup
-	                    tag = null;
-					}
+                    // SPECIAL CASE:
+                    if(TKS.TXT.test(tag[1]) === true){
+                        // Found the opening of a <text> block
+                    
+                        // Manually advance i passed <text>
+                        i += 5;
+                    
+                        // Blank out curr so it's not added to the buffer by default
+                        curr = ''; // this is a bit tricky. 
+                    }
+
+                    // cleanup
+                    tag = null;
                 }
                 
-                // consume < or '' (empty string), continue
-                // empty string is only if a </text> tag was encountered
+                // Consume < or '' (empty string), continue.
+                // Empty string is only if a </text> tag was encountered.
                 buffer += curr;
                 continue;
             } else if(TKS.GT.test(curr) === true){
-				// found a >, signifying the end of a tag
-				// if we're within a code block, switch to BLK mode.
-				// if there is more markup, the following < will cause 
-				// BLK mode to switch back to MKP
-				
-				buffer += curr;
-				
-				block = blockStack.peek();
-				if(block !== null && block.type === modes.BLK){
-					buffers.push( { type: modes.MKP, value: buffer } );
-					buffer = '';
-					mode = modes.BLK;
-					continue;
-				}
-				
-			} else {
+                // Found a >, signifying the end of a tag.
+                // If we're within a code block, switch to BLK mode.
+                // If there is more markup, the following < will cause 
+                // BLK mode to switch back to MKP
+                
+                buffer += curr;
+                
+                block = blockStack.peek();
+                
+                if(block !== null && block.type === modes.BLK){
+                    buffers.push( { type: modes.MKP, value: buffer } );
+                    buffer = '';
+                    mode = modes.BLK;
+                    continue;
+                }
+                
+            } else {
                 buffer += curr;
                 continue;
             }
@@ -434,22 +485,23 @@ function parse(str){
         if(mode === modes.BLK){
         
             if(TKS.AT.test(curr) === true){
-                // current character is @
+                // Current character is @
             
                 if(TKS.AT.test(next) === true){
-                    // escaped @, continue, but ignore one @
+                    // Escaped @, continue, but ignore one @
                     buffer += curr;
                     i += 1; // skip next @
                 } else if(TKS.COLON.test(next) === true){
-                    // found @:, explicit escape into markup mode
+                    // Found @:, explicit escape into markup mode
                     buffers.push( { type: modes.BLK, value: buffer } );
                     buffer = '';
                     mode = modes.MKP;
                     i += 1; // advance i to skip :
                     continue;
                 } else {
-                    // possible explicit exit out of block mode. 
-                    // rollback i to char before @, and let markup mode delegate
+                    // Possible explicit exit out of block mode. 
+
+                    // Rollback i to char before @, and let markup mode delegate.
                     buffers.push( { type: modes.BLK, value: buffer } );
                     buffer = '';
                     mode = modes.MKP;
@@ -458,16 +510,16 @@ function parse(str){
                 }
             
             } else if(TKS.LT.test(curr) === true){
-                // current character is <
+                // Current character is <
   
                 if(TKS.TAGOC.test(next) === true){
-                    // we have a markup tag
-                    // switch to markup mode
+                    // We have a markup tag, switch to markup mode.
                 
                     buffers.push( { type: modes.BLK, value: buffer } );
-					buffer = '';
+                    buffer = '';
                     mode = modes.MKP;
-					i -= 1; // rollback i to character before < to let markup mode handle <
+                    // rollback i to character before < to let markup mode handle <
+                    i -= 1; 
 
                     continue;
                 }
@@ -478,109 +530,119 @@ function parse(str){
                 continue;
 
             } else if(TKS.BRACEEND.test(curr) === true) {
-				block = blockStack.peek();
-				
-				if(block === null || block.type !== modes.BLK){
-					throw new ERR.UNMATCHED('Found closing }, missing opening {', i, str);
-				}
-				
+                // Current character is }
+                
+                block = blockStack.peek();
+                
+                if(block === null || block.type !== modes.BLK){
+                    throw new ERR.UNMATCHED('Found closing }, missing opening {', i, str);
+                }
+                
+                // Because we're in a block, assume that } closes this block.
                 blockStack.pop();
                 buffer += curr;
                 
-				block = blockStack.peek();
-				if(block !== null && block.type === modes.MKP){
-					// the previous block was markup. switch to that mode implicitly
-					buffers.push( { type: modes.BLK, value: buffer } );
-	                buffer = '';
-					mode = modes.MKP;
-				}
+                block = blockStack.peek();
+                if(block !== null && block.type === modes.MKP){
+                    // The previous block was markup. Switch to that mode implicitly
+                    buffers.push( { type: modes.BLK, value: buffer } );
+                    buffer = '';
+                    mode = modes.MKP;
+                }
 
                 continue;
             }
             
-			// the default
+            // Default
             buffer += curr;
             continue;       
         }
     
         if(mode === modes.EXP){
-            // test for identifier
+            // Test for identifier
             identifier = str.substring(i);
             identifierMatch = identifier.match( TKS.IDENTIFIER );
         
             if(identifierMatch === null){
-                // this is not a variable/property
-                // check for @ switch, ( to indicate function call, and [ to indicate indexing
-                // if none, must be the end of the expression
+                // This is not a variable/property.
+                // Check for @ switch, ( to indicate function call, and [ to indicate indexing.
+                // If none, must be the end of the expression.
                 
                 if(TKS.AT.test(curr) === true){
-                    // must just be standalone @, switch to markup mode
+                    // Must just be standalone @, switch to markup mode
                     buffer += curr;
 
                     buffers.push( { type: modes.MPK, value: buffer } );
                     buffer = ''; // blank out markup buffer;
                     mode = modes.MKP;
                 } else if( TKS.HARDPARENSTART.test(curr) === true ){
-                    j = i; // update future cursor in prep for consumption
+                    // Update future cursor in prep for consumption
+                    j = i; 
                     untilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
                 } else if( TKS.PARENSTART.test(curr) === true ){
-                    j = i; // update future cursor in prep for consumption
+                    // Update future cursor in prep for consumption
+                    j = i; 
                     untilMatched(TKS.PARENSTART, TKS.PARENEND);
                 } else {
-                    // this is probably the end of the expression
+                    // This is probably the end of the expression.
                     
-                    // end of expression, switch to markup mode
+                    // Switch to markup mode
                     buffers.push( { type: modes.EXP, value: buffer } );
                     buffer = ''; // blank out buffer
                     mode = modes.MKP;
-                    i -= 1; // roll cursor back one to allow markup mode to handle 
+                    // roll cursor back one to allow markup mode to handle 
+                    i -= 1; 
                 }
                 
                 continue;
                 
             } else {
-                // found a valid JS identifier
+                // Found a valid JS identifier
             
                 buffer += identifierMatch[0];
                 j = i + identifierMatch[0].length;
-                next = str[j]; // set next to the actual next char after identifier
+                // Set next to the actual next char after identifier
+                next = str[j]; 
             
                 if(TKS.PARENSTART.test(next) === true){
-                    // found (, consume until next matching
+                    // Found (, consume until next matching
+
                     i = j; // move i forward
                     untilMatched(TKS.PARENSTART, TKS.PARENEND);
                     continue; 
 
                 } else if(TKS.HARDPARENSTART.test(next) === true){
-                    // found [, consume until next matching
+                    // Found [, consume until next matching
                     
                     i = j; // move i forward
                     untilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
                     continue;
 
                 } else if(TKS.PERIOD.test(next) === true){
-                    // next char is a .
+                    // Next char is a .
                 
                     if( j+1 < str.length && TKS.IDENTIFIER.test( str[j+1] ) ){
-                        // char after the . is a valid identifier
-                        // consume ., continue in EXP mode
+                        // Char after the . is a valid identifier.
+                        // Consume . and continue in EXP mode.
                         buffer += next;
-                        i = j; // update i to .
+                        // Update i to .
+                        i = j;
                         continue;
                     } else {
-                        // do not consume . in code, but in markup
-                        // end EXP block, continue in markup mode 
+                        // Do not consume . in code, but in markup.
+                        // End EXP block, continue in markup mode.
                     
                         buffers.push( { type: modes.EXP, value: buffer } );
                         buffer = next; // consume . in markup buffer
                         mode = modes.MKP;
                         
-                        i = j; // update i to .
+                        // Update i to .
+                        i = j; 
                         continue;
                     }
                 
                 } else {
-                    // just advance i to last char of found identifier
+                    // Just advance i to last char of found identifier.
                     i = j - 1;
                 }
             }
@@ -613,7 +675,7 @@ function generateTemplate(buffers, useWith, modelName){
         }
         
         if(current.type === modes.BLK){
-            // nuke new lines, otherwise causes parse error
+            // Nuke new lines, otherwise causes parse error
             generated += current.value
                 .replace(TKS.QUOTE, '\"')
                 .replace(TKS.LINEBREAK, '') + '\n';
@@ -634,14 +696,15 @@ function generateTemplate(buffers, useWith, modelName){
             : generated ) + "\nreturn out;");
 }
 
-// public interface. keys are quoted to allow for proper export when compressed
+// Public interface. 
+// Keys are quoted to allow for proper export when compressed.
 
 var vash = {
      "_err": ERR
     ,"_parse": parse
     ,"_generate": generateTemplate
-    // useWith is optional, defaults to value of vash.config.useWith
     ,"tpl": function tpl(str, useWith){
+        // useWith is optional, defaults to value of vash.config.useWith
         useWith = (useWith === true || useWith === false)
             ? useWith
             : vash.config.useWith;
