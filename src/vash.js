@@ -25,32 +25,32 @@
 
 // Various tokens that make up a Razor template
 var TKS = {
-    AT:             /@/,
-    PARENSTART:     /\(/,
-    PARENEND:       /\)/,
-    COLON:          /:/,
-    BRACESTART:     /\{/,
-    BRACEEND:       /\}/, 
-    LT:             /</,
-    GT:             />/,
-    HARDPARENSTART: /\[/,
-    HARDPARENEND:   /\]/,
-    PERIOD:         /\./,
-    LINEBREAK:      /[\n\r]/gi,
-    NONWHITESPACE:  /\S/,
-    TAGOC:          /\/|[a-zA-Z]/, // tag open or close, minus <,
-    TAGSTART:       /^<[^\/]{0,0}([a-zA-Z\-\:]*)[\b]?/i,
-    TAGEND:         /^<\/(\S*?[^>])>/i,
-    TAGSELFCLOSE:   /^<[^>]+?\/>/i,
-    EMAILCHARS:     /[a-zA-Z0-9\_]/,
-    IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/, // this could be simplifed to not support unicode
-    RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with/,
-    ATSTARSTART:    /@\*/,
-    ATSTAREND:      /\*@/,
-    TXT:            /^text/,
+     AT:             /@/
+    ,PARENSTART:     /\(/
+    ,PARENEND:       /\)/
+    ,COLON:          /:/
+    ,BRACESTART:     /\{/
+    ,BRACEEND:       /\}/
+    ,LT:             /</
+    ,GT:             />/
+    ,HARDPARENSTART: /\[/
+    ,HARDPARENEND:   /\]/
+    ,PERIOD:         /\./
+    ,LINEBREAK:      /[\n\r]/gi
+    ,NONWHITESPACE:  /\S/
+    ,TAGOC:          /\/|[a-zA-Z]/ // tag open or close, minus <
+    ,TAGSTART:       /^<[^\/]{0,0}([a-zA-Z\-\:]*)[\b]?/i
+    ,TAGEND:         /^<\/(\S*?[^>])>/i
+    ,TAGSELFCLOSE:   /^<[^>]+?\/>/i
+    ,EMAILCHARS:     /[a-zA-Z0-9\_]/
+    ,IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/ // this could be simplifed to not support unicode
+    ,RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with/
+    ,ATSTARSTART:    /@\*/
+    ,ATSTAREND:      /\*@/
+    ,TXT:            /^text/
 
     // This is used for template generation, not parsing
-    QUOTE:          /[\"']/gi
+    ,QUOTE:          /[\"']/gi
 };
 
 // Custom exceptions, to allow for more specific testing
