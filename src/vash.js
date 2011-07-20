@@ -174,6 +174,21 @@ function parse(str){
 
     // ## State-Aware Functions
 
+	/**
+	 * Ends the current mode by pushing a new buffer if it's not empty,
+	 * blanks the current buffer, and sets the given mode.
+	 *
+	 * @param  {const} nextMode  If not defined, defaults to MKP (content)
+	 * @return  void
+	 */
+	function endMode(nextMode){
+		if(buffer !== ''){
+			buffers.push( { type: mode, value: buffer } );
+	        buffer = '';
+		}
+        mode = nextMode || modes.MKP;
+	}
+
     /**
      * Adds characters, including the current, to the buffer until 
      * a matched character is found. For example: curr == (, so it
@@ -247,7 +262,6 @@ function parse(str){
         else next = null;
     }
 
-    // 
     /**
      * Looks at the block stack and throws errors if there are any blocks
      * in the stack. Blocks still in the stack at the end of parsing indicate
@@ -316,17 +330,11 @@ function parse(str){
                     continue;
                 } else if(TKS.BRACESTART.test(next) === true){
                     // Found {, enter block mode
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    // Blank out markup buffer;
-                    buffer = '';
-                    mode = modes.BLK;
+                    endMode(modes.BLK);
                     continue;
                 } else if(TKS.PARENSTART.test(next) === true){
                     // End of markup mode, switch to EXP
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    // Blank out markup buffer
-                    buffer = ''; 
-                    mode = modes.EXP;
+                    endMode(modes.EXP);
                     continue;
                 } else {
                     // Test for valid JS var identifier
@@ -345,12 +353,7 @@ function parse(str){
                     } else {
                         // Found either a reserved word or a valid JS identifier.
 						// Let expression mode delegate to block mode if necessary.
-                    
-						buffers.push( { type: modes.MKP, value: buffer } );
-                        
-                        // Blank out markup buffer;
-                        buffer = ''; 
-                        mode = modes.EXP;
+						endMode(modes.EXP);
                         continue;
                     }
                 }
@@ -365,9 +368,7 @@ function parse(str){
                     
                 } else {
                     // Found } when not in a markup block, assume it's a block closer. switch to BLK
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = '';
-                    mode = modes.BLK;
+                    endMode(modes.BLK);
                     
                     // rollback cursor to character before found }
                     i -= 1; 
@@ -410,8 +411,7 @@ function parse(str){
                     
                     }
                     
-                    // cleanup
-                    tag = null;
+                    tag = null; // cleanup
 
                 } else if(block !== null && block.type === modes.BLK){
                     // The last block was BLK, meaning that if this opening tag is
@@ -446,8 +446,7 @@ function parse(str){
                         curr = ''; // this is a bit tricky. 
                     }
 
-                    // cleanup
-                    tag = null;
+                    tag = null; // cleanup
                 }
                 
                 // Consume < or '' (empty string), continue.
@@ -465,9 +464,7 @@ function parse(str){
                 block = blockStack.peek();
                 
                 if(block !== null && block.type === modes.BLK){
-                    buffers.push( { type: modes.MKP, value: buffer } );
-                    buffer = '';
-                    mode = modes.BLK;
+                    endMode(modes.BLK);
                     continue;
                 }
                 
@@ -489,18 +486,14 @@ function parse(str){
                     i += 1; // skip next @
                 } else if(TKS.COLON.test(next) === true){
                     // Found @:, explicit escape into markup mode
-                    buffers.push( { type: modes.BLK, value: buffer } );
-                    buffer = '';
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                     i += 1; // advance i to skip :
                     continue;
                 } else {
                     // Possible explicit exit out of block mode. 
 
                     // Rollback i to char before @, and let markup mode delegate.
-                    buffers.push( { type: modes.BLK, value: buffer } );
-                    buffer = '';
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                     i = i > 1 ? i - 1 : 0;
                     continue;
                 }
@@ -511,9 +504,7 @@ function parse(str){
                 if(TKS.TAGOC.test(next) === true){
                     // We have a markup tag, switch to markup mode.
                 
-                    buffers.push( { type: modes.BLK, value: buffer } );
-                    buffer = '';
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                     // rollback i to character before < to let markup mode handle <
                     i -= 1; 
 
@@ -541,9 +532,7 @@ function parse(str){
                 block = blockStack.peek();
                 if(block !== null && block.type === modes.MKP){
                     // The previous block was markup. Switch to that mode implicitly
-                    buffers.push( { type: modes.BLK, value: buffer } );
-                    buffer = '';
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                 }
 
                 continue;
@@ -567,12 +556,9 @@ function parse(str){
                 // If none, must be the end of the expression.
                 
                 if(TKS.AT.test(curr) === true){
-                    // Must just be standalone @, switch to markup mode
+                    // Must just be standalone @, consume and switch to markup mode
                     buffer += curr;
-
-                    buffers.push( { type: modes.MPK, value: buffer } );
-                    buffer = ''; // blank out markup buffer;
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                 } else if( TKS.HARDPARENSTART.test(curr) === true ){
                     // Update future cursor in prep for consumption
                     j = i; 
@@ -585,9 +571,7 @@ function parse(str){
                     // This is probably the end of the expression.
                     
                     // Switch to markup mode
-                    buffers.push( { type: modes.EXP, value: buffer } );
-                    buffer = ''; // blank out buffer
-                    mode = modes.MKP;
+                    endMode(modes.MKP);
                     // Roll cursor back one to allow markup mode to handle 
                     i -= 1; 
                 }
@@ -601,9 +585,8 @@ function parse(str){
 	                // Found a reserved word, like while.
 
 	                // Switch to JS Block mode.
-	                buffers.push( { type: modes.MKP, value: buffer } );
+	                endMode(modes.BLK);
 	                buffer = identifierMatch[0];
-	                mode = modes.BLK;
 
 	                // Move to last character of identifier and continue in block mode
 	                i += buffer.length - 1; 
@@ -644,9 +627,8 @@ function parse(str){
                         // Do not consume . in code, but in markup.
                         // End EXP block, continue in markup mode.
                     
-                        buffers.push( { type: modes.EXP, value: buffer } );
+                        endMode(modes.MKP);
                         buffer = next; // consume . in markup buffer
-                        mode = modes.MKP;
                         
                         // Update i to .
                         i = j; 
@@ -664,9 +646,7 @@ function parse(str){
     finalErrorCheck();
 
 	// Assume that there is an open buffer. Most likely this will be of type MKP.
-    buffers.push( { type: mode, value: buffer } );
-    buffer = ''; // blank out buffer;
-    mode = modes.MKP;
+    endMode(modes.MKP);
     return buffers;
 
 }
