@@ -343,30 +343,15 @@ function parse(str){
                         // Advance cursor to next char
                         i += 1;
                     } else {
-                        // Found either a reserved word or a valid JS identifier
+                        // Found either a reserved word or a valid JS identifier.
+						// Let expression mode delegate to block mode if necessary.
                     
-                        if(TKS.RESERVED.test(identifierMatch[0]) === true){
-                            // Found a reserved word, like while.
-
-                            // Switch to JS Block mode.
-                            buffers.push( { type: modes.MKP, value: buffer } );
-                            buffer = identifierMatch[0];
-                            mode = modes.BLK;
-
-                            // move passed identifier and continue in block mode
-                            i += buffer.length; 
-                            continue;
-                        } else {
-                            // We have a valid identifier
-
-                            // Switch to implicit expression mode: @myvar().dosomethingelse().prop
-                            buffers.push( { type: modes.MKP, value: buffer } );
-                            
-                            // Blank out markup buffer;
-                            buffer = ''; 
-                            mode = modes.EXP;
-                            continue;
-                        }
+						buffers.push( { type: modes.MKP, value: buffer } );
+                        
+                        // Blank out markup buffer;
+                        buffer = ''; 
+                        mode = modes.EXP;
+                        continue;
                     }
                 }
 
@@ -603,7 +588,7 @@ function parse(str){
                     buffers.push( { type: modes.EXP, value: buffer } );
                     buffer = ''; // blank out buffer
                     mode = modes.MKP;
-                    // roll cursor back one to allow markup mode to handle 
+                    // Roll cursor back one to allow markup mode to handle 
                     i -= 1; 
                 }
                 
@@ -612,6 +597,20 @@ function parse(str){
             } else {
                 // Found a valid JS identifier
             
+				if(TKS.RESERVED.test(identifierMatch[0]) === true){
+	                // Found a reserved word, like while.
+
+	                // Switch to JS Block mode.
+	                buffers.push( { type: modes.MKP, value: buffer } );
+	                buffer = identifierMatch[0];
+	                mode = modes.BLK;
+
+	                // Move to last character of identifier and continue in block mode
+	                i += buffer.length - 1; 
+	                continue;
+                }
+
+				// If we get to here, it's not a block but rather an expression
                 buffer += identifierMatch[0];
                 j = i + identifierMatch[0].length;
                 // Set next to the actual next char after identifier
@@ -664,6 +663,7 @@ function parse(str){
 
     finalErrorCheck();
 
+	// Assume that there is an open buffer. Most likely this will be of type MKP.
     buffers.push( { type: mode, value: buffer } );
     buffer = ''; // blank out buffer;
     mode = modes.MKP;
@@ -674,7 +674,8 @@ function parse(str){
 // ## Code Generation
 
 /**
- * undocumented function
+ * Takes an array of buffer tokens and creates a "compiled" template that has zero
+ * external dependencies.
  *
  * @param  {array} buffers  an array of buffer tokens to create a compiled template from
  * @param  {bool}  useWith  Defaults to false. If true, wraps the template content in a with(){} statement 
