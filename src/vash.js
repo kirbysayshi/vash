@@ -174,20 +174,20 @@ function parse(str){
 
     // ## State-Aware Functions
 
-	/**
-	 * Ends the current mode by pushing a new buffer if it's not empty,
-	 * blanks the current buffer, and sets the given mode.
-	 *
-	 * @param  {const} nextMode  If not defined, defaults to MKP (content)
-	 * @return  void
-	 */
-	function endMode(nextMode){
-		if(buffer !== ''){
-			buffers.push( { type: mode, value: buffer } );
-	        buffer = '';
-		}
+    /**
+     * Ends the current mode by pushing a new buffer if it's not empty,
+     * blanks the current buffer, and sets the given mode.
+     *
+     * @param  {const} nextMode  If not defined, defaults to MKP (content)
+     * @return  void
+     */
+    function endMode(nextMode){
+        if(buffer !== ''){
+            buffers.push( { type: mode, value: buffer } );
+            buffer = '';
+        }
         mode = nextMode || modes.MKP;
-	}
+    }
 
     /**
      * Adds characters, including the current, to the buffer until 
@@ -352,8 +352,8 @@ function parse(str){
                         i += 1;
                     } else {
                         // Found either a reserved word or a valid JS identifier.
-						// Let expression mode delegate to block mode if necessary.
-						endMode(modes.EXP);
+                        // Let expression mode delegate to block mode if necessary.
+                        endMode(modes.EXP);
                         continue;
                     }
                 }
@@ -435,9 +435,8 @@ function parse(str){
                             + str.substring( i, i + str.substring(i).indexOf('>') + 1 ), i, str);
                     }
 
-                    // SPECIAL CASE:
                     if(TKS.TXT.test(tag[1]) === true){
-                        // Found the opening of a text block
+                        // SPECIAL CASE: Found the opening of a text block
                     
                         // Manually advance i passed <text>
                         i += 5;
@@ -581,19 +580,19 @@ function parse(str){
             } else {
                 // Found a valid JS identifier
             
-				if(TKS.RESERVED.test(identifierMatch[0]) === true){
-	                // Found a reserved word, like while.
+                if(TKS.RESERVED.test(identifierMatch[0]) === true){
+                    // Found a reserved word, like while.
 
-	                // Switch to JS Block mode.
-	                endMode(modes.BLK);
-	                buffer = identifierMatch[0];
+                    // Switch to JS Block mode.
+                    endMode(modes.BLK);
+                    buffer = identifierMatch[0];
 
-	                // Move to last character of identifier and continue in block mode
-	                i += buffer.length - 1; 
-	                continue;
+                    // Move to last character of identifier and continue in block mode
+                    i += buffer.length - 1; 
+                    continue;
                 }
 
-				// If we get to here, it's not a block but rather an expression
+                // If we get to here, it's not a block but rather an expression
                 buffer += identifierMatch[0];
                 j = i + identifierMatch[0].length;
                 // Set next to the actual next char after identifier
@@ -645,7 +644,7 @@ function parse(str){
 
     finalErrorCheck();
 
-	// Assume that there is an open buffer. Most likely this will be of type MKP.
+    // Assume that there is an open buffer. Most likely this will be of type MKP.
     endMode(modes.MKP);
     return buffers;
 
