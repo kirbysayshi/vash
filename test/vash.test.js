@@ -301,6 +301,40 @@ vows.describe('vash templating library').addBatch({
 			} catch(e){}
 		}
 	}
+	,'markup within a code block with an expression in the tag name': {
+		topic: function(){
+			var str = '@if(true){ \n'
+				+ '<span-@name>this is text \n'
+				+ 'that spans multiple lines</span-@name> \n'
+				+ '}';
+			return str;
+		}
+		,'parses': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error );
+			try {
+				var tpl = vash.tpl(topic);
+				assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what> \n');
+			} catch(e){}
+		}
+	}
+	,'markup within a code block with an expression after the tag name': {
+		topic: function(){
+			var str = '@if(true){ \n'
+				+ '<span-@name>this is text \n'
+				+ 'that spans multiple lines</span-@name> \n'
+				+ '<span class="@name">this is text \n'
+				+ 'that spans multiple lines</span> \n'
+				+ '}';
+			return str;
+		}
+		,'parses': function(topic){
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error );
+			try {
+				var tpl = vash.tpl(topic);
+				assert.equal(tpl({ name: 'what' }), '<span class="what">this is text \nthat spans multiple lines</span> \n');
+			} catch(e){}
+		}
+	}
 	,'markup within a code block within markup within a code block': {
 		topic: function(){
 			var str = '@if(true){ \n'
