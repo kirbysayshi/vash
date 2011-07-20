@@ -23,7 +23,7 @@
 
 (function(root){
 
-// Various tokens that make up a Razor template
+// ## Razor Template Tokens
 var TKS = {
      AT:             /@/
     ,PARENSTART:     /\(/
@@ -44,16 +44,19 @@ var TKS = {
     ,TAGSELFCLOSE:   /^<[^>]+?\/>/i
     ,EMAILCHARS:     /[a-zA-Z0-9\_]/
     ,IDENTIFIER:     /^[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*/ // this could be simplifed to not support unicode
-    ,RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with/
+    ,RESERVED:       /^case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with/ // these are not all the reserved words in JS, but ones that can be used with @
     ,ATSTARSTART:    /@\*/
     ,ATSTAREND:      /\*@/
     ,TXT:            /^text/
 
-    // This is used for template generation, not parsing
-    ,QUOTE:          /[\"']/gi
+    ,QUOTE:          /[\"']/gi // This is used for template generation, not parsing
 };
 
-// Custom exceptions, to allow for more specific testing
+// Mode Contants: markup, js block, implicit js expression
+var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
+
+// ## Custom Exceptions
+// for more specific testing
 var ERR = {
     BASE: function(msg, cursorPos, str){
         this.message = msg 
@@ -93,7 +96,7 @@ var ERR = {
     }
 })()
 
-// A very simple stack implementation.
+// ## Simple Stack.
 // Yes, a JS array is basically a stack, but this one
 // has automatic underflow and null handling.
 function Stack(){
@@ -130,14 +133,11 @@ Stack.prototype = {
     }
 }
 
-
-// Mode Contants: markup, js block, implicit js expression
-var modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
-
+// ## Parse Method
 // The bulk of Vash. Accepts a string, returns an array of tokens.
 function parse(str){
 
-    // Parser state
+    // ### Parser state
     var
         // Current immediate, local mode
         mode = modes.MKP 
@@ -172,13 +172,23 @@ function parse(str){
         // Holds the result of a more than single character regex test
         ,identifierMatch = null;
 
-    // Adds characters, including the current, to the buffer until 
-    // a matched character is found. For example: curr == (, so it
-    // would consume until a matching ) is found, being sure they 
-    // actually match in case of nested characters.
-    // If consume arg === false, then does not consume, and only moves
-    // the cursor (i) ahead.
-    // This is defined here to allow it to access parser state.
+    // ## State-Aware Functions
+
+    /**
+     * Adds characters, including the current, to the buffer until 
+     * a matched character is found. For example: curr == (, so it
+     * would consume until a matching ) is found, being sure they 
+     * actually match in case of nested characters.
+     * If consume arg === false, then does not consume, and only moves
+     * the cursor (i) ahead.
+     * This is defined here to allow it to access parser state.
+     *
+     * @private
+     * @param {RegExp} sRe The regex defining the beginning char of the matched sequence
+     * @param {RegExp} eRe The regex defining the ending char of the matched sequence
+     * @param {bool} consume Defaults to true. If false, does not add the found sequence to the buffer
+     * @returns void
+     */
     function untilMatched(sRe, eRe, consume){
         
         var groupLevel = 1;
@@ -196,24 +206,26 @@ function parse(str){
             if(j >= str.length) throw new ERR.UNMATCHED('unmatched ' + sRe, j, str);
         }
     
-        // Add matched contents to buffer
         if(consume === true) buffer += str.substring(i, j+1);
     
-        // Advance i to current char
-        i = j; 
-        // curr will be equal to eRe
-        curr = str[i]; 
-        // Next will equal to the next, if it's not the end of the template
-        if(i < str.length - 1) next = str[i+1];
+        i = j; // Advance i to current char
+        curr = str[i]; // curr will be equal to eRe
+
+        if(i < str.length - 1) next = str[i+1]; // Update next value to be actual next char
         else next = null;
     }
 
-    // Consumes all characters, including the current, through the char 
-    // before the char that evaluates to false.
-    // Begins testing from curr + 1, and exits leaving i/curr == the 
-    // character before the char that evaluated as true.
-    // If consume arg === false, then does not consume, and only moves
-    // the cursor (i) ahead.
+    /**
+     * Consumes all characters, including the current, through the char 
+     * before the char that evaluates to false.
+     * Begins testing from curr + 1, and exits leaving i/curr == the 
+     * character before the char that evaluated as true.
+     *
+     * @param  {RegExp} stopRe
+     * @param  {bool}  consume  Defaults to true. If false, does not consume, 
+     * and only moves the cursor (i) ahead.
+     * @return  void 
+     */
     function until(stopRe, consume){
 
         if(consume !== false && consume !== true) { consume = true; }
@@ -229,17 +241,20 @@ function parse(str){
         // consume, including current char through char before char that evaluated as true
         if(consume === true) buffer += str.substring(i, j);
         
-        // cleanup:
-        // advance i to char before char that evaluated as false 
-        i = j - 1; 
-        // curr will be equal to char before stopRe
-        curr = str[i]; 
+        i = j - 1; // advance i to char before char that evaluated as false 
+        curr = str[i]; // curr will be equal to char before stopRe
         if(i < str.length - 1) next = str[i+1];
         else next = null;
     }
 
-    // Looks at the block stack and throws errors if there are any blocks
-    // in the stack. This should only be run at the end of the parse.
+    // 
+    /**
+     * Looks at the block stack and throws errors if there are any blocks
+     * in the stack. Blocks still in the stack at the end of parsing indicate
+     * an unclosed *something*.
+     *
+     * @return  void
+     */
     function finalErrorCheck(){
         var entry;
 
@@ -262,13 +277,14 @@ function parse(str){
         }
     }
 
-    // The main parser loop/entry point
+    // ### Main Parser Loop
     for(i = 0; i < str.length; i++){
         if(i > 0) prev = str[i-1];
         curr = str[i];
         if(i < str.length - 1) next = str[i+1];
         else next = null;
     
+        // #### Markup/Content Mode
         if(mode === modes.MKP){
             
             // Do special check for current + next to be @* comment. @* comments
@@ -288,8 +304,8 @@ function parse(str){
             // Current character is @
             if(TKS.AT.test(curr) === true){
                 if(i > 0 && TKS.EMAILCHARS.test(prev) === true && TKS.EMAILCHARS.test(next)){
-                    // This test is invalid if the first character of the str
-                    // before and after @ are valid e-mail address chars.
+                    // The characters immediately preceeding and succeeding the @ are valid
+                    // email address characters.
                     // Assume it's an e-mail address and continue.
                     buffer += curr;
                 } else if(TKS.AT.test(next) === true){
@@ -337,7 +353,7 @@ function parse(str){
                             buffer = identifierMatch[0];
                             mode = modes.BLK;
 
-                            // Skip identifier and continue in block mode
+                            // move passed identifier and continue in block mode
                             i += buffer.length; 
                             continue;
                         } else {
@@ -375,11 +391,6 @@ function parse(str){
                 continue;
     
             } else if(TKS.LT.test(curr) === true){
-                // Found <.
-                // If current block is of type MKP, then test for a closing tag
-                // to determine if this markup block should be considered closed.
-                // If current block is of type BLK, then test for opening non-selfclosing
-                // tag, and if found, create a new MKP block context.
                 
                 block = blockStack.peek();
                 
@@ -396,9 +407,8 @@ function parse(str){
                         // tag[0] is matching string.
                         // tag[1] is capture group === tag name.
                         
-                        // SPECIAL CASE:
                         if(TKS.TXT.test(tag[1]) === true){ 
-                            // tag is a closing </text> tag, which is not meant to be consumed
+                            // SPECIAL CASE: tag is a closing </text> tag, which is not meant to be consumed
                             
                             // Update i to >
                             i += 6;
@@ -442,7 +452,7 @@ function parse(str){
 
                     // SPECIAL CASE:
                     if(TKS.TXT.test(tag[1]) === true){
-                        // Found the opening of a <text> block
+                        // Found the opening of a text block
                     
                         // Manually advance i passed <text>
                         i += 5;
@@ -482,6 +492,7 @@ function parse(str){
             }
         }
     
+        // #### Block Mode
         if(mode === modes.BLK){
         
             if(TKS.AT.test(curr) === true){
@@ -558,7 +569,9 @@ function parse(str){
             continue;       
         }
     
+        // #### Expression Mode
         if(mode === modes.EXP){
+    
             // Test for identifier
             identifier = str.substring(i);
             identifierMatch = identifier.match( TKS.IDENTIFIER );
@@ -658,6 +671,16 @@ function parse(str){
 
 }
 
+// ## Code Generation
+
+/**
+ * undocumented function
+ *
+ * @param  {array} buffers  an array of buffer tokens to create a compiled template from
+ * @param  {bool}  useWith  Defaults to false. If true, wraps the template content in a with(){} statement 
+ * @param  {string}  modelName  the identifier to use for the "model", if useWith is false
+ * @return  void   desc
+ */
 function generateTemplate(buffers, useWith, modelName){
     var  i
         ,previous = null
@@ -706,7 +729,7 @@ function generateTemplate(buffers, useWith, modelName){
             : generated ) + "\nreturn out;");
 }
 
-// Public interface. 
+// ## Public Interface / Export
 // Keys are quoted to allow for proper export when compressed.
 
 var vash = {

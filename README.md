@@ -21,10 +21,10 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 ## Neat Stuff
 
 * __Speed__: It's almost as fast as [doT](https://github.com/olado/doT) when rendering with `vash.config.useWith = false` (see test/SPEED.txt, test/vash.speed.js for now). For me, this is "good enough" `:)`.
-* __Small__: it's about 4k using the closure compiler on simple, and supports closure's advanced mode.
+* __Small__: it's about 5k using the closure compiler on advanced.
 * __Portability__: the compiled template functions are completely self-contained with no external dependencies, allowing you to compile your templates on the server, and only output the compiled versions! [Here's an example](https://gist.github.com/1022323) of how you might do that as part of your build process (the script uses doT, but you get the idea).
 * __No dependencies__: Vash itself has no external dependencies, aside from using [Vows](http://vowsjs.org/) for testing.
-* __Complete__: It supports approximately 95% of the actual Razor syntax spec, all the things you actually use.
+* __Complete__: Vash supports approximately 100% of the actual Razor syntax, all the things you actually use. See below for what it doesn't support.
 
 # USAGE
 
@@ -95,7 +95,7 @@ Again, rendering is the same regardless:
 Since this is JavaScript and not C#, there are a few superfluous aspects of Razor that are not implemented, and most likely never will be. Here is a list of unimplemented Razor features:
 
 * `@foreach`: this is not a JavaScript keyword, and while some code generation could take place, it's tough. Deal. `:)`
-* `@helper`: this keyword's existence is a consequence of a typed language, and is not needed in JS. The same functionality can be gained by just defining a function within a template!
+* `@helper`: I believe that this keyword requires more of a View Engine than a template maker. This is outside the realm of Vash, but could be included with some type of Vash Engine.
 
 # Current Test Results
 
@@ -126,12 +126,12 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 # TODO
 
 * make npm package
+* avoid pushing new buffer if it's blank
 * implement mode stack for @{} blocks, to avoid extra {} in code generation?
 * for each mode, encapsulate into constructor function, each with own buffer, each gets pushed onto master stack
 * refactor to remove repeated code (mode switches, mostly)
 * change regexes to straight string compares where possible for speed (probably not necessary anymore)
 * add possiblity for useWith configuration from within template? special keyword?
-* in code generation, be smarter to avoid extraneous += for speed (probably not)
 
 # License
 
