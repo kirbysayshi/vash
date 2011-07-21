@@ -182,6 +182,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="G"></a>');
 		}
 	}
+	,'expression with indexed properties and method call with additional property': {
+		topic: function(){
+			var str = '<a href="@what.how()[0].length"></a>';
+			return vash.tpl(str);
+		}
+		,'outputs 1': function(topic){
+			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="1"></a>');
+		}
+	}
 	,'empty anonymous block': {
 		topic: function(){
 			var str = "@{ }";
@@ -350,6 +359,22 @@ vows.describe('vash templating library').addBatch({
 				var tpl = vash.tpl(topic);
 				assert.equal(tpl(), '<span>this is text \n<b>important</b> \nthat spans multiple lines</span> \n');
 			} catch(e){}
+		}
+	}
+	,'simple expression as tagname': {
+		topic: function(){
+			return '<@name>This is content</@name>';
+		}
+		,'is allowed': function(topic){
+			assert.equal( vash.tpl(topic)({name: 'what'}), '<what>This is content</what>' );
+		}
+	}
+	,'complex expression as tagname': {
+		topic: function(){
+			return '<@name[0].length>This is content</@name[0].length>';
+		}
+		,'is allowed': function(topic){
+			assert.equal( vash.tpl(topic)({name: 'what'}), '<1>This is content</1>' );
 		}
 	}
 	,'including email address in markup': {

@@ -551,7 +551,7 @@ function parse(str){
 		
 			if(identifierMatch === null){
 				// This is not a variable/property.
-				// Check for @ switch, ( to indicate function call, and [ to indicate indexing.
+				// Check for @ switch, . for property, ( to indicate function call, and [ to indicate indexing.
 				// If none, must be the end of the expression.
 				
 				if(TKS.AT.test(curr) === true){
@@ -566,6 +566,22 @@ function parse(str){
 					// Update future cursor in prep for consumption
 					j = i; 
 					untilMatched(TKS.PARENSTART, TKS.PARENEND);
+				} else if( TKS.PERIOD.test(curr) === true) {
+					// current char is a .
+				
+					if( next !== null && TKS.IDENTIFIER.test( next ) === true ){
+						// Char after the . is a valid identifier.
+						// Consume . and continue in EXP mode.
+						buffer += curr;
+						
+					} else {
+						// Do not consume . in code, but in markup.
+						// End EXP block, continue in markup mode.
+					
+						endMode(modes.MKP);
+						buffer = curr; // consume . in markup buffer
+					}
+					
 				} else {
 					// This is probably the end of the expression.
 					
@@ -594,50 +610,12 @@ function parse(str){
 
 				// If we get to here, it's not a block but rather an expression
 				buffer += identifierMatch[0];
-				j = i + identifierMatch[0].length;
+				// advance i to last char of match
+				i += identifierMatch[0].length - 1;
 				// Set next to the actual next char after identifier
-				next = str[j]; 
+				//next = str[i + identifierMatch[0].length]; 
 			
-				if(TKS.PARENSTART.test(next) === true){
-					// Found (, consume until next matching
-
-					i = j; // move i forward
-					untilMatched(TKS.PARENSTART, TKS.PARENEND);
-					continue; 
-
-				} else if(TKS.HARDPARENSTART.test(next) === true){
-					// Found [, consume until next matching
-					
-					i = j; // move i forward
-					untilMatched(TKS.HARDPARENSTART, TKS.HARDPARENEND);
-					continue;
-
-				} else if(TKS.PERIOD.test(next) === true){
-					// Next char is a .
-				
-					if( j+1 < str.length && TKS.IDENTIFIER.test( str[j+1] ) ){
-						// Char after the . is a valid identifier.
-						// Consume . and continue in EXP mode.
-						buffer += next;
-						// Update i to .
-						i = j;
-						continue;
-					} else {
-						// Do not consume . in code, but in markup.
-						// End EXP block, continue in markup mode.
-					
-						endMode(modes.MKP);
-						buffer = next; // consume . in markup buffer
-						
-						// Update i to .
-						i = j; 
-						continue;
-					}
-				
-				} else {
-					// Just advance i to last char of found identifier.
-					i = j - 1;
-				}
+				continue;
 			}
 		}
 	}
