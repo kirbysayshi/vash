@@ -121,13 +121,6 @@ Stack.prototype = {
 			return null;
 		}
 	}
-	,doublePeek: function(){
-		if(this._stack.length > 1){
-			return this._stack[ this._stack.length - 2 ]
-		} else {
-			return null;
-		}
-	}
 	,count: function(){
 		return this._stack.length;
 	}
@@ -612,8 +605,6 @@ function parse(str){
 				buffer += identifierMatch[0];
 				// advance i to last char of match
 				i += identifierMatch[0].length - 1;
-				// Set next to the actual next char after identifier
-				//next = str[i + identifierMatch[0].length]; 
 			
 				continue;
 			}

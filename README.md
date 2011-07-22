@@ -20,8 +20,8 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 ## Neat Stuff
 
-* __Speed__: It's almost as fast as [doT](https://github.com/olado/doT) when rendering with `vash.config.useWith = false` (see test/SPEED.txt, test/vash.speed.js for now). For me, this is "good enough" `:)`.
-* __Small__: it's about 5k using the closure compiler on advanced.
+* __Speed__: It's on par with [doT](https://github.com/olado/doT) when rendering with `vash.config.useWith = false` (see test/SPEED.txt, test/vash.speed.js for now). For me, this is "good enough" `:)`.
+* __Small__: it's about 4.5k (2k gzipped) using the closure compiler on advanced.
 * __Portability__: the compiled template functions are completely self-contained with no external dependencies, allowing you to compile your templates on the server, and only output the compiled versions! [Here's an example](https://gist.github.com/1022323) of how you might do that as part of your build process (the script uses doT, but you get the idea).
 * __No dependencies__: Vash itself has no external dependencies, aside from using [Vows](http://vowsjs.org/) for testing.
 * __Complete__: Vash supports approximately 100% of the actual Razor syntax, all the things you actually use. See below for what it doesn't support.
