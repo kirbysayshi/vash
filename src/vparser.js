@@ -56,7 +56,7 @@ VParser.prototype = {
 		this._endMode(VParser.modes.MKP);
 
 		if(this.blockStack.count() > 0) 
-			throw new VParser.exceptions.UNMATCHED(this.blockStack.peek());
+			throw new VParser.exceptions.UNMATCHED(this.blockStack.peek().tok);
 		
 		return this.buffers;
 	}
@@ -210,7 +210,7 @@ VParser.prototype = {
 			
 			case this.tks.TEXT_TAG_OPEN:
 			case this.tks.HTML_TAG_OPEN:
-				tagName = curr.val.match(/^<[^\/]{0,0}([a-zA-Z\-\:@]+)[\b]?/i); 
+				tagName = curr.val.match(/^<([^\/ >]+)/i); 
 				
 				if(tagName === null && next && next.type === this.tks.AT && ahead)
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
