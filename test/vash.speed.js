@@ -49,9 +49,9 @@ var  Benchmark = require('benchmark')
 		,anothervar: 'there is another'
 	}
 
-	,largeTokens = vash._parse(largeVTemplate)
-	,mediumTokens = vash._parse(mediumVTemplate)
-	,smallTokens = vash._parse(smallVTemplate)
+	,largeTokens = new vash.VParser(largeVTemplate).parse()
+	,mediumTokens = new vash.VParser(mediumVTemplate).parse()
+	,smallTokens = new vash.VParser(smallVTemplate).parse()
 
 	,suite;
 
@@ -85,29 +85,29 @@ Benchmark.Suite.options.onComplete = function(e, bench){
 
 suite = new Benchmark.Suite("vash parse times by template size")
 .add("vash#parse large", function(){
-	vash._parse(largeVTemplate)
+	new vash.VParser(largeVTemplate).parse()
 })
 .add("vash#parse medium", function(){
-	vash._parse(mediumVTemplate)
+	new vash.VParser(mediumVTemplate).parse()
 })
 .add("vash#parse small", function(){
-	vash._parse(smallVTemplate)
+	new vash.VParser(smallVTemplate).parse()
 })
 logSuiteName(suite);
 suite.run();
 
-suite = new Benchmark.Suite("vash generate times by template size")
-.add("vash#generate tokens large", function(){
-	vash._generate(largeTokens);
-})
-.add("vash#generate tokens medium", function(){
-	vash._generate(mediumTokens);
-})
-.add("vash#generate tokens small", function(){
-	vash._generate(smallTokens);
-})
-logSuiteName(suite);
-suite.run();
+//suite = new Benchmark.Suite("vash generate times by template size")
+//.add("vash#generate tokens large", function(){
+//	vash._generate(largeTokens);
+//})
+//.add("vash#generate tokens medium", function(){
+//	vash._generate(mediumTokens);
+//})
+//.add("vash#generate tokens small", function(){
+//	vash._generate(smallTokens);
+//})
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation large")
 .add("dot#template large", function(){
