@@ -239,15 +239,6 @@ VParser.prototype = {
 				}
 				break;
 			
-			//case this.tks.GT:
-			//	this._useToken(curr);
-			//	block = this.blockStack.peek();
-			//	if(block !== null && block.type === VParser.modes.BLK){
-			//		this._endMode(VParser.modes.BLK);
-			//	}
-			//	//this._endMode(VParser.modes.BLK);
-			//	break;
-			
 			default:
 				this._useToken(curr);
 				break;

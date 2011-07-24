@@ -97,7 +97,6 @@ VLexer.prototype = {
 			|| this.HTML_TAG_OPEN()
 			|| this.HTML_TAG_CLOSE()
 			
-			|| this.GT()
 			|| this.PERIOD()
 			|| this.NEWLINE()
 			|| this.WHITESPACE()
@@ -139,9 +138,6 @@ VLexer.prototype = {
 	}
 	,BRACE_CLOSE: function(){
 		return this.scan(/^(\})/, this.tks.BRACE_CLOSE);
-	}
-	,GT: function(){
-		return this.scan(/^(>)/, this.tks.GT);
 	}
 	,HARD_PAREN_OPEN: function(){
 		return this.scan(/^(\[)/, this.tks.HARD_PAREN_OPEN);
@@ -201,7 +197,6 @@ VLexer.prototype = {
 		,PAREN_CLOSE: 'PAREN_CLOSE'
 		,BRACE_OPEN: 'BRACE_OPEN'
 		,BRACE_CLOSE: 'BRACE_CLOSE'
-		,GT: 'GT'
 		,HARD_PAREN_OPEN: 'HARD_PAREN_OPEN'
 		,HARD_PAREN_CLOSE: 'HARD_PAREN_CLOSE'
 		,TEXT_TAG_OPEN: 'TEXT_TAG_OPEN'
