@@ -1,5 +1,32 @@
 (function(root){
 
+function Stack(){
+	this._stack = []
+}
+
+Stack.prototype = {
+	push: function(obj){
+		this._stack.push(obj);
+		return this;
+	}
+	,pop: function(){
+		if(this._stack.length > 0)
+			return this._stack.pop();
+		else 
+			throw new Error('Stack Underflow');
+	}
+	,peek: function(){
+		if(this._stack.length > 0){
+			return this._stack[ this._stack.length - 1 ]
+		} else {
+			return null;
+		}
+	}
+	,count: function(){
+		return this._stack.length;
+	}
+};
+
 var L;
 
 var VParser = function VParser(str){
@@ -24,7 +51,7 @@ VParser.exceptions = (function(){
 			this.name = "UnmatchedCharacterError";
 			this.message = 'Unmatched ' + tok.type
 				+ ' at line ' + tok.line
-				+ ', character ' + tok.char
+				+ ', character ' + tok.chr
 				+ '. Value: ' + tok.val
 			this.lineNumber = tok.line;
 			this.stack = '';
@@ -178,16 +205,6 @@ VParser.prototype = {
 			
 			case this.tks.AT_STAR_OPEN:
 				this._advanceUntilMatched(curr, this.tks.AT_STAR_OPEN, this.tks.AT_STAR_CLOSE);
-				break;
-			
-			case this.tks.AT_BRACE_OPEN:
-				this._endMode(VParser.modes.BLK);
-				this.lex.defer(curr);
-				break;
-			
-			case this.tks.AT_PAREN_OPEN:
-				this._endMode(VParser.modes.EXP);
-				this.lex.defer(curr);
 				break;
 			
 			case this.tks.AT:
@@ -360,34 +377,6 @@ VParser.prototype = {
 	}
 	
 }
-
-function Stack(){
-	this._stack = []
-}
-
-Stack.prototype = {
-	push: function(obj){
-		this._stack.push(obj);
-		return this;
-	}
-	,pop: function(){
-		if(this._stack.length > 0)
-			return this._stack.pop();
-		else 
-			throw new Error('Stack Underflow');
-	}
-	,peek: function(){
-		if(this._stack.length > 0){
-			return this._stack[ this._stack.length - 1 ]
-		} else {
-			return null;
-		}
-	}
-	,count: function(){
-		return this._stack.length;
-	}
-};
-
 
 if(typeof module !== 'undefined' && module.exports){
 	module["exports"] = VParser;

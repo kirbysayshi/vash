@@ -17,7 +17,7 @@ VLexer.prototype = {
 		return {
 			 type: type
 			,line: this.lineno
-			,char: this.charno
+			,chr: this.charno
 			,val: val
 		}
 	}
