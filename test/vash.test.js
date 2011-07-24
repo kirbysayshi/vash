@@ -383,6 +383,22 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(vash.tpl(topic)(), '<p>This is content that is <strong>important</strong> but outside.</p>');
 		}
 	}
+	,'markup with numbers': {
+		topic: function(){
+			var str = "<div>"
+				+ "	<h1 class='header'>@header</h1>"
+				+ "	<h2 class='header2'>@header2</h2>"
+				+ "</div>"
+			return str;
+		}
+		,'is named properly': function(topic){
+			assert.equal( vash.tpl(topic)( { header: 'a', header2: 'b' } ),  
+				'<div>'
+				+ '	<h1 class="header">a</h1>'
+				+ '	<h2 class="header2">b</h2>'
+				+ '</div>' );
+		}
+	}
 	,'simple expression as tagname': {
 		topic: function(){
 			return '<@name>This is content</@name>';
