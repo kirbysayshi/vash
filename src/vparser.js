@@ -17,17 +17,29 @@ var VParser = function VParser(str){
 
 VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 
-VParser.exceptions = {
-	UNMATCHED: function UNMATCHED(tok){
-		this.name = "UnmatchedCharacterError";
-		this.message = 'Unmatched ' + tok.type
-			+ ' at line ' + tok.line
-			+ ', character ' + tok.char
-			+ '. Value: ' + tok.val
-		this.lineNumber = tok.line;
-		this.stack = '';
-	}	
-};
+VParser.exceptions = (function(){
+
+	var err = {
+		UNMATCHED: function UNMATCHED(tok){
+			this.name = "UnmatchedCharacterError";
+			this.message = 'Unmatched ' + tok.type
+				+ ' at line ' + tok.line
+				+ ', character ' + tok.char
+				+ '. Value: ' + tok.val
+			this.lineNumber = tok.line;
+			this.stack = '';
+		}
+	};
+	
+	for(var e in err){
+		if(err.hasOwnProperty(e)){
+			err[e].prototype = new Error();
+			err[e].constructor = err[e];
+		}
+	}
+	
+	return err;
+})
 
 VParser.prototype = {
 
