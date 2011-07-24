@@ -37,6 +37,19 @@ vows.describe('vash templating library').addBatch({
 				,'<li class="blue">the blue item</li>' );
 		}
 	}
+	,'during simple interpolation with self-closing tags': {
+		topic: function(){
+			var str = '<img src="@src" alt="github" />';
+			//console.log( vash._parse(str) )
+			return vash.tpl(str);
+		}
+		,'we get the full self-closed tag': function(topic){
+			//console.log(topic);
+			assert.equal( 
+				topic( { src: 'https://github.com' } )
+				,'<img src="https://github.com" alt="github" />' );
+		}
+	}
 	,'property references': {
 		topic: function(){
 			var str = '<li>@model.name</li>'
@@ -280,7 +293,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.tpl(str);
 		}
 		,'outputs plain text': function(topic){
-			assert.equal( topic(), 'Plain Text\n' );
+			assert.equal( topic(), 'Plain Text' );
 		}
 	}
 	,'mixing code and plain text, @: escape': {
@@ -361,12 +374,29 @@ vows.describe('vash templating library').addBatch({
 			} catch(e){}
 		}
 	}
+	,'markup within markup within a block': {
+		topic: function(){
+			var str = '@if(true){ <p>This is content that is <strong>important</strong> but outside.</p> }'
+			return str;
+		}
+		,'is consumed by markup, not block': function(topic){
+			assert.equal(vash.tpl(topic)(), '<p>This is content that is <strong>important</strong> but outside.</p>');
+		}
+	}
 	,'simple expression as tagname': {
 		topic: function(){
 			return '<@name>This is content</@name>';
 		}
 		,'is allowed': function(topic){
 			assert.equal( vash.tpl(topic)({name: 'what'}), '<what>This is content</what>' );
+		}
+	}
+	,'simple expression as tagname within block': {
+		topic: function(){
+			return '@if(true){ <@name>This is content</@name> }';
+		}
+		,'is allowed': function(topic){
+			assert.equal( vash.tpl(topic)({name: 'what'}), '<what>This is content</what> ' );
 		}
 	}
 	,'complex expression as tagname': {
@@ -401,7 +431,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws syntax error': function(topic){
-			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
+			assert.throws( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
 		}
 	}
 	,'escaping the @ symbol': {
@@ -433,7 +463,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws exception': function(topic){
-			assert.throws( function(){ vash.tpl(topic) }, vash._err.UNMATCHED );
+			assert.throws( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
 		}
 	}
 	,'mixing expressions and text': {
@@ -490,9 +520,9 @@ vows.describe('vash templating library').addBatch({
 			var str = '@if(true) { <li><p></li></p> }';
 			return str;
 		}
-		,'throws "Invalid Tag" exception': function(topic){
+		,'throws "UMATCHED" exception': function(topic){
 			//vash.tpl(topic);
-			assert.throws( function(){ vash.tpl(topic) }, vash._err.INVALIDTAG );
+			assert.throws( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
 		}
 	}
 	,'self closing html tag inside block': {
@@ -501,8 +531,8 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'does not bork the block stack': function(topic){
-			assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
-			assert.equal( vash.tpl(topic)(), '<img src="" />' );
+			//assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
+			assert.equal( vash.tpl(topic)(), '<img src="" /> \n' );
 		}
 	}
 	,'nested self closing html tag inside block': {
@@ -511,7 +541,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'does not bork the block stack': function(topic){
-			assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
+			//assert.doesNotThrow( function(){ vash.tpl(topic); }, vash._err.MALFORMEDHTML );
 			assert.equal( vash.tpl(topic)(), '<li><img src="" /></li>' );
 		}
 	}
@@ -522,7 +552,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'does not need to be escaped': function(topic){
 			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error);
-			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			//assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
 			assert.equal( vash.tpl(topic)(), '<li> } </li>');
 		}
 	}
@@ -532,8 +562,8 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'can be escaped with @': function(topic){
-			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
-			assert.equal( vash.tpl(topic)(), '<img src="" />} ');
+			//assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			assert.equal( vash.tpl(topic)(), '<img src="" /> } ');
 		}
 	}
 	,'markup followed by for loop': {
@@ -542,7 +572,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.tpl(str);
 		}
 		,'renders': function(topic){
-			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div></div>' );
+			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div> </div>' );
 		}
 	}
 	//,'putting markup into a property': {
