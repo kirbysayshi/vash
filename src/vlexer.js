@@ -1,6 +1,7 @@
 (function(root){
 
-// this pattern and basic lexer code is taken from the Jade lexer
+// This pattern and basic lexer code are taken from the Jade lexer:
+// https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 var VLexer = function Lexer(str){
 	this.tokens = [];
