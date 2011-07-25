@@ -1,5 +1,5 @@
 var  Benchmark = require('benchmark')
-	,vash = require('../src/vash')
+	,vash = require('../build/index')
 	,dot = require('dot')
 	,fs = require('fs')
 

@@ -116,99 +116,99 @@ VLexer.prototype = {
 	}
 	
 	,AT: function(){
-		return this.scan(/^(@)/, this.tks.AT);
+		return this.scan(/^(@)/, VLexer.tks.AT);
 	}
 	,AT_COLON: function(){
-		return this.scan(/^@\:/, this.tks.AT_COLON);
+		return this.scan(/^@\:/, VLexer.tks.AT_COLON);
 	}
 	,AT_STAR_OPEN: function(){
-		return this.scan(/^(@\*)/, this.tks.AT_STAR_OPEN);
+		return this.scan(/^(@\*)/, VLexer.tks.AT_STAR_OPEN);
 	}
 	,AT_STAR_CLOSE: function(){
-		return this.scan(/^(\*@)/, this.tks.AT_STAR_CLOSE);
+		return this.scan(/^(\*@)/, VLexer.tks.AT_STAR_CLOSE);
 	}
 	,PAREN_OPEN: function(){
-		return this.scan(/^(\()/, this.tks.PAREN_OPEN);
+		return this.scan(/^(\()/, VLexer.tks.PAREN_OPEN);
 	}
 	,PAREN_CLOSE: function(){
-		return this.scan(/^(\))/, this.tks.PAREN_CLOSE);
+		return this.scan(/^(\))/, VLexer.tks.PAREN_CLOSE);
 	}
 	,BRACE_OPEN: function(){
-		return this.scan(/^(\{)/, this.tks.BRACE_OPEN);
+		return this.scan(/^(\{)/, VLexer.tks.BRACE_OPEN);
 	}
 	,BRACE_CLOSE: function(){
-		return this.scan(/^(\})/, this.tks.BRACE_CLOSE);
+		return this.scan(/^(\})/, VLexer.tks.BRACE_CLOSE);
 	}
 	,HARD_PAREN_OPEN: function(){
-		return this.scan(/^(\[)/, this.tks.HARD_PAREN_OPEN);
+		return this.scan(/^(\[)/, VLexer.tks.HARD_PAREN_OPEN);
 	}
 	,HARD_PAREN_CLOSE: function(){
-		return this.scan(/^(\])/, this.tks.HARD_PAREN_CLOSE);
+		return this.scan(/^(\])/, VLexer.tks.HARD_PAREN_CLOSE);
 	}
 	,TEXT_TAG_OPEN: function(){
-		return this.scan(/^(<text>)/, this.tks.TEXT_TAG_OPEN);
+		return this.scan(/^(<text>)/, VLexer.tks.TEXT_TAG_OPEN);
 	}
 	,TEXT_TAG_CLOSE: function(){
-		return this.scan(/^(<\/text>)/, this.tks.TEXT_TAG_CLOSE);
+		return this.scan(/^(<\/text>)/, VLexer.tks.TEXT_TAG_CLOSE);
 	}
 	,HTML_TAG_SELFCLOSE: function(){
-		return this.spewIf(this.scan(/^(<[^>]+?\/>)/, this.tks.HTML_TAG_SELFCLOSE), '@');
+		return this.spewIf(this.scan(/^(<[^>]+?\/>)/, VLexer.tks.HTML_TAG_SELFCLOSE), '@');
 	}
 	,HTML_TAG_OPEN: function(){
-		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, this.tks.HTML_TAG_OPEN), '@');
+		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, VLexer.tks.HTML_TAG_OPEN), '@');
 	} 
 	,HTML_TAG_CLOSE: function(){
-		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, this.tks.HTML_TAG_CLOSE), '@');
+		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
 	,KEYWORD: function(){
-		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)/, this.tks.KEYWORD);
+		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)/, VLexer.tks.KEYWORD);
 	}
 	,IDENTIFIER: function(){
-		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, this.tks.IDENTIFIER);
+		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, VLexer.tks.IDENTIFIER);
 	}
 	,PERIOD: function(){
-		return this.scan(/^(\.)/, this.tks.PERIOD);
+		return this.scan(/^(\.)/, VLexer.tks.PERIOD);
 	}
 	,EMAIL: function(){
-		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, this.tks.EMAIL);
+		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, VLexer.tks.EMAIL);
 	}
 	,CONTENT: function(){
-		return this.scan(/^([^\s})@.]+?)/, this.tks.CONTENT);
+		return this.scan(/^([^\s})@.]+?)/, VLexer.tks.CONTENT);
 	}
 	,WHITESPACE: function(){
-		return this.scan(/^(\s+)/, this.tks.WHITESPACE);
+		return this.scan(/^(\s+)/, VLexer.tks.WHITESPACE);
 	}
 	,NEWLINE: function(){
-		var token = this.scan(/^(\n)/, this.tks.NEWLINE);
+		var token = this.scan(/^(\n)/, VLexer.tks.NEWLINE);
 		if(token){
 			this.lineno++;
 			this.charno = 0;
 		}
 		return token;
 	}
-	
-	,tks: {
-		 AT: 'AT'
-		,AT_STAR_OPEN: 'AT_STAR_OPEN'
-		,AT_STAR_CLOSE: 'AT_STAR_CLOSE'
-		,AT_COLON: 'AT_COLON'
-		,EMAIL: 'EMAIL'
-		,PAREN_OPEN: 'PAREN_OPEN'
-		,PAREN_CLOSE: 'PAREN_CLOSE'
-		,BRACE_OPEN: 'BRACE_OPEN'
-		,BRACE_CLOSE: 'BRACE_CLOSE'
-		,HARD_PAREN_OPEN: 'HARD_PAREN_OPEN'
-		,HARD_PAREN_CLOSE: 'HARD_PAREN_CLOSE'
-		,TEXT_TAG_OPEN: 'TEXT_TAG_OPEN'
-		,TEXT_TAG_CLOSE: 'TEXT_TAG_CLOSE'
-		,HTML_TAG_SELFCLOSE: 'HTML_TAG_SELFCLOSE'
-		,HTML_TAG_OPEN: 'HTML_TAG_OPEN'
-		,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
-		,KEYWORD: 'KEYWORD'
-		,IDENTIFIER: 'IDENTIFIER'
-		,PERIOD: 'PERIOD'
-		,CONTENT: 'CONTENT'
-		,WHITESPACE: 'WHITESPACE'
-		,NEWLINE: 'NEWLINE'
-	}
+}
+
+VLexer.tks = {
+	 AT: 'AT'
+	,AT_STAR_OPEN: 'AT_STAR_OPEN'
+	,AT_STAR_CLOSE: 'AT_STAR_CLOSE'
+	,AT_COLON: 'AT_COLON'
+	,EMAIL: 'EMAIL'
+	,PAREN_OPEN: 'PAREN_OPEN'
+	,PAREN_CLOSE: 'PAREN_CLOSE'
+	,BRACE_OPEN: 'BRACE_OPEN'
+	,BRACE_CLOSE: 'BRACE_CLOSE'
+	,HARD_PAREN_OPEN: 'HARD_PAREN_OPEN'
+	,HARD_PAREN_CLOSE: 'HARD_PAREN_CLOSE'
+	,TEXT_TAG_OPEN: 'TEXT_TAG_OPEN'
+	,TEXT_TAG_CLOSE: 'TEXT_TAG_CLOSE'
+	,HTML_TAG_SELFCLOSE: 'HTML_TAG_SELFCLOSE'
+	,HTML_TAG_OPEN: 'HTML_TAG_OPEN'
+	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
+	,KEYWORD: 'KEYWORD'
+	,IDENTIFIER: 'IDENTIFIER'
+	,PERIOD: 'PERIOD'
+	,CONTENT: 'CONTENT'
+	,WHITESPACE: 'WHITESPACE'
+	,NEWLINE: 'NEWLINE'
 };

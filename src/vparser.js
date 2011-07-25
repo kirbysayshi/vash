@@ -28,7 +28,7 @@ Stack.prototype = {
 
 function VParser(str){
 	this.lex = new VLexer(str);
-	this.tks = this.lex.tks;
+	this.tks = VLexer.tks;
 	
 	this.blockStack = new Stack();
 	this.mode = VParser.modes.MKP;
