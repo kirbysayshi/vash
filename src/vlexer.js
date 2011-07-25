@@ -1,9 +1,8 @@
-(function(root){
 
 // This pattern and basic lexer code are taken from the Jade lexer:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
-var VLexer = function Lexer(str){
+function VLexer(str){
 	this.tokens = [];
 	this.input = str.replace(/\r\n|\r/g, '\n');
 	this.deferredTokens = [];
@@ -213,16 +212,3 @@ VLexer.prototype = {
 		,NEWLINE: 'NEWLINE'
 	}
 };
-
-if(typeof module !== 'undefined' && module.exports){
-	module["exports"] = VLexer;
-} else {
-	root["vash"] = root["vash"] || {};
-	root["vash"].VLexer = VLexer;
-}
-
-})(this);
-
-
-
-

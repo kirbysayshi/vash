@@ -1,6 +1,6 @@
 var vows = require('vows')
 	,assert = require('assert')
-	,vash = require('../src/vash');
+	,vash = require('../build/index');
 	
 vows.describe('vash templating library').addBatch({
 	'a plain text template': {

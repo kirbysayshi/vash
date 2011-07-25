@@ -1,4 +1,3 @@
-(function(root){
 
 function Stack(){
 	this._stack = []
@@ -27,10 +26,8 @@ Stack.prototype = {
 	}
 };
 
-var L;
-
-var VParser = function VParser(str){
-	this.lex = new L(str);
+function VParser(str){
+	this.lex = new VLexer(str);
 	this.tks = this.lex.tks;
 	
 	this.blockStack = new Stack();
@@ -377,14 +374,3 @@ VParser.prototype = {
 	}
 	
 }
-
-if(typeof module !== 'undefined' && module.exports){
-	module["exports"] = VParser;
-	L = require('./vlexer');
-} else {
-	root["vash"] = root["vash"] || {};
-	root["vash"].VParser = VParser;
-	L = root["vash"].VLexer;
-}
-
-})(this);
