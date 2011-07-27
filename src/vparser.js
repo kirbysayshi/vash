@@ -63,12 +63,12 @@ VParser.exceptions = (function(){
 	}
 	
 	return err;
-})
+})();
 
 VParser.prototype = {
 
 	parse: function(){
-		var curr;
+		var curr, i, len, block;
 		
 		while( (curr = this.lex.advance()) ){
 			this.debug && console.debug(curr.val, curr.type, curr);
@@ -91,8 +91,14 @@ VParser.prototype = {
 
 		this._endMode(VParser.modes.MKP);
 
-		if(this.blockStack.count() > 0) 
-			throw new VParser.exceptions.UNMATCHED(this.blockStack.peek().tok);
+		for(i = 0, len = this.blockStack.count(); i < len; i++){
+			block = this.blockStack.pop();
+			
+			// only throw errors if there is an unclosed block
+			if(block.type === VParser.modes.BLK)
+				throw new VParser.exceptions.UNMATCHED(block.tok);
+		}
+			
 		
 		return this.buffers;
 	}

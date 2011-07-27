@@ -591,6 +591,28 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div> </div>' );
 		}
 	}
+	,'unclosed block': {
+		// throws UNMATCHED exception
+		topic: function(){
+			var str = '<div class="yeah"> @for(var i = 0; i < 1; i++){ </div>';
+			return str;
+		}
+		,'throws UNMATCHED': function(topic){
+			assert.throws( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
+		}
+	}
+	,'HTML5': {
+		// unclosed tags do not bork
+		topic: function(){
+			var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i }';
+			return str;
+		}
+		,'unclosed tags does not bork': function(topic){
+			assert.equal( vash.tpl(topic)(), '<div class="how what">This is content <p>0 ' );
+		}
+	}
+	
+	
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
