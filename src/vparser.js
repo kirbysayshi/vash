@@ -24,6 +24,9 @@ Stack.prototype = {
 	,count: function(){
 		return this._stack.length;
 	}
+	,raw: function(){
+		return this._stack;
+	}
 };
 
 function VParser(str){
@@ -231,13 +234,8 @@ VParser.prototype = {
 				break;		
 			
 			case this.tks.BRACE_CLOSE:
-				block = this.blockStack.peek();
-				if(block !== null && block.type === VParser.modes.MKP)
-					this._useToken(curr);
-				else {
-					this._endMode(VParser.modes.BLK);
-					this.lex.defer(curr);
-				}
+				this._endMode(VParser.modes.BLK);
+				this.lex.defer(curr);
 				break;
 			
 			case this.tks.TEXT_TAG_OPEN:
@@ -261,6 +259,9 @@ VParser.prototype = {
 				block = this.blockStack.peek();
 				if(block !== null && block.type === VParser.modes.MKP && tagName[1] === block.tag){
 					this.blockStack.pop();
+				} else {
+					// I can't think of when a closing tag would be found without an opening
+					throw new VParser.exceptions.UNMATCHED(block.tok);
 				}
 				
 				if(this.tks.HTML_TAG_CLOSE === curr.type) this._useToken(curr);
@@ -281,7 +282,8 @@ VParser.prototype = {
 	,_handleBLK: function(curr){
 		
 		var next = this.lex.lookahead(1)
-			,block = null;
+			,block = null
+			,tempStack = [];
 		
 		switch(curr.type){
 			
@@ -317,11 +319,20 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.BRACE_CLOSE:
-				block = this.blockStack.peek();
-				// TODO: throw error if not BLK
+				block = this.blockStack.pop();
+				
+				// try to find a block of type BLK. save non-BLKs for later...
+				while(block !== null && block.type !== VParser.modes.BLK ){
+					tempStack.push(block);
+					block = this.blockStack.pop();
+				}
+				
+				// put non-BLKs back in
+				this.blockStack.raw().push.apply(this.blockStack.raw(), tempStack);
+				
 				if(block === null || (block !== null && block.type !== VParser.modes.BLK))
 					throw new VParser.exceptions.UNMATCHED(curr);
-				this.blockStack.pop();
+				
 				this._useToken(curr);
 				
 				block = this.blockStack.peek();
