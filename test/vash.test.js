@@ -563,12 +563,12 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'content } in closed markup': {
 		topic: function(){
-			var str = '@if(true) { <li> } </li> }';
+			var str = '@if(true) { <li> @} </li> }';
 			return str;
 		}
 		,'does not need to be escaped': function(topic){
-			assert.doesNotThrow( function(){ vash.tpl(topic) }, Error);
-			//assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			//assert.doesNotThrow( function(){ vash.tpl(topic) }, Error);
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED);
 			assert.equal( vash.tpl(topic)(), '<li> } </li>');
 		}
 	}
@@ -578,7 +578,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'can be escaped with @': function(topic){
-			//assert.doesNotThrow( function(){ vash.tpl(topic) }, vash._err.SYNTAX);
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED);
 			assert.equal( vash.tpl(topic)(), '<img src="" /> } ');
 		}
 	}
@@ -602,13 +602,32 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'HTML5': {
-		// unclosed tags do not bork
-		topic: function(){
-			var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i }';
-			return str;
+		'unclosed tags': {
+			topic: function(){
+				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i }';
+				return str;
+			}
+			,'do not bork': function(topic){
+				assert.equal( vash.tpl(topic)(), '<div class="how what">This is content <p>0 ' );
+			}
 		}
-		,'unclosed tags does not bork': function(topic){
-			assert.equal( vash.tpl(topic)(), '<div class="how what">This is content <p>0 ' );
+		,'unclosed tag followed by previous closing tag borks': {
+			topic: function(){
+				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i </div> }';
+				return str;
+			}
+			,'throws UNMATCHED': function(topic){
+				assert.throws( function(){ vash.tpl(topic)() }, vash.VParser.exceptions.UNMATCHED );
+			}
+		}
+		,'self-closing tags WITHOUT /': {
+			topic: function(){
+				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <br>@i </div> }'
+				return str;
+			}
+			,'does not throw UNMATCHED': function(topic){
+				assert.doesNotThrow( function(){ vash.tpl(topic)() }, vash.VParser.exceptions.UNMATCHED );
+			}
 		}
 	}
 	
