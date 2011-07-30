@@ -504,6 +504,19 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic.toString().indexOf("with"), -1 );
 		}
 	}
+	,'including "with"': {
+		topic: function(){
+			var str = '<li>@name</li>'
+				,tpl;
+
+			tpl = vash.tpl(str, true);
+			return tpl;
+		}
+		,'ensures it is there': function(topic){
+			assert.equal( topic({name: 'what'}), "<li>what</li>" );
+			assert.equal( topic.toString().indexOf("with") > -1, true );
+		}
+	}
 	,'model name': {
 		topic: function(){
 			var str = '<li>@it.name</li>'
@@ -630,7 +643,16 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 	}
-	
+	,'simple expression followed by @()': {
+		
+		topic: function(){
+			return '<li data-score="@model.Score" class="user-panel-track @(model.i % 2 === 0 ? \'even\' : \'odd\')">';
+		}
+		,'renders': function(topic){
+			assert.equal( vash.tpl(topic)({ Score: '1', i: 0 })
+				, '<li data-score="1" class="user-panel-track even">');
+		}
+	}
 	
 	//,'putting markup into a property': {
 	//	topic: function(){

@@ -42,15 +42,15 @@ VLexer.prototype = {
 		this.input = this.input.substr(len);
 	}
 
-	,spewIf: function(tok, ifTok){
-		var ifSplit
+	,spewIf: function(tok, ifStr){
+		var parts;
 
 		if(tok){
-			ifSplit = tok.val.split(ifTok);
+			parts = tok.val.split(ifStr);
 
-			if(ifSplit.length > 1){
-				tok.val = ifSplit.shift();
-				this.spew('@' + ifSplit.join(''));
+			if(parts.length > 1){
+				tok.val = parts.shift();
+				this.spew(ifStr + parts.join(ifStr));
 			}
 		}
 		
