@@ -1,7 +1,9 @@
 var vows = require('vows')
 	,assert = require('assert')
-	,vash = require('../build/index');
-	
+	,vash = require('../build/vash');
+
+vash.config.useWith = true;
+
 vows.describe('vash templating library').addBatch({
 	'a plain text template': {
 		topic: function(){
