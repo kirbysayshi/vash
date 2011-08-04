@@ -205,7 +205,8 @@ VParser.prototype = {
 		var  next = this.lex.lookahead(1)
 			,ahead = this.lex.lookahead(2)
 			,block = null
-			,tagName = null;
+			,tagName = null
+			,tempStack = [];
 		
 		switch(curr.type){
 			
@@ -256,13 +257,23 @@ VParser.prototype = {
 				if(tagName === null && next && next.type === this.tks.AT && ahead)
 					tagName = ahead.val.match(/(.*)/); // HACK for </@exp>
 				
-				block = this.blockStack.peek();
-				if(block !== null && block.type === VParser.modes.MKP && tagName[1] === block.tag){
-					this.blockStack.pop();
-				} else {
-					// I can't think of when a closing tag would be found without an opening
+				block = this.blockStack.pop();
+				
+				while(block !== null){
+					if(block.type === VParser.modes.MKP && tagName[1] === block.tag){
+						break;
+					}
+					tempStack.push(block);
+					block = this.blockStack.pop();
+				}
+				
+				if(block === null){
+					// couldn't find opening tag
 					throw new VParser.exceptions.UNMATCHED(block.tok);
 				}
+				
+				// put all blocks back except for found
+				this.blockStack.raw().push.apply(this.blockStack.raw(), tempStack);
 				
 				if(this.tks.HTML_TAG_CLOSE === curr.type) this._useToken(curr);
 

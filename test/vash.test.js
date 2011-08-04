@@ -549,9 +549,9 @@ vows.describe('vash templating library').addBatch({
 			var str = '@if(true) { <li><p></li></p> }';
 			return str;
 		}
-		,'throws "UMATCHED" exception': function(topic){
+		,'does not throw "UMATCHED" exception': function(topic){
 			//vash.tpl(topic);
-			assert.throws( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
+			assert.doesNotThrow( function(){ vash.tpl(topic) }, vash.VParser.exceptions.UNMATCHED );
 		}
 	}
 	,'self closing html tag inside block': {
@@ -624,13 +624,13 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( vash.tpl(topic)(), '<div class="how what">This is content <p>0 ' );
 			}
 		}
-		,'unclosed tag followed by previous closing tag borks': {
+		,'unclosed tag followed by previous closing tag does not bork': {
 			topic: function(){
 				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i </div> }';
 				return str;
 			}
 			,'throws UNMATCHED': function(topic){
-				assert.throws( function(){ vash.tpl(topic)() }, vash.VParser.exceptions.UNMATCHED );
+				assert.doesNotThrow( function(){ vash.tpl(topic)() }, vash.VParser.exceptions.UNMATCHED );
 			}
 		}
 		,'self-closing tags WITHOUT /': {
