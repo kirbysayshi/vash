@@ -1,22 +1,12 @@
 var fs = require('fs')
 	,uglify = require('uglify-js')
 
-	,browserFiles = [
-		'../src/vash.browser.js'
-	]
-	,nodeFiles = [
-		'../src/vash.node.js'
-	]
+	,buildNum = parseInt(fs.readFileSync(__dirname + '/buildnum', 'utf8'), 10)
+	,exp = fs.readFileSync(__dirname + '/../src/vash.exports.js', 'utf8')
 	,commonFiles = [
-		'../src/vlexer.js'
+		 '../src/vlexer.js'
 		,'../src/vparser.js'
-		//,'../src/vash.js'
-	]
-	
-	,common = ''
-	,browser = ''
-	,node = ''
-	,fnWrap = '(function(root){\n????\n})(this)';
+	];
 
 function combine(files){
 	var b = [];
@@ -37,13 +27,12 @@ function minify(str){
 	return pro.gen_code(ast);
 }
 
-
 common = combine(commonFiles);
-browser = combine(browserFiles);
-node = combine(nodeFiles);
+exp = exp
+	.replace('?CODE?', common)
+	.replace('?BUILDNUM?', ++buildNum);
 
-browser = fnWrap.replace('????', common + '\n' + browser);
-
-fs.writeFileSync(__dirname + '/../build/index.js', common + node, 'utf8');
-fs.writeFileSync(__dirname + '/../build/vash.js', browser, 'utf8');
-fs.writeFileSync(__dirname + '/../build/vash.min.js', minify(browser), 'utf8');
+fs.writeFileSync(__dirname + '/buildnum', buildNum.toString(), 'utf8');
+fs.writeFileSync(__dirname + '/../build/vash.js', exp, 'utf8');
+fs.writeFileSync(__dirname + '/../build/vash.min.js', minify(exp), 'utf8');
+console.log('finished build #' + buildNum);
