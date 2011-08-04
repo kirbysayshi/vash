@@ -30,7 +30,8 @@ Stack.prototype = {
 };
 
 function VParser(str){
-	if(typeof str !== 'string') throw new VParser.exceptions.INVALIDINPUT(str);
+	if(typeof str !== 'string')
+		throw new VParser.exceptions.INVALIDINPUT(str);
 	this.lex = new VLexer(str);
 	this.tks = VLexer.tks;
 	
