@@ -1,6 +1,6 @@
 (function(exports){
 
-	exports["version"] = "0.0.1-?BUILDNUM?";
+	exports["version"] = "0.2.1-?BUILDNUM?";
 
 	exports["config"] = {
 		 "useWith": false
