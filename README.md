@@ -20,26 +20,30 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 ## Neat Stuff
 
+* __Works in Browser or in Node__: Comes with built in Express support, and also works clientside in all browsers >= IE6 (!) and up.
 * __Speed__: It's on par with [doT](https://github.com/olado/doT) when rendering with `vash.config.useWith = false` (see test/SPEED.txt, test/vash.speed.js for now). For me, this is "good enough" `:)`.
-* __Small__: it's about 4.5k (2k gzipped) using the closure compiler on advanced.
+* __Small-ish__: it's about 7k (2.5k gzipped) using the closure compiler on advanced.
 * __Portability__: the compiled template functions are completely self-contained with no external dependencies, allowing you to compile your templates on the server, and only output the compiled versions! [Here's an example](https://gist.github.com/1022323) of how you might do that as part of your build process (the script uses doT, but you get the idea).
 * __No dependencies__: Vash itself has no external dependencies, aside from using [Vows](http://vowsjs.org/) for testing.
 * __Complete__: Vash supports approximately 100% of the actual Razor syntax, all the things you actually use. See below for what it doesn't support.
 
+# BUILD
+
+	cd GIT/vash
+	node support/build.js && node test/vash.test.js
+	// creates build/vash.js and build/vash.min.js 
+
 # USAGE
 
 	// include src/vash.js somewhere on the page...
-
 	console.log(vash)
-	
+	// outputs
 	vash
 		tpl: function(string, useWith){}
 		config: {
 			useWith: true
 			modelName: "model"
 		}
-		_generate: function(){} // internal, only public to aid testing
-		_parse: function(){} // internal, only public to aid testing
 
 ### vash.tpl(templateString, [useWith])
 
@@ -90,18 +94,37 @@ Again, rendering is the same regardless:
 	// outputs:
 	// <li>I'm a banana!</li>
 
+# Express Support
+
+	var 
+		 vash = require('path/to/vash')
+		,express = require('express')
+		,app = express.createServer();
+
+	app.configure(function(){	
+		app.use(app.router);
+		app.use(express.static(__dirname + '/fixtures/public'));
+		app.use(express.bodyParser());
+		app.set('views', __dirname + '/views');
+		app.set('view engine', 'vash')
+		app.register('vash', vash);
+	})
+
+Full example coming soon.
+
 # Errata
 
 Since this is JavaScript and not C#, there are a few superfluous aspects of Razor that are not implemented, and most likely never will be. Here is a list of unimplemented Razor features:
 
 * `@foreach`: this is not a JavaScript keyword, and while some code generation could take place, it's tough. Deal. `:)`
 * `@helper`: I believe that this keyword requires more of a View Engine than a template maker. This is outside the realm of Vash, but could be included with some type of Vash Engine.
+* `@using`: JS just doesn't work that way.
 
 # Current Test Results
 
-	node test/vash.test.js 
-	··············································· 
-	✓ OK » 47 honored (0.017s)
+	node support/build.js && node test/vash.test.js
+	································································· 
+	✓ OK » 65 honored (0.037s)
 
 
 # Why Vash?
@@ -121,16 +144,13 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 				> Vash the Stampede! 
 				> vash.tpl()
 					> Very Awesome Scripted HTML
-					> maybe just vash
+					> ...maybe just vash
 
 # TODO
 
 * make npm package
-* avoid pushing new buffer if it's blank
-* implement mode stack for @{} blocks, to avoid extra {} in code generation?
-* for each mode, encapsulate into constructor function, each with own buffer, each gets pushed onto master stack
-* refactor to remove repeated code (mode switches, mostly)
-* change regexes to straight string compares where possible for speed (probably not necessary anymore)
+* rewrite README
+* refactor tests to take advantage of Vows' awesomeness
 * add possiblity for useWith configuration from within template? special keyword?
 
 # License
