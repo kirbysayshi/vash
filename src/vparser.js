@@ -30,6 +30,7 @@ Stack.prototype = {
 };
 
 function VParser(str){
+	if(typeof str !== 'string') throw new VParser.exceptions.INVALIDINPUT(str);
 	this.lex = new VLexer(str);
 	this.tks = VLexer.tks;
 	
@@ -54,6 +55,13 @@ VParser.exceptions = (function(){
 				+ ', character ' + tok.chr
 				+ '. Value: ' + tok.val
 			this.lineNumber = tok.line;
+			this.stack = '';
+		}
+		,INVALIDINPUT: function INVALIDINPUT(input){
+			this.name = "InvalidParserInputError";
+			this.message = 'Asked to parse invalid or non-string input: '
+				+ input;
+			this.lineNumber = 0;
 			this.stack = '';
 		}
 	};

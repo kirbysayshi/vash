@@ -653,6 +653,18 @@ vows.describe('vash templating library').addBatch({
 				, '<li data-score="1" class="user-panel-track even">');
 		}
 	}
+	,'empty string': {
+		topic: function(){ return "" }
+		,'returns empty string': function(topic){
+			assert.equal( vash.tpl(topic)(), '' );
+		}
+	}
+	,'non-string parameter': {
+		topic: function(){ return {} }
+		,'throws exception': function(topic){
+			assert.throws( function(){ vash.tpl(topic)() }, vash.VParser.exceptions.INVALIDINPUT );
+		}
+	}
 	
 	//,'putting markup into a property': {
 	//	topic: function(){
