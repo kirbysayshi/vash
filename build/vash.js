@@ -8,7 +8,7 @@
  */
 (function(exports){
 
-	exports["version"] = "0.2.1-255";
+	exports["version"] = "0.2.2-256";
 
 	exports["config"] = {
 		 "useWith": false
