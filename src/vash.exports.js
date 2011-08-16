@@ -1,3 +1,11 @@
+/**
+ * Vash - JavaScript Template Parser
+ *
+ * https://github.com/kirbysayshi/vash
+ *
+ * Copyright (c) 2011 Andrew Petersen
+ * MIT License (LICENSE)
+ */
 (function(exports){
 
 	exports["version"] = "0.2.1-?BUILDNUM?";
