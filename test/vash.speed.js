@@ -1,5 +1,5 @@
 var  Benchmark = require('benchmark')
-	,vash = require('../build/index')
+	,vash = require('../build/vash')
 	,dot = require('dot')
 	,fs = require('fs')
 
@@ -57,6 +57,8 @@ var  Benchmark = require('benchmark')
 
 //console.log(mediumDTpl.toString());
 //console.log(mediumVTplNoWith.toString());
+
+vash.config.useWith = true;
 
 function logSuiteName(suite){
 	
