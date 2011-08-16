@@ -32,6 +32,11 @@ Full parser / lexer
 # BUILD
 
 	cd GIT/vash
+
+	# one time
+	touch support/buildnum
+	0 > support/buildnum
+
 	node support/build.js && node test/vash.test.js
 	// creates build/vash.js and build/vash.min.js 
 
@@ -127,15 +132,6 @@ Since this is JavaScript and not C#, there are a few superfluous aspects of Razo
 	node support/build.js && node test/vash.test.js
 	································································· 
 	✓ OK » 65 honored (0.037s)
-
-# Building 
-
-	# one time
-	touch support/buildnum
-	0 > support/buildnum
-
-	# then
-	node support/build.js
 
 # Why Vash?
 
