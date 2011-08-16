@@ -73,7 +73,7 @@ Rendering is the same regardless:
 	// outputs:
 	// <li>I'm a banana!</li>
 
-The default is `true`.
+The default is `false`.
 
 Tech note: using a `with` block comes at a severe performance penalty (at least 25x slower!). Using `with` is mostly to support the cleanest syntax as possible.
 
