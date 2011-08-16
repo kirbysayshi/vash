@@ -117,7 +117,7 @@ VParser.prototype = {
 	
 	,compile: function(options){
 		options = options || {};
-		options.useWith = options.useWith === false ? false : true;
+		options.useWith = options.useWith === true ? true : false;
 		options.modelName = options.modelName || 'model';
 	
 		var	 i

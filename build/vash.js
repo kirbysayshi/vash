@@ -8,7 +8,7 @@
  */
 (function(exports){
 
-	exports["version"] = "0.2.1-242";
+	exports["version"] = "0.2.1-255";
 
 	exports["config"] = {
 		 "useWith": false
@@ -350,7 +350,7 @@ VParser.prototype = {
 	
 	,compile: function(options){
 		options = options || {};
-		options.useWith = options.useWith === false ? false : true;
+		options.useWith = options.useWith === true ? true : false;
 		options.modelName = options.modelName || 'model';
 	
 		var	 i
@@ -649,29 +649,24 @@ VParser.prototype = {
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
-	exports["tpl"] = function tpl(str, useWith){
-		// useWith is optional, defaults to value of vash.config.useWith
-		var conf = {
-			useWith: (useWith === true || useWith === false)
-				? useWith
-				: exports.config.useWith
-			,modelName: exports.config.modelName 
-		};
-		
-		var p = new VParser(str);
+	exports["compile"] = function tpl(markup, options){
+
+		var  p = new VParser(markup)
+			,cmp;
+
+		options = options || {};
+		options.useWith = typeof options.useWith === 'undefined' 
+			? exports.config.useWith 
+			: options.useWith;
+		options.modelName = options.modelName || exports.config.modelName;
+
 		p.parse();
-		return p.compile(conf);
-	};
+		cmp = p.compile(options)
 
-	// Express support
-	// This is small enough that it's ok if the browser also gets it
-	exports["compile"] = function(markup, options){
-
-		var cmp = exports.tpl(markup, exports.config.useWith);
-		
+		// Express support
 		return function render(locals){
 			return cmp(locals);
 		}
-	}
+	};
 
 })(typeof exports === 'undefined' ? this['vash'] = {} : exports);

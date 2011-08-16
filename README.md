@@ -5,7 +5,7 @@ Vash is an implementation of the [Razor](http://www.asp.net/webmatrix/tutorials/
 Here's a quick example:
 
 	// compile template
-	var itemTpl = vash.tpl( '<li data-description="@desc.name">This is item number: @number.</li>' );
+	var itemTpl = vash.compile( '<li data-description="@desc.name">This is item number: @number.</li>' );
 	
 	// generate using some data 
 	var out = itemTpl({ desc: { name: 'templating functions seem to breed' }, number: 2 });
@@ -42,21 +42,11 @@ Full parser / lexer
 
 # USAGE
 
-	// include src/vash.js somewhere on the page...
-	console.log(vash)
-	// outputs
-	vash
-		tpl: function(string, useWith){}
-		config: {
-			useWith: true
-			modelName: "model"
-		}
+### vash.compile(templateString, [options])
 
-### vash.tpl(templateString, [useWith])
+Vash has one public method, `vash.compile()`. It accepts a string template, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template. 
 
-Vash has one public method, `vash.tpl()`. It accepts a string template, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template. 
-
-`useWith` is an optional parameter that can be used to override the global `vash.config.useWith`.
+`options` is an optional parameter that can be used to override the global `vash.config`.
 
 ## OPTIONS
 
@@ -104,7 +94,7 @@ Again, rendering is the same regardless:
 # Express Support
 
 	var 
-		 vash = require('path/to/vash')
+		 vash = require('vash')
 		,express = require('express')
 		,app = express.createServer();
 
@@ -154,8 +144,6 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 
 # TODO
 
-* make npm package
-* rewrite README
 * refactor tests to take advantage of Vows' awesomeness
 * add possiblity for useWith configuration from within template? special keyword?
 
