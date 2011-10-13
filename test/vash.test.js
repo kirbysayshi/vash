@@ -170,6 +170,20 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(), '<a href="true"></a>');
 		}
 	}
+	,'simple expression with valid identifier following': {
+		topic: function(){
+			var str = '<a href="@(true)that"></a>';
+			return str;
+		}
+		,'outputs true': function(topic){
+
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
+			try {
+				var tpl = vash.compile(topic);
+				assert.equal(tpl(), '<a href="truethat"></a>');
+			} catch(e){}
+		}
+	}
 	,'expression with nested parenthesis': {
 		topic: function(){
 			var str = '<a href="@( true == (Math.random() + 1 >= 1 ? true : false) ? "red" : "blue" )"></a>';
@@ -204,6 +218,15 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'outputs 1': function(topic){
 			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="1"></a>');
+		}
+	}
+	,'expression with indexed property followed by valid identifer': {
+		topic: function(){
+			var str = '<a href="@what[0]yeah"></a>';
+			return vash.compile(str);
+		}
+		,'outputs 1yeah': function(topic){
+			assert.equal( topic({ what: '1'}), '<a href="1yeah"></a>');
 		}
 	}
 	,'empty anonymous block': {

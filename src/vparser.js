@@ -384,10 +384,18 @@ VParser.prototype = {
 			
 			case this.tks.HARD_PAREN_OPEN:
 				this._useTokens(this._advanceUntilMatched(curr, this.tks.HARD_PAREN_OPEN, this.tks.HARD_PAREN_CLOSE));
+				ahead = this.lex.lookahead(1);
+				if(ahead && ahead.type === this.tks.IDENTIFIER){
+					this._endMode(VParser.modes.MKP);
+				}
 				break;
 			
 			case this.tks.PAREN_OPEN:
 				this._useTokens(this._advanceUntilMatched(curr, this.tks.PAREN_OPEN, this.tks.PAREN_CLOSE));
+				ahead = this.lex.lookahead(1);
+				if(ahead && ahead.type === this.tks.IDENTIFIER){
+					this._endMode(VParser.modes.MKP);
+				}
 				break;
 			
 			case this.tks.PERIOD:
