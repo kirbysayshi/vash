@@ -125,6 +125,16 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="2-what">some text, even, value x</li><li class="3-what">some text, odd, value w</li><li class="odd">Some element, number 1, value b</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="2-what">some text, even, value x</li><li class="3-what">some text, odd, value w</li><li class="even">Some element, number 2, value c</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="2-what">some text, even, value x</li><li class="3-what">some text, odd, value w</li><li class="odd">Some element, number 3, value d</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="2-what">some text, even, value x</li><li class="3-what">some text, odd, value w</li>');
 		}
 	}
+	,'forEach blocks and markup with complex interpolation/expression': {
+		topic: function(){
+			var str = '@model.forEach(function(p){ <li class="@(p.x % 2 == 0 ? \'blue\' : \'red\')">list item</li> });';
+			return vash.compile(str);
+		}
+		,'output markup': function(topic){
+			var model = [{ x: 0, y: 1 }];
+			assert.equal(topic(model), '<li class="blue">list item</li>');
+		}
+	}
 	,'empty try/catch block': {
 		topic: function(){
 			var str = "@try { var i = 0; } catch(e){  }";

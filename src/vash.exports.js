@@ -3,12 +3,12 @@
  *
  * https://github.com/kirbysayshi/vash
  *
- * Copyright (c) 2011 Andrew Petersen
+ * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
 (function(exports){
 
-	exports["version"] = "0.2.2-?BUILDNUM?";
+	exports["version"] = "0.3.0-?BUILDNUM?";
 
 	exports["config"] = {
 		 "useWith": false

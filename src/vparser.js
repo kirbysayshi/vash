@@ -83,7 +83,7 @@ VParser.prototype = {
 		var curr, i, len, block;
 		
 		while( (curr = this.lex.advance()) ){
-			this.debug && console.debug(curr.val, curr.type, curr);
+			this.debug && console.debug(this.mode, curr.type, curr, curr.val);
 			
 			if(this.mode === VParser.modes.MKP){
 				this._handleMKP(curr);
@@ -157,13 +157,15 @@ VParser.prototype = {
 					(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
 						? '+' 
 						: 'out +=') 
-					+ ' (' 
+					//+ ' (' 
 					+ current.value
 						.replace(reQuote, '\"')
 						.replace(reLineBreak, '\\n') 
-					+ ')\n';
+					+ '\n';//+ ')\n';
 			}
 		}
+
+		this.debug && console.debug(generated);
 
 		return new Function(options.modelName, 
 			(options.useWith === true 
@@ -202,6 +204,11 @@ VParser.prototype = {
 		return tks;
 	}
 	
+	// allows a mode switch without closing the current buffer
+	,_retconMode: function(correctMode){
+		this.mode = correctMode;
+	}
+
 	,_endMode: function(nextMode){
 		if(this.buffer !== ''){
 			this.buffers.push( { type: this.mode, value: this.buffer } );
@@ -243,6 +250,11 @@ VParser.prototype = {
 				}
 				break;		
 			
+			case this.tks.BRACE_OPEN:
+				this._endMode(VParser.modes.BLK);
+				this.lex.defer(curr);
+				break;
+
 			case this.tks.BRACE_CLOSE:
 				this._endMode(VParser.modes.BLK);
 				this.lex.defer(curr);
@@ -334,11 +346,13 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.BRACE_OPEN:
+			case this.tks.PAREN_OPEN:
 				this.blockStack.push({ type: VParser.modes.BLK, tok: curr });
 				this._useToken(curr);
 				break;
 			
 			case this.tks.BRACE_CLOSE:
+			case this.tks.PAREN_CLOSE:
 				block = this.blockStack.pop();
 				
 				// try to find a block of type BLK. save non-BLKs for later...
@@ -358,8 +372,9 @@ VParser.prototype = {
 				block = this.blockStack.peek();
 				if(block !== null && block.type === VParser.modes.MKP) 
 					this._endMode(VParser.modes.MKP);
+					
 				break;
-			
+
 			default:
 				this._useToken(curr);
 				break;
@@ -391,16 +406,22 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.PAREN_OPEN:
-				this._useTokens(this._advanceUntilMatched(curr, this.tks.PAREN_OPEN, this.tks.PAREN_CLOSE));
 				ahead = this.lex.lookahead(1);
-				if(ahead && ahead.type === this.tks.IDENTIFIER){
-					this._endMode(VParser.modes.MKP);
+				if(ahead && ahead.type === this.tks.KEYWORD){
+					this.lex.defer(curr);
+					this._retconMode(VParser.modes.BLK);
+				} else {
+					this._useTokens(this._advanceUntilMatched(curr, this.tks.PAREN_OPEN, this.tks.PAREN_CLOSE));
+					ahead = this.lex.lookahead(1);
+					if(ahead && ahead.type === this.tks.IDENTIFIER){
+						this._endMode(VParser.modes.MKP);
+					}	
 				}
 				break;
 			
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
-				if(ahead && ahead.type === this.tks.IDENTIFIER)
+				if(ahead && (ahead.type === this.tks.IDENTIFIER || ahead.type === this.tks.KEYWORD))
 					this._useToken(curr);
 				else {
 					this._endMode(VParser.modes.MKP);

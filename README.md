@@ -16,6 +16,27 @@ Here's a quick example:
 	// outputs:
 	<li data-description="templating functions seem to breed">This is item number: 2.</li>
 
+One more:
+
+	// assume this is in the DOM somewhere:
+	<ul>
+	@model.forEach(function(m){
+		<li>m.lastname, m.firstname</li>
+	})
+	</ul>
+
+	// generate
+	var out = itemTpl([
+		{ firstname: 'Meryl', lastname: 'Stryfe' },
+		{ firstname: 'Milly', lastname: 'Thompson' }
+	]);
+
+	// outputs
+	<ul>
+		<li>Stryfe, Meryl</li>
+		<li>Thompson, Milly</li>
+	</ul>
+
 There are many more examples in the unit tests, located in `test/vash.test.js`. Stand-alone examples are coming soon!
 
 ## Neat Stuff
@@ -120,8 +141,8 @@ Since this is JavaScript and not C#, there are a few superfluous aspects of Razo
 # Current Test Results
 
 	node support/build.js && node test/vash.test.js
-	································································· 
-	✓ OK » 65 honored (0.037s)
+	···································································· 
+	✓ OK » 68 honored (0.033s)
 
 # Why Vash?
 
