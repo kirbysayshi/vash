@@ -41,8 +41,7 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 ## Neat Stuff
 
-Full parser / lexer
-
+* __Full-blown parser / lexer__: Use the parsed tokens for whatever you'd like!
 * __Works in Browser or in Node__: Comes with built in Express support, and also works clientside in all browsers >= IE6 (!) and up.
 * __Speed__: It's on par with [doT](https://github.com/olado/doT) when rendering with `vash.config.useWith = false` (see test/SPEED.txt, test/vash.speed.js for now). For me, this is "good enough" `:)`.
 * __Small-ish__: it's about 7k (2.5k gzipped) using the closure compiler on advanced.
