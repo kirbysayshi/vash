@@ -8,7 +8,7 @@
  */
 (function(exports){
 
-	exports["version"] = "0.3.0-build.?BUILDNUM?";
+	exports["version"] = "0.3.0-?BUILDNUM?";
 
 	exports["config"] = {
 		 "useWith": false
