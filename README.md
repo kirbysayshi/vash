@@ -70,7 +70,7 @@ Vash has one public method, `vash.compile()`. It accepts a string template, and 
 
 ## OPTIONS
 
-### vash.config.useWith = true(default)/false
+### vash.config.useWith = true/false(default)
 
 If `vash.config.useWith` is set to `true`, then Vash will wrap a `with` block around the contents of the compiled function. Set to `false`, changes how you must write your templates, and is best explained with an example:
 
