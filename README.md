@@ -21,7 +21,7 @@ One more:
 	// assume this is in the DOM somewhere:
 	<ul>
 	@model.forEach(function(m){
-		<li>m.lastname, m.firstname</li>
+		<li>@m.lastname, @m.firstname</li>
 	})
 	</ul>
 
