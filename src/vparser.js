@@ -67,9 +67,11 @@ VParser.exceptions = (function(){
 		}
 	};
 	
+	var eproto = new Error();
+
 	for(var e in err){
 		if(err.hasOwnProperty(e)){
-			err[e].prototype = new Error();
+			err[e].prototype = eproto;
 			err[e].constructor = err[e];
 		}
 	}
@@ -127,7 +129,9 @@ VParser.prototype = {
 			,generated = 'var out = "";\n'
 			,modes = VParser.modes
 			,reQuote = /[\"']/gi
-			,reLineBreak = /[\n\r]/gi;
+			,reLineBreak = /[\n\r]/gi
+
+			,func;
 
 		for(i = 0, len = this.buffers.length; i < len; i++){
 			previous = current;
@@ -167,11 +171,19 @@ VParser.prototype = {
 
 		this.debug && console.debug(generated);
 
-		return new Function(options.modelName, 
-			(options.useWith === true 
-				? "with(" + options.modelName + " || {}){" + generated + "}" 
-				: generated ) + "\nreturn out;");
-	
+		try {
+
+			func = new Function(options.modelName, 
+				(options.useWith === true 
+					? "with(" + options.modelName + " || {}){" + generated + "}" 
+					: generated ) + "\nreturn out;");
+
+		} catch(e){
+			e.message += ' :::: GENERATED :::: ' + generated;
+			throw e;	
+		}
+
+		return func;
 	}
 	
 	,_useToken: function(tok){
@@ -183,7 +195,22 @@ VParser.prototype = {
 			this.buffer += toks[i].val;
 		}
 	}
-	
+
+	,_advanceUntilNot: function(untilNot){
+		var curr, next, tks = [];
+
+		while( next = this.lex.lookahead(1) ){
+			if(next.type === untilNot){
+				curr = this.lex.advance();
+				tks.push(curr);
+			} else {
+				break;
+			}
+		}
+		
+		return tks;
+	}
+
 	,_advanceUntilMatched: function(curr, start, end){
 		var next = curr
 			,nstart = 0
@@ -300,10 +327,11 @@ VParser.prototype = {
 
 				block = this.blockStack.peek();
 				if(block !== null && block.type === VParser.modes.BLK){
+					this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 					this._endMode(VParser.modes.BLK);
 				}
 				break;
-			
+
 			default:
 				this._useToken(curr);
 				break;
@@ -369,10 +397,21 @@ VParser.prototype = {
 				
 				this._useToken(curr);
 				
+				// check for: } KEYWORD
+				this._advanceUntilNot(this.tks.WHITESPACE);
+				next = this.lex.lookahead(1);
+				if( next && next.type === this.tks.KEYWORD )
+					break;
+
 				block = this.blockStack.peek();
 				if(block !== null && block.type === VParser.modes.MKP) 
 					this._endMode(VParser.modes.MKP);
 					
+				break;
+
+			case this.tks.WHITESPACE:
+				this._useToken(curr);
+				this._advanceUntilNot(this.tks.WHITESPACE);
 				break;
 
 			default:

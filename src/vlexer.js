@@ -176,7 +176,7 @@ VLexer.prototype = {
 		return this.scan(/^([^\s})@.]+?)/, VLexer.tks.CONTENT);
 	}
 	,WHITESPACE: function(){
-		return this.scan(/^(\s+)/, VLexer.tks.WHITESPACE);
+		return this.scan(/^(\s)/, VLexer.tks.WHITESPACE);
 	}
 	,NEWLINE: function(){
 		var token = this.scan(/^(\n)/, VLexer.tks.NEWLINE);
