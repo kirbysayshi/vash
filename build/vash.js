@@ -8,7 +8,7 @@
  */
 (function(exports){
 
-	exports["version"] = "0.3.1-327";
+	exports["version"] = "0.3.1-332";
 
 	exports["config"] = {
 		 "useWith": false
@@ -22,7 +22,7 @@
 
 function VLexer(str){
 	this.tokens = [];
-	this.input = str.replace(/\r\n|\r/g, '\n');
+	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
 	this.deferredTokens = [];
 	this.stash = [];
 	this.lineno = 1;
@@ -245,7 +245,7 @@ Stack.prototype = {
 		if(this._stack.length > 0)
 			return this._stack.pop();
 		else 
-			throw new Error('Stack Underflow');
+			return null //throw new Error('Stack Underflow');
 	}
 	,peek: function(){
 		if(this._stack.length > 0){
@@ -264,7 +264,7 @@ Stack.prototype = {
 
 function VParser(str){
 	if(typeof str !== 'string')
-		throw new VParser.exceptions.INVALIDINPUT(str);
+		throw this.exceptionFactory(new Error, 'INVALIDINPUT', str);
 	this.lex = new VLexer(str);
 	this.tks = VLexer.tks;
 	
@@ -278,39 +278,6 @@ function VParser(str){
 }
 
 VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
-
-VParser.exceptions = (function(){
-
-	var err = {
-		UNMATCHED: function UNMATCHED(tok){
-			this.name = "UnmatchedCharacterError";
-			this.message = 'Unmatched ' + tok.type
-				+ ' at line ' + tok.line
-				+ ', character ' + tok.chr
-				+ '. Value: ' + tok.val
-			this.lineNumber = tok.line;
-			this.stack = '';
-		}
-		,INVALIDINPUT: function INVALIDINPUT(input){
-			this.name = "InvalidParserInputError";
-			this.message = 'Asked to parse invalid or non-string input: '
-				+ input;
-			this.lineNumber = 0;
-			this.stack = '';
-		}
-	};
-	
-	var eproto = new Error();
-
-	for(var e in err){
-		if(err.hasOwnProperty(e)){
-			err[e].prototype = eproto;
-			err[e].constructor = err[e];
-		}
-	}
-	
-	return err;
-})();
 
 VParser.prototype = {
 
@@ -343,13 +310,16 @@ VParser.prototype = {
 			
 			// only throw errors if there is an unclosed block
 			if(block.type === VParser.modes.BLK)
-				throw new VParser.exceptions.UNMATCHED(block.tok);
+				throw this.exceptionFactory(new Error, 'UNMATCHED', block.tok);
 		}
 			
 		
 		return this.buffers;
 	}
 	
+	// TODO: break compile out to its own object, maybe even own file
+	// TODO: make two passes, once to concat/clean all adjacent same types, once to actually combine and compile
+
 	,compile: function(options){
 		options = options || {};
 		options.useWith = options.useWith === true ? true : false;
@@ -419,6 +389,53 @@ VParser.prototype = {
 		return func;
 	}
 	
+	,exceptionFactory: function(e, type, tok){
+
+		// second param is either a token or string?
+
+		//var context = this.lex.originalInput.split('\n')[tok.line - 1].substring(0, tok.chr + 1);
+		var context = '', i;
+
+		for(i = 0; i < this.buffers.length; i++){
+			context += this.buffers[i].value;
+		}
+
+		if(context.length > 100){
+			context = context.substring( context.length - 100 );
+		}
+
+		switch(type){
+
+			case 'UNMATCHED':
+				e.name = "UnmatchedCharacterError";
+
+				if(tok){
+					e.message = 'Unmatched ' + tok.type
+						+ ' near: "' + context + '"'
+						+ ' at line ' + tok.line
+						+ ', character ' + tok.chr
+						+ '. Value: ' + tok.val;
+					e.lineNumber = tok.line;
+				}
+
+				break;
+
+			case 'INVALIDINPUT':
+				e.name = "InvalidParserInputError";
+				
+				if(tok){
+					this.message = 'Asked to parse invalid or non-string input: '
+						+ tok;
+				}
+				
+				this.lineNumber = 0;
+				break;
+
+		}
+
+		return e;
+	}
+
 	,_useToken: function(tok){
 		this.buffer += tok.val;
 	}
@@ -458,7 +475,7 @@ VParser.prototype = {
 			
 			if(nstart === nend) break;
 			next = this.lex.advance();
-			if(!next) throw new VParser.exceptions.UNMATCHED(curr);
+			if(!next) throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
 		}
 		
 		return tks;
@@ -550,7 +567,7 @@ VParser.prototype = {
 				
 				if(block === null){
 					// couldn't find opening tag
-					throw new VParser.exceptions.UNMATCHED(block.tok);
+					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
 				}
 				
 				// put all blocks back except for found
@@ -626,7 +643,7 @@ VParser.prototype = {
 				this.blockStack.raw().push.apply(this.blockStack.raw(), tempStack);
 				
 				if(block === null || (block !== null && block.type !== VParser.modes.BLK))
-					throw new VParser.exceptions.UNMATCHED(curr);
+					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
 				
 				this._useToken(curr);
 				

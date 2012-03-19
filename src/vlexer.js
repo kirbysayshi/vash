@@ -4,7 +4,7 @@
 
 function VLexer(str){
 	this.tokens = [];
-	this.input = str.replace(/\r\n|\r/g, '\n');
+	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
 	this.deferredTokens = [];
 	this.stash = [];
 	this.lineno = 1;

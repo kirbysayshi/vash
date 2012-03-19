@@ -564,7 +564,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws syntax error': function(topic){
-			assert.throws( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED );
+			assert.throws( function(){ vash.compile(topic) }, Error );
 		}
 	}
 	,'escaping the @ symbol': {
@@ -596,7 +596,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws exception': function(topic){
-			assert.throws( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED );
+			assert.throws( function(){ vash.compile(topic) }, Error );
 		}
 	}
 	,'mixing expressions and text': {
@@ -663,7 +663,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'does not throw "UMATCHED" exception': function(topic){
 			//vash.compile(topic);
-			assert.doesNotThrow( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED );
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 	}
 	,'self closing html tag inside block': {
@@ -693,7 +693,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'does not need to be escaped': function(topic){
 			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
-			assert.doesNotThrow( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED);
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 			assert.equal( vash.compile(topic)(), '<li> } </li> ');
 		}
 	}
@@ -703,7 +703,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'can be escaped with @': function(topic){
-			assert.doesNotThrow( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED);
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 			assert.equal( vash.compile(topic)(), '<img src="" /> } ');
 		}
 	}
@@ -723,7 +723,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'throws UNMATCHED': function(topic){
-			assert.throws( function(){ vash.compile(topic) }, vash.VParser.exceptions.UNMATCHED );
+			assert.throws( function(){ vash.compile(topic) }, Error );
 		}
 	}
 	,'HTML5': {
@@ -742,7 +742,7 @@ vows.describe('vash templating library').addBatch({
 				return str;
 			}
 			,'throws UNMATCHED': function(topic){
-				assert.doesNotThrow( function(){ vash.compile(topic)() }, vash.VParser.exceptions.UNMATCHED );
+				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 			}
 		}
 		,'self-closing tags WITHOUT /': {
@@ -751,7 +751,7 @@ vows.describe('vash templating library').addBatch({
 				return str;
 			}
 			,'does not throw UNMATCHED': function(topic){
-				assert.doesNotThrow( function(){ vash.compile(topic)() }, vash.VParser.exceptions.UNMATCHED );
+				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 			}
 		}
 	}
@@ -774,7 +774,7 @@ vows.describe('vash templating library').addBatch({
 	,'non-string parameter': {
 		topic: function(){ return {} }
 		,'throws exception': function(topic){
-			assert.throws( function(){ vash.compile(topic)() }, vash.VParser.exceptions.INVALIDINPUT );
+			assert.throws( function(){ vash.compile(topic)() }, Error );
 		}
 	}
 	
