@@ -19,6 +19,7 @@ VLexer.prototype = {
 			,line: this.lineno
 			,chr: this.charno
 			,val: val
+			,touched: 0
 		}
 	}
 	
@@ -46,10 +47,12 @@ VLexer.prototype = {
 		var parts;
 
 		if(tok){
+			tok.touched += 1;
 			parts = tok.val.split(ifStr);
 
 			if(parts.length > 1){
 				tok.val = parts.shift();
+				tok.touched += 1;
 				this.spew(ifStr + parts.join(ifStr));
 			}
 		}
@@ -64,6 +67,7 @@ VLexer.prototype = {
 	}
 
 	,defer: function(tok){
+		tok.touched += 1;
 		this.deferredTokens.push(tok);
 	}
 
@@ -106,13 +110,27 @@ VLexer.prototype = {
 	}
 
 	,deferred: function() {
-		return this.deferredTokens.length 
-			&& this.deferredTokens.shift();
+
+		var tok = this.deferredTokens.shift();
+
+		if(tok){
+			tok.touched += 1;
+			return tok;
+		} else {
+			return false;
+		}
 	}
 
 	,stashed: function() {
-		return this.stash.length
-			&& this.stash.shift();
+		
+		var tok = this.stash.shift();
+
+		if(tok) {
+			tok.touched += 1;
+			return tok;
+		} else {
+			return false;
+		}
 	}
 	
 	,AT: function(){
@@ -160,6 +178,9 @@ VLexer.prototype = {
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
+	,FUNCTION: function(){
+		return this.scan(/^(function)(?![\d\w])/, VLexer.tks.FUNCTION);
+	}
 	,KEYWORD: function(){
 		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/, VLexer.tks.KEYWORD);
 	}
@@ -206,6 +227,7 @@ VLexer.tks = {
 	,HTML_TAG_OPEN: 'HTML_TAG_OPEN'
 	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
 	,KEYWORD: 'KEYWORD'
+	,FUNCTION: 'FUNCTION'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
 	,CONTENT: 'CONTENT'

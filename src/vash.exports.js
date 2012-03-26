@@ -1,3 +1,5 @@
+/*jshint strict:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+
 /**
  * Vash - JavaScript Template Parser
  *
@@ -8,6 +10,7 @@
  */
 (function(exports){
 
+	"use strict";
 	exports["version"] = "0.3.1-?BUILDNUM?";
 
 	exports["config"] = {
