@@ -567,6 +567,24 @@ vows.describe('vash templating library').addBatch({
 			assert.throws( function(){ vash.compile(topic) }, Error );
 		}
 	}
+	,'expression with spaces in func call': {
+		topic: function(){
+			var str = '<span>@a.replace("x", "o")</span>';
+			return str;
+		}
+		,'throws syntax error': function(topic){
+			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>oxx</span>');
+		}
+	}
+	,'expression with regex in func call': {
+		topic: function(){
+			var str = '<span>@a.replace(/x/gi, "o")</span>';
+			return str;
+		}
+		,'throws syntax error': function(topic){
+			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>ooo</span>');
+		}
+	}
 	,'escaping the @ symbol': {
 		topic: function(){
 			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
@@ -775,6 +793,24 @@ vows.describe('vash templating library').addBatch({
 		topic: function(){ return {} }
 		,'throws exception': function(topic){
 			assert.throws( function(){ vash.compile(topic)() }, Error );
+		}
+	}
+	,'@function': {
+		topic: function(){ return '@function doWhat(){ return "what"; } @doWhat()' }
+		,compiles: function(topic){
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
+		}
+		,'can be called': function(topic){
+			assert.equal( vash.compile(topic)(), 'what' );
+		}
+	}
+	,'@function with markup': {
+		topic: function(){ return '@function doWhat(input){ <li>@input.name</li> } @doWhat(model)' }
+		,compiles: function(topic){
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
+		}
+		,'can be called': function(topic){
+			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li>' );
 		}
 	}
 	

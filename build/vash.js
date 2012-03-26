@@ -1,3 +1,5 @@
+/*jshint strict:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+
 /**
  * Vash - JavaScript Template Parser
  *
@@ -8,7 +10,8 @@
  */
 (function(exports){
 
-	exports["version"] = "0.3.1-332";
+	"use strict";
+	exports["version"] = "0.3.1-365";
 
 	exports["config"] = {
 		 "useWith": false
@@ -37,6 +40,7 @@ VLexer.prototype = {
 			,line: this.lineno
 			,chr: this.charno
 			,val: val
+			,touched: 0
 		}
 	}
 	
@@ -64,10 +68,12 @@ VLexer.prototype = {
 		var parts;
 
 		if(tok){
+			tok.touched += 1;
 			parts = tok.val.split(ifStr);
 
 			if(parts.length > 1){
 				tok.val = parts.shift();
+				tok.touched += 1;
 				this.spew(ifStr + parts.join(ifStr));
 			}
 		}
@@ -82,6 +88,7 @@ VLexer.prototype = {
 	}
 
 	,defer: function(tok){
+		tok.touched += 1;
 		this.deferredTokens.push(tok);
 	}
 
@@ -124,13 +131,27 @@ VLexer.prototype = {
 	}
 
 	,deferred: function() {
-		return this.deferredTokens.length 
-			&& this.deferredTokens.shift();
+
+		var tok = this.deferredTokens.shift();
+
+		if(tok){
+			tok.touched += 1;
+			return tok;
+		} else {
+			return false;
+		}
 	}
 
 	,stashed: function() {
-		return this.stash.length
-			&& this.stash.shift();
+		
+		var tok = this.stash.shift();
+
+		if(tok) {
+			tok.touched += 1;
+			return tok;
+		} else {
+			return false;
+		}
 	}
 	
 	,AT: function(){
@@ -178,6 +199,9 @@ VLexer.prototype = {
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
+	,FUNCTION: function(){
+		return this.scan(/^(function)(?![\d\w])/, VLexer.tks.FUNCTION);
+	}
 	,KEYWORD: function(){
 		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/, VLexer.tks.KEYWORD);
 	}
@@ -224,6 +248,7 @@ VLexer.tks = {
 	,HTML_TAG_OPEN: 'HTML_TAG_OPEN'
 	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
 	,KEYWORD: 'KEYWORD'
+	,FUNCTION: 'FUNCTION'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
 	,CONTENT: 'CONTENT'
@@ -275,6 +300,7 @@ function VParser(str){
 	this.buffers = [];
 
 	this.debug = false;
+	this.consumedTokens = [];
 }
 
 VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -282,7 +308,7 @@ VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block;
+		var curr, i, len, block, orderedTokens;
 		
 		while( (curr = this.lex.advance()) ){
 			this.debug && console.debug(this.mode, curr.type, curr, curr.val);
@@ -312,7 +338,13 @@ VParser.prototype = {
 			if(block.type === VParser.modes.BLK)
 				throw this.exceptionFactory(new Error, 'UNMATCHED', block.tok);
 		}
-			
+		
+		if(this.debug){
+			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched })
+			console.group('Top 30 tokens ordered by TOUCHING');
+			orderedTokens.slice(0, 30).forEach(function(tok){ console.debug( tok.touched, tok ) })
+			console.groupEnd();
+		}
 		
 		return this.buffers;
 	}
@@ -437,11 +469,13 @@ VParser.prototype = {
 	}
 
 	,_useToken: function(tok){
+		this.debug && this.consumedTokens.push(tok);
 		this.buffer += tok.val;
 	}
 	
 	,_useTokens: function(toks){
 		for(var i = 0, len = toks.length; i < len; i++){
+			this.debug && this.consumedTokens.push(toks[i]);
 			this.buffer += toks[i].val;
 		}
 	}
@@ -516,6 +550,7 @@ VParser.prototype = {
 						break;
 					
 					case this.tks.KEYWORD:
+					case this.tks.FUNCTION:
 					case this.tks.BRACE_OPEN:
 						this._endMode(VParser.modes.BLK);
 						break;
@@ -576,7 +611,10 @@ VParser.prototype = {
 				if(this.tks.HTML_TAG_CLOSE === curr.type) this._useToken(curr);
 
 				block = this.blockStack.peek();
-				if(block !== null && block.type === VParser.modes.BLK){
+				if(
+					block !== null && block.type === VParser.modes.BLK 
+					&& (next.type === this.tks.WHITESPACE || next.type === this.tks.NEWLINE) 
+				){
 					this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 					this._endMode(VParser.modes.BLK);
 				}
@@ -644,13 +682,13 @@ VParser.prototype = {
 				
 				if(block === null || (block !== null && block.type !== VParser.modes.BLK))
 					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
-				
+
 				this._useToken(curr);
 				
 				// check for: } KEYWORD
 				this._advanceUntilNot(this.tks.WHITESPACE);
 				next = this.lex.lookahead(1);
-				if( next && next.type === this.tks.KEYWORD )
+				if( next && (next.type === this.tks.KEYWORD || next.type === this.tks.FUNCTION) )
 					break;
 
 				block = this.blockStack.peek();
@@ -677,10 +715,11 @@ VParser.prototype = {
 		
 		switch(curr.type){
 			
-			case this.tks.KEYWORD:		
+			case this.tks.KEYWORD:
+			case this.tks.FUNCTION:	
 				this._endMode(VParser.modes.BLK);
 				this.lex.defer(curr);
-				break
+				break;
 			
 			case this.tks.IDENTIFIER:
 				this._useToken(curr);		
@@ -696,7 +735,7 @@ VParser.prototype = {
 			
 			case this.tks.PAREN_OPEN:
 				ahead = this.lex.lookahead(1);
-				if(ahead && ahead.type === this.tks.KEYWORD){
+				if(ahead && (ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION) ){
 					this.lex.defer(curr);
 					this._retconMode(VParser.modes.BLK);
 				} else {
@@ -710,7 +749,7 @@ VParser.prototype = {
 			
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
-				if(ahead && (ahead.type === this.tks.IDENTIFIER || ahead.type === this.tks.KEYWORD))
+				if(ahead && (ahead.type === this.tks.IDENTIFIER || ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION))
 					this._useToken(curr);
 				else {
 					this._endMode(VParser.modes.MKP);
