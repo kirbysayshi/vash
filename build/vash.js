@@ -11,7 +11,7 @@
 (function(exports){
 
 	"use strict";
-	exports["version"] = "0.3.1-365";
+	exports["version"] = "0.3.1-366";
 
 	exports["config"] = {
 		 "useWith": false

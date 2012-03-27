@@ -12,10 +12,10 @@ var  Benchmark = require('benchmark')
 	,mediumDTemplate = fs.readFileSync(__dirname + '/fixtures/mediumTemplate.dot.html', 'utf8')
 	,smallDTemplate = fs.readFileSync(__dirname + '/fixtures/smallTemplate.dot.html', 'utf8')
 
-	,largeVTpl = vash.tpl(largeVTemplate)
-	,mediumVTpl = vash.tpl(mediumVTemplate)
-	,mediumVTplNoWith = vash.tpl(mediumVTemplateNoWith, false)
-	,smallVTpl = vash.tpl(smallVTemplate)
+	,largeVTpl = vash.compile(largeVTemplate, { useWith: true })
+	,mediumVTpl = vash.compile(mediumVTemplate, { useWith: true })
+	,mediumVTplNoWith = vash.compile(mediumVTemplateNoWith)
+	,smallVTpl = vash.compile(smallVTemplate, { useWith: true })
 
 	,largeDTpl = dot.template(largeDTemplate)
 	,mediumDTpl = dot.template(mediumDTemplate)
@@ -116,7 +116,7 @@ suite = new Benchmark.Suite("vash vs doT compilation large")
 	dot.template( largeDTemplate )
 })
 .add("vash#tpl large", function(){
-	vash.tpl(largeVTemplate)
+	vash.compile(largeVTemplate)
 })
 logSuiteName(suite);
 suite.run();
@@ -126,10 +126,10 @@ suite = new Benchmark.Suite("vash vs doT compilation medium")
 	dot.template( mediumDTemplate )
 })
 .add("vash#tpl medium", function(){
-	vash.tpl(mediumVTemplate)
+	vash.compile(mediumVTemplate)
 })
 .add("vash#tpl medium no with", function(){
-	vash.tpl(mediumVTemplateNoWith, false)
+	vash.compile(mediumVTemplateNoWith, false)
 })
 logSuiteName(suite);
 suite.run();
@@ -139,7 +139,7 @@ suite = new Benchmark.Suite("vash vs doT compilation small")
 	dot.template( smallDTemplate )
 })
 .add("vash#tpl small", function(){
-	vash.tpl(smallVTemplate)
+	vash.compile(smallVTemplate)
 })
 logSuiteName(suite);
 suite.run();
