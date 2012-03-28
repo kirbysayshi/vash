@@ -25,7 +25,7 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'during "why are you using a template?"-style idiotic edge-cased interpolation': {
 		topic: function(){
-			return vash.compile('@i');
+			return vash.compile('@i', { htmlEscape: false });
 		}
 		,'we get 2 from just @i': function(topic){
 			assert.equal( topic({ i: 2 }), 2 );
@@ -786,7 +786,7 @@ vows.describe('vash templating library').addBatch({
 	,'empty string': {
 		topic: function(){ return "" }
 		,'returns empty string': function(topic){
-			assert.equal( vash.compile(topic)(), '' );
+			assert.throws( function(){ vash.compile(topic)() }, Error );
 		}
 	}
 	,'non-string parameter': {
@@ -810,10 +810,42 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li>' );
+			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li> ' );
 		}
 	}
 	
+	,'html escaping': {
+
+		'basic': {
+			topic: function(){
+				return vash.compile( '<span>@it</span>' );
+			}
+			,'is escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), '<span>&lt;b&gt;texted&lt;/b&gt;</span>' );
+			}
+		}
+
+		,'force no escaping': {
+			topic: function(){
+				return vash.compile( '<span>@it</span>', { htmlEscape: false } );
+			}
+			,'is escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
+			}	
+		}
+
+		,'multiple function calls': {
+			topic: function(){
+				return vash.compile( '@function f(i){ <b>@i</b> }<span>@f(it)</span>@f(it)' );
+			}
+			,'are escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), 
+					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b> </span><b>&lt;b&gt;texted&lt;/b&gt;</b> ' );
+			}
+		}
+
+	}
+
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';

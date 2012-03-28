@@ -10,12 +10,13 @@
  */
 (function(exports){
 
-	"use strict";
-	exports["version"] = "0.3.1-?BUILDNUM?";
+	
+	exports["version"] = "0.4.1-?BUILDNUM?";
 
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
+		,"debug": false
 	};
 
 	/************** Begin injected code from build script */
@@ -24,24 +25,28 @@
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
+	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function tpl(markup, options){
 
-		var  p = new VParser(markup)
+		var  p
+			,c
 			,cmp;
 
 		options = options || {};
-		options.useWith = typeof options.useWith === 'undefined' 
-			? exports.config.useWith 
-			: options.useWith;
+		options.useWith = options.useWith || exports.config.useWith ;
 		options.modelName = options.modelName || exports.config.modelName;
+		options.debug = options.debug || exports.config.debug;
 
+		p = new VParser(markup, options);
 		p.parse();
-		cmp = p.compile(options)
+
+		c = new VCompiler(p.buffers, p.lex.originalInput);
+		c.generate(options);
 
 		// Express support
-		return function render(locals){
-			return cmp(locals);
-		}
+		cmp = c.assemble(options);
+		cmp.displayName = 'render';
+		return cmp;
 	};
 
-})(typeof exports === 'undefined' ? this['vash'] = {} : exports);
+})(typeof exports === 'undefined' ? (this['vash'] = this['vash'] || {}) : exports);

@@ -15,6 +15,7 @@ var  Benchmark = require('benchmark')
 	,largeVTpl = vash.compile(largeVTemplate, { useWith: true })
 	,mediumVTpl = vash.compile(mediumVTemplate, { useWith: true })
 	,mediumVTplNoWith = vash.compile(mediumVTemplateNoWith)
+	,mediumVTplNoWithNoEscape = vash.compile( mediumVTemplateNoWith, { debug: false, useWith: false, htmlEscape: false } )
 	,smallVTpl = vash.compile(smallVTemplate, { useWith: true })
 
 	,largeDTpl = dot.template(largeDTemplate)
@@ -48,6 +49,9 @@ var  Benchmark = require('benchmark')
 		 somevar: 'no'
 		,anothervar: 'there is another'
 	}
+
+	,mediumVConfig = { debug: false, useWith: false, htmlEscape: false }
+	,mediumVConfigHtmlEscape = { debug: false, useWith: false, htmlEscape: true }
 
 	,largeTokens = new vash.VParser(largeVTemplate).parse()
 	,mediumTokens = new vash.VParser(mediumVTemplate).parse()
@@ -95,8 +99,8 @@ suite = new Benchmark.Suite("vash parse times by template size")
 .add("vash#parse small", function(){
 	new vash.VParser(smallVTemplate).parse()
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 //suite = new Benchmark.Suite("vash generate times by template size")
 //.add("vash#generate tokens large", function(){
@@ -118,8 +122,8 @@ suite = new Benchmark.Suite("vash vs doT compilation large")
 .add("vash#tpl large", function(){
 	vash.compile(largeVTemplate)
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation medium")
 .add("dot#template medium", function(){
@@ -141,8 +145,8 @@ suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("vash#tpl small", function(){
 	vash.compile(smallVTemplate)
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT render large")
 .add("dot#template large", function(){
@@ -151,8 +155,8 @@ suite = new Benchmark.Suite("vash vs doT render large")
 .add("vash#tpl large", function(){
 	largeVTpl( largeData );
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT render medium")
 .add("dot#template medium", function(){
@@ -164,6 +168,9 @@ suite = new Benchmark.Suite("vash vs doT render medium")
 .add("vash#tpl medium no with", function(){
 	mediumVTplNoWith( mediumData )
 })
+.add("vash#tpl medium no with no htmlescape", function(){
+	mediumVTplNoWithNoEscape( mediumData )
+})
 logSuiteName(suite);
 suite.run();
 
@@ -174,6 +181,43 @@ suite = new Benchmark.Suite("vash vs doT render small")
 .add("vash#tpl small", function(){
 	smallVTpl( smallData )
 })
+//logSuiteName(suite);
+//suite.run();
+
+var indexed = function(){
+    var idx = 0, out = [];
+    
+    out[idx++] = Math.random()
+    out[idx++] = Math.random()
+    out[idx++] = Math.random()
+}
+    
+var pushed = function(){
+    var out = [];
+    
+    out.push(Math.random())
+    out.push(Math.random())
+    out.push(Math.random())
+}
+
+var plussed = function(){
+    var out = '';
+    
+    out += '' + Math.random()
+    out += '' + Math.random()
+    out += '' + Math.random()
+}
+
+suite = new Benchmark.Suite('array index vs push')
+.add('indexed', function(){
+	indexed();
+})
+.add('pushed', function(){
+	pushed();
+})
+.add('plussed', function(){
+	plussed();
+});
 logSuiteName(suite);
 suite.run();
 

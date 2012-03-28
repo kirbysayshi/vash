@@ -104,9 +104,13 @@ VLexer.prototype = {
 			|| this.PERIOD()
 			|| this.NEWLINE()
 			|| this.WHITESPACE()
+			|| this.FUNCTION()
 			|| this.KEYWORD()
+			|| this.HTML_RAW()
+			//|| this.BLOCK_GENERATOR()
 			|| this.IDENTIFIER()
 			|| this.CONTENT()
+			//|| this.EOF()
 	}
 
 	,deferred: function() {
@@ -187,6 +191,12 @@ VLexer.prototype = {
 	,IDENTIFIER: function(){
 		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, VLexer.tks.IDENTIFIER);
 	}
+	,HTML_RAW: function(){
+		return this.scan(/^(vash\.raw)(?![\d\w])/, VLexer.tks.HTML_RAW);
+	}
+	//,BLOCK_GENERATOR: function(){
+	//	return this.scan(/^(helper)(?![\d\w])/, VLexer.tks.BLOCK_GENERATOR);
+	//}
 	,PERIOD: function(){
 		return this.scan(/^(\.)/, VLexer.tks.PERIOD);
 	}
@@ -206,6 +216,9 @@ VLexer.prototype = {
 			this.charno = 0;
 		}
 		return token;
+	}
+	,EOF: function(){
+		return this.scan(/^$/, VLexer.tks.EOF);
 	}
 }
 
@@ -233,4 +246,7 @@ VLexer.tks = {
 	,CONTENT: 'CONTENT'
 	,WHITESPACE: 'WHITESPACE'
 	,NEWLINE: 'NEWLINE'
+	,EOF: 'EOF'
+	,HTML_RAW: 'HTML_RAW'
+	//,BLOCK_GENERATOR: 'BLOCK_GENERATOR'
 };

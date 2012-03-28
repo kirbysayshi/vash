@@ -10,12 +10,13 @@
  */
 (function(exports){
 
-	"use strict";
-	exports["version"] = "0.3.1-366";
+	
+	exports["version"] = "0.4.1-475";
 
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
+		,"debug": false
 	};
 
 	/************** Begin injected code from build script */
@@ -125,9 +126,13 @@ VLexer.prototype = {
 			|| this.PERIOD()
 			|| this.NEWLINE()
 			|| this.WHITESPACE()
+			|| this.FUNCTION()
 			|| this.KEYWORD()
+			|| this.HTML_RAW()
+			//|| this.BLOCK_GENERATOR()
 			|| this.IDENTIFIER()
 			|| this.CONTENT()
+			//|| this.EOF()
 	}
 
 	,deferred: function() {
@@ -208,6 +213,12 @@ VLexer.prototype = {
 	,IDENTIFIER: function(){
 		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, VLexer.tks.IDENTIFIER);
 	}
+	,HTML_RAW: function(){
+		return this.scan(/^(vash\.raw)(?![\d\w])/, VLexer.tks.HTML_RAW);
+	}
+	//,BLOCK_GENERATOR: function(){
+	//	return this.scan(/^(helper)(?![\d\w])/, VLexer.tks.BLOCK_GENERATOR);
+	//}
 	,PERIOD: function(){
 		return this.scan(/^(\.)/, VLexer.tks.PERIOD);
 	}
@@ -227,6 +238,9 @@ VLexer.prototype = {
 			this.charno = 0;
 		}
 		return token;
+	}
+	,EOF: function(){
+		return this.scan(/^$/, VLexer.tks.EOF);
 	}
 }
 
@@ -254,6 +268,9 @@ VLexer.tks = {
 	,CONTENT: 'CONTENT'
 	,WHITESPACE: 'WHITESPACE'
 	,NEWLINE: 'NEWLINE'
+	,EOF: 'EOF'
+	,HTML_RAW: 'HTML_RAW'
+	//,BLOCK_GENERATOR: 'BLOCK_GENERATOR'
 };
 
 
@@ -287,20 +304,24 @@ Stack.prototype = {
 	}
 };
 
-function VParser(str){
-	if(typeof str !== 'string')
-		throw this.exceptionFactory(new Error, 'INVALIDINPUT', str);
+function VParser(str, options){
+	
+	options = options || {}
+
 	this.lex = new VLexer(str);
 	this.tks = VLexer.tks;
 	
 	this.blockStack = new Stack();
 	this.mode = VParser.modes.MKP;
 	
-	this.buffer = '';
+	this.buffer = [];
 	this.buffers = [];
 
-	this.debug = false;
+	this.debug = options.debug;
 	this.consumedTokens = [];
+
+	if(typeof str !== 'string' || str.length === 0)
+		throw this.exceptionFactory(new Error, 'INVALIDINPUT', str);
 }
 
 VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -340,85 +361,15 @@ VParser.prototype = {
 		}
 		
 		if(this.debug){
-			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched })
-			console.group('Top 30 tokens ordered by TOUCHING');
-			orderedTokens.slice(0, 30).forEach(function(tok){ console.debug( tok.touched, tok ) })
+			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched });
+			(console.groupCollapsed 
+				? console.groupCollapsed('Top 30 tokens ordered by TOUCHING')
+				: console.group('Top 30 tokens ordered by TOUCHING') );
+			orderedTokens.slice(0, 30).forEach(function(tok){ console.debug( tok.touched, tok ) });
 			console.groupEnd();
 		}
 		
 		return this.buffers;
-	}
-	
-	// TODO: break compile out to its own object, maybe even own file
-	// TODO: make two passes, once to concat/clean all adjacent same types, once to actually combine and compile
-
-	,compile: function(options){
-		options = options || {};
-		options.useWith = options.useWith === true ? true : false;
-		options.modelName = options.modelName || 'model';
-	
-		var	 i
-			,len
-			,previous = null
-			,current = null
-			,generated = 'var out = "";\n'
-			,modes = VParser.modes
-			,reQuote = /[\"']/gi
-			,reLineBreak = /[\n\r]/gi
-
-			,func;
-
-		for(i = 0, len = this.buffers.length; i < len; i++){
-			previous = current;
-			current = this.buffers[i];
-
-			if(current.type === modes.MKP){
-				generated += 
-					(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
-						? '+' 
-						: 'out += ') 
-					+ '\'' 
-					+ current.value
-						.replace(reQuote, '\"')
-						.replace(reLineBreak, '\\n') 
-					+ '\'\n';
-			}
-
-			if(current.type === modes.BLK){
-				// Nuke new lines, otherwise causes parse error
-				generated += current.value
-					.replace(reQuote, '\"')
-					.replace(reLineBreak, '') + '\n';
-			}
-
-			if(current.type === modes.EXP){
-				generated += 
-					(previous !== null && (previous.type === modes.MKP || previous.type === modes.EXP) 
-						? '+' 
-						: 'out +=') 
-					//+ ' (' 
-					+ current.value
-						.replace(reQuote, '\"')
-						.replace(reLineBreak, '\\n') 
-					+ '\n';//+ ')\n';
-			}
-		}
-
-		this.debug && console.debug(generated);
-
-		try {
-
-			func = new Function(options.modelName, 
-				(options.useWith === true 
-					? "with(" + options.modelName + " || {}){" + generated + "}" 
-					: generated ) + "\nreturn out;");
-
-		} catch(e){
-			e.message += ' :::: GENERATED :::: ' + generated;
-			throw e;	
-		}
-
-		return func;
 	}
 	
 	,exceptionFactory: function(e, type, tok){
@@ -470,13 +421,13 @@ VParser.prototype = {
 
 	,_useToken: function(tok){
 		this.debug && this.consumedTokens.push(tok);
-		this.buffer += tok.val;
+		this.buffer.push( tok );
 	}
 	
 	,_useTokens: function(toks){
 		for(var i = 0, len = toks.length; i < len; i++){
 			this.debug && this.consumedTokens.push(toks[i]);
-			this.buffer += toks[i].val;
+			this.buffer.push( toks[i] );
 		}
 	}
 
@@ -521,10 +472,18 @@ VParser.prototype = {
 	}
 
 	,_endMode: function(nextMode){
-		if(this.buffer !== ''){
-			this.buffers.push( { type: this.mode, value: this.buffer } );
-			this.buffer = '';
+		if(this.buffer.length !== 0){
+
+			// mark all tokens with their appropriate mode
+			// and add to flat list of global tokens
+			for(var i = 0; i < this.buffer.length; i++){
+				this.buffer[i].mode = this.mode;
+				this.buffers.push( this.buffer[i] );
+			}
+
+			this.buffer.length = 0;
 		}
+
 		this.mode = nextMode || VParser.modes.MKP;
 	}
 	
@@ -546,12 +505,14 @@ VParser.prototype = {
 					
 					case this.tks.PAREN_OPEN:
 					case this.tks.IDENTIFIER:
+					case this.tks.HTML_RAW:
 						this._endMode(VParser.modes.EXP);
 						break;
 					
 					case this.tks.KEYWORD:
 					case this.tks.FUNCTION:
 					case this.tks.BRACE_OPEN:
+					case this.tks.BLOCK_GENERATOR:
 						this._endMode(VParser.modes.BLK);
 						break;
 					
@@ -722,6 +683,7 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.IDENTIFIER:
+			case this.tks.HTML_RAW:
 				this._useToken(curr);		
 				break;
 			
@@ -769,28 +731,322 @@ VParser.prototype = {
 	
 }
 
+
+function VCompiler(tokens, originalMarkup){
+	this.tokens = tokens;
+	this.originalMarkup = originalMarkup;
+	this.symbolTable = {};
+}
+
+var VCP = VCompiler.prototype;
+
+
+VCP.generate = function(options){
+
+	if(options.htmlEscape !== false){
+		this.buildSymbolTable();
+		this.insertHTMLExpressionEscape();	
+	}
+	
+	//this.insertFunctionBuffering();
+	this.mergeTokens();
+}
+
+VCP.assemble = function(options){
+	// actually turn into a function
+
+	var i, tok, lines = []
+		,reQuote = /[\"']/gi
+		,reLineBreak = /[\n\r]/gi
+		,body
+		,func;
+
+	// suprisingly: http://jsperf.com/array-index-vs-push
+	lines.push("var __vout = []; \n");
+
+	options.debug && lines.push('var __vline = 0, __vchar = 0;');
+
+	for(i = 0; i < this.tokens.length; i++){
+		tok = this.tokens[i];
+
+		options.debug && console.log(tok);
+		options.debug && lines.push( '__vline = ' + tok.line + '; __vchar = ' + tok.chr + ';' )
+
+		// normalize in prep for eval
+		tok.val = tok.val.replace(reQuote, '\"');
+
+		if(tok.mode === VParser.modes.MKP){
+			lines.push( '__vout.push(\'' + tok.val.replace(reLineBreak, '\\n') + '\');' )
+		}
+
+		if(tok.mode === VParser.modes.BLK){
+			// Nuke new lines, otherwise causes parse error
+			lines.push( tok.val.replace(reLineBreak, '') )
+		}
+
+		if(tok.mode === VParser.modes.EXP){
+			lines.push( '__vout.push(' + tok.val.replace(reLineBreak, '\\n') + ');' )
+		}
+	}
+
+	if(options.useWith === true){
+		lines.unshift( "with(" + options.modelName + " || {}){ \n" );
+		lines.push("}");
+	}
+
+	if(options.debug){
+		lines.unshift( 'try { \n' );
+		lines.push( '} catch(e){ (' 
+			+ VCP.reportError.toString()
+			+ ')(e, __vline, __vchar) } \n' )
+	}
+
+	lines.push('return __vout.join(\'\');');
+	body = lines.join('');
+	options.debug && console.log(body);
+	//console.log(body);
+
+	try {
+		func = new Function(options.modelName, body);
+	} catch(e){
+		e.message += ' :::: GENERATED :::: ' + body;
+		throw e;	
+	}
+
+	return func;
+}
+
+VCP.mergeTokens = function(){
+	var  all = []
+		,currentCondenser = this.tokens[0]
+		,tok
+		,i;
+
+	for(i = 1; i < this.tokens.length; i++){
+		tok = this.tokens[i];
+
+		if(currentCondenser.mode === tok.mode){
+			currentCondenser.val += tok.val;
+			currentCondenser.type += ' ' + tok.type;
+		} else {
+			all.push(currentCondenser);
+			currentCondenser = tok;
+		}
+	}
+
+	all.push(currentCondenser);
+
+	this.tokens = all;
+	return this.tokens;
+}
+
+// transform functions
+
+VCP.insertHTMLExpressionEscape = function(){
+	var i, tok, nextNotExp, edgeCase = false;
+
+	for(i = 0; i < this.tokens.length; i++){
+		tok = this.tokens[i];
+		nextNotExp = -1;
+
+		if(tok.mode !== VParser.modes.EXP) continue;
+		if(tok.type === VLexer.tks.HTML_RAW || this.symbolTable[tok.val] === true) {
+			nextNotExp = Math.max(this.tokens.length - 1, this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i) - 1);
+			i = nextNotExp; // skip i ahead, remembering auto inc
+			continue; // named helper function, do not escape
+		}
+
+		nextNotExp = this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i);
+
+		// EDGE CASE!
+		if(nextNotExp === -1 && this.tokens.length === 1){
+			nextNotExp = 1;
+			edgeCase = true;
+		}
+
+		this.tokens.splice(i, 0, { 
+			mode: VParser.modes.EXP
+			,type: 'EXP_GENERATED'
+			,touched: 1
+			,val: '(' 
+			,line: tok.line
+			,chr: tok.chr
+		});
+
+		this.tokens.splice(nextNotExp + 1, 0, { 
+			mode: VParser.modes.EXP
+			,type: 'EXP_GENERATED'
+			,touched: 1
+			,val: ").toString()"
+				+ ".replace(/&(?!\w+;)/g, '&amp;')"
+				+ ".replace(/</g, '&lt;')"
+				+ ".replace(/>/g, '&gt;')"
+				+ ".replace(/\"/g, '&quot;')"
+			,line: this.tokens[nextNotExp].line
+			,chr: this.tokens[nextNotExp].chr
+		});
+
+		if(edgeCase == false){
+			i = nextNotExp + 1;	
+		} else {
+			i = nextNotExp + 2;
+		}
+		
+	}
+
+	return this.tokens;
+}
+
+VCP.insertFunctionBuffering = function(){
+	var i, openBraceAt, closingBraceAt, tok;
+
+	for(i = 0; i < this.tokens.length; i++){
+
+		tok = this.tokens[i];
+		openBraceAt = 0;
+
+		if(tok.mode !== VParser.modes.BLK || tok.type !== VLexer.tks.FUNCTION) continue;
+
+		openBraceAt = this.deeperIndexOf(this.tokens, 'type', VLexer.tks.BRACE_OPEN, i);
+		closingBraceAt = this.findMatchingIndex(this.tokens, VLexer.tks.BRACE_OPEN, VLexer.tks.BRACE_CLOSE, openBraceAt);
+
+		if( openBraceAt && closingBraceAt ){
+
+			// plus 1 because we want it after the brace
+			//this.tokens.splice(openBraceAt + 1, 0, { 
+			//	mode: VParser.modes.BLK
+			//	,type: 'BLK_GENERATED'
+			//	,touched: 1
+			//	,val: 'var __vout = [];'
+			//	,line: this.tokens[openBraceAt + 1].line
+			//	,chr: this.tokens[openBraceAt + 1].chr
+			//});
+
+			// plus 1 because thee previous op has increased the index
+			//this.tokens.splice(closingBraceAt + 1, 0, { 
+			//this.tokens.splice(closingBraceAt, 0, { 
+			//	mode: VParser.modes.BLK
+			//	,type: 'BLK_GENERATED'
+			//	,touched: 1
+			//	,val: '__vout.push.apply(__vout, );'
+			//	,line: this.tokens[closingBraceAt].line
+			//	,chr: this.tokens[closingBraceAt].chr
+			//});
+		}
+	}
+
+	return this.tokens;
+}
+
+VCP.buildSymbolTable = function(){
+	this.symbolTable = {};
+
+	var i, tok, nextIdentifier, nextOpenParen;
+
+	for(i = 0; i < this.tokens.length; i++){
+		tok = this.tokens[i];
+
+		if(tok.type === VLexer.tks.FUNCTION){
+			nextIdentifier = this.deeperIndexOf( this.tokens, 'type', VLexer.tks.IDENTIFIER, i );
+			nextOpenParen = this.deeperIndexOf( this.tokens, 'type', VLexer.tks.PAREN_OPEN, i );
+
+			// anonymous function
+			if(nextIdentifier > nextOpenParen) continue;
+
+			this.symbolTable[ this.tokens[nextIdentifier].val ] = true;
+		}
+	}
+
+	return this.symbolTable;
+}
+
+
+// Helper functions
+
+VCP.deeperIndexOf = function(list, property, value, startAt){
+	startAt = startAt || 0;
+
+	var i, foundAt = -1;
+
+	for(i = startAt; i < list.length; i++){
+		if( list[i][property] === value ) {
+			foundAt = i;
+			break;
+		}
+	}
+
+	return foundAt;
+}
+
+VCP.deeperIndexOfNot = function(list, property, value, startAt){
+	startAt = startAt || 0;
+
+	var i, foundAt = -1;
+
+	for(i = startAt; i < list.length; i++){
+		if( list[i][property] !== value ) {
+			foundAt = i;
+			break;
+		}
+	}
+
+	return foundAt;
+}
+
+// expects a flat list of tokens
+VCP.findMatchingIndex = function(list, startType, endType, startAt){
+	var nstart = 0
+		,nend = 0
+		,i = startAt || 0
+		,tok;
+
+	for(; i < list.length; i++){
+		tok = list[i];
+		if(tok.type === startType) nstart++;
+		if(tok.type === endType) nend++
+
+		if(nstart === nend) break;
+	}
+
+	return i;
+}
+
+// runtime-esque
+
+VCP.reportError = function(e, line, chr){
+
+	e.message = 'Problem while rendering template at line ' 
+		+ line + ', character ' + chr 
+		+ '. Original error: ' + e.message;
+
+	throw e;
+}
 	/************** End injected code from build script */
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
+	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function tpl(markup, options){
 
-		var  p = new VParser(markup)
+		var  p
+			,c
 			,cmp;
 
 		options = options || {};
-		options.useWith = typeof options.useWith === 'undefined' 
-			? exports.config.useWith 
-			: options.useWith;
+		options.useWith = options.useWith || exports.config.useWith ;
 		options.modelName = options.modelName || exports.config.modelName;
+		options.debug = options.debug || exports.config.debug;
 
+		p = new VParser(markup, options);
 		p.parse();
-		cmp = p.compile(options)
+
+		c = new VCompiler(p.buffers, p.lex.originalInput);
+		c.generate(options);
 
 		// Express support
-		return function render(locals){
-			return cmp(locals);
-		}
+		cmp = c.assemble(options);
+		cmp.displayName = 'render';
+		return cmp;
 	};
 
-})(typeof exports === 'undefined' ? this['vash'] = {} : exports);
+})(typeof exports === 'undefined' ? (this['vash'] = this['vash'] || {}) : exports);

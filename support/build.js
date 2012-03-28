@@ -6,6 +6,7 @@ var fs = require('fs')
 	,commonFiles = [
 		 '../src/vlexer.js'
 		,'../src/vparser.js'
+		,'../src/vcompiler.js'
 	];
 
 function combine(files){
