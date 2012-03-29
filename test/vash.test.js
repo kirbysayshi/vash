@@ -3,6 +3,7 @@ var vows = require('vows')
 	,vash = require('../build/vash');
 
 vash.config.useWith = true;
+vash.config.debug = true;
 
 var tryCompile = function(str){
 	assert.doesNotThrow( function(){ vash.compile(str) }, Error );
@@ -841,6 +842,16 @@ vows.describe('vash templating library').addBatch({
 			,'are escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), 
 					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b> </span><b>&lt;b&gt;texted&lt;/b&gt;</b> ' );
+			}
+		}
+
+		,'multiple nested function calls': {
+			topic: function(){
+				return vash.compile( '@function f(i){ <b>@i</b> function d(i){ <b>@i</b> } @d(model.it) }<span>@f(model.it)</span>@f(model.it)' );
+			}
+			,'are escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), 
+					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b> <b>&lt;b&gt;texted&lt;/b&gt;</b>  </span><b>&lt;b&gt;texted&lt;/b&gt;</b> <b>&lt;b&gt;texted&lt;/b&gt;</b>  ' );
 			}
 		}
 

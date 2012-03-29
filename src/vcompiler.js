@@ -36,7 +36,7 @@ VCP.assemble = function(options){
 	for(i = 0; i < this.tokens.length; i++){
 		tok = this.tokens[i];
 
-		options.debug && console.log(tok);
+		options.debugCompiler && console.log(tok);
 		options.debug && lines.push( '__vline = ' + tok.line + '; __vchar = ' + tok.chr + ';' )
 
 		// normalize in prep for eval
@@ -63,15 +63,18 @@ VCP.assemble = function(options){
 
 	if(options.debug){
 		lines.unshift( 'try { \n' );
-		lines.push( '} catch(e){ (' 
-			+ VCP.reportError.toString()
-			+ ')(e, __vline, __vchar) } \n' )
+		lines.push( '} catch(e){ ('
+			, VCP.reportError.toString()
+			,')(e, __vline, __vchar, '
+			,'"' + this.originalMarkup
+				.replace(reLineBreak, '!LB!')
+				.replace(/(["'])/g, '\\$1') + '"'
+			,') } \n' )
 	}
 
 	lines.push('return __vout.join(\'\');');
 	body = lines.join('');
-	options.debug && console.log(body);
-	//console.log(body);
+	options.debugCompiler && console.log(body);
 
 	try {
 		func = new Function(options.modelName, body);
@@ -280,11 +283,29 @@ VCP.findMatchingIndex = function(list, startType, endType, startAt){
 
 // runtime-esque
 
-VCP.reportError = function(e, line, chr){
+// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
+VCP.reportError = function(e, lineno, chr, orig){
+
+	var lines = orig.split('!LB!')
+		,contextSize = 3
+		,start = Math.max(0, lineno - contextSize)
+		,end = Math.min(lines.length, lineno + contextSize);
+
+	console.log(start, end);
+
+	var contextStr = lines.slice(start, end).map(function(line, i, all){
+		var curr = i + start + 1;
+
+		return (curr === lineno ? '  > ' : '    ')
+			+ curr 
+			+ ' | '
+			+ line + '\n';
+	});
 
 	e.message = 'Problem while rendering template at line ' 
-		+ line + ', character ' + chr 
-		+ '. Original error: ' + e.message;
+		+ lineno + ', character ' + chr 
+		+ '.\nOriginal message: ' + e.message + '.'
+		+ '\nContext: \n\n' + contextStr;
 
 	throw e;
 }

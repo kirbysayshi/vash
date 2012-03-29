@@ -17,6 +17,8 @@
 		 "useWith": false
 		,"modelName": "model"
 		,"debug": false
+		,"debugParser": false
+		,"debugCompiler": false
 	};
 
 	/************** Begin injected code from build script */
@@ -26,16 +28,18 @@
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
-	exports["compile"] = function tpl(markup, options){
+	exports["compile"] = function compile(markup, options){
 
 		var  p
 			,c
 			,cmp;
 
 		options = options || {};
-		options.useWith = options.useWith || exports.config.useWith ;
+		options.useWith = options.useWith || exports.config.useWith;
 		options.modelName = options.modelName || exports.config.modelName;
 		options.debug = options.debug || exports.config.debug;
+		options.debugParser = options.debugParser || exports.config.debugParser;
+		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
 
 		p = new VParser(markup, options);
 		p.parse();

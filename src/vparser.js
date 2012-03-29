@@ -42,7 +42,7 @@ function VParser(str, options){
 	this.buffer = [];
 	this.buffers = [];
 
-	this.debug = options.debug;
+	this.debug = options.debugParser;
 	this.consumedTokens = [];
 
 	if(typeof str !== 'string' || str.length === 0)
@@ -55,9 +55,9 @@ VParser.prototype = {
 
 	parse: function(){
 		var curr, i, len, block, orderedTokens;
-		
+
 		while( (curr = this.lex.advance()) ){
-			this.debug && console.debug(this.mode, curr.type, curr, curr.val);
+			this.debug && console.log(this.mode, curr.type, curr, curr.val);
 			
 			if(this.mode === VParser.modes.MKP){
 				this._handleMKP(curr);
@@ -89,11 +89,14 @@ VParser.prototype = {
 			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched });
 			(console.groupCollapsed 
 				? console.groupCollapsed('Top 30 tokens ordered by TOUCHING')
-				: console.group('Top 30 tokens ordered by TOUCHING') );
-			orderedTokens.slice(0, 30).forEach(function(tok){ console.debug( tok.touched, tok ) });
-			console.groupEnd();
+				: console.group 
+					? console.group('Top 30 tokens ordered by TOUCHING') 
+					: console.log('Top 30 tokens ordered by TOUCHING'));
+			orderedTokens.slice(0, 30).forEach(function(tok){ console.log( tok.touched, tok ) });
+			console.groupEnd && console.groupEnd();
 		}
 		
+
 		return this.buffers;
 	}
 	

@@ -11,12 +11,14 @@
 (function(exports){
 
 	
-	exports["version"] = "0.4.1-475";
+	exports["version"] = "0.4.1-510";
 
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
 		,"debug": false
+		,"debugParser": false
+		,"debugCompiler": false
 	};
 
 	/************** Begin injected code from build script */
@@ -317,7 +319,7 @@ function VParser(str, options){
 	this.buffer = [];
 	this.buffers = [];
 
-	this.debug = options.debug;
+	this.debug = options.debugParser;
 	this.consumedTokens = [];
 
 	if(typeof str !== 'string' || str.length === 0)
@@ -330,9 +332,9 @@ VParser.prototype = {
 
 	parse: function(){
 		var curr, i, len, block, orderedTokens;
-		
+
 		while( (curr = this.lex.advance()) ){
-			this.debug && console.debug(this.mode, curr.type, curr, curr.val);
+			this.debug && console.log(this.mode, curr.type, curr, curr.val);
 			
 			if(this.mode === VParser.modes.MKP){
 				this._handleMKP(curr);
@@ -364,11 +366,14 @@ VParser.prototype = {
 			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched });
 			(console.groupCollapsed 
 				? console.groupCollapsed('Top 30 tokens ordered by TOUCHING')
-				: console.group('Top 30 tokens ordered by TOUCHING') );
-			orderedTokens.slice(0, 30).forEach(function(tok){ console.debug( tok.touched, tok ) });
-			console.groupEnd();
+				: console.group 
+					? console.group('Top 30 tokens ordered by TOUCHING') 
+					: console.log('Top 30 tokens ordered by TOUCHING'));
+			orderedTokens.slice(0, 30).forEach(function(tok){ console.log( tok.touched, tok ) });
+			console.groupEnd && console.groupEnd();
 		}
 		
+
 		return this.buffers;
 	}
 	
@@ -769,7 +774,7 @@ VCP.assemble = function(options){
 	for(i = 0; i < this.tokens.length; i++){
 		tok = this.tokens[i];
 
-		options.debug && console.log(tok);
+		options.debugCompiler && console.log(tok);
 		options.debug && lines.push( '__vline = ' + tok.line + '; __vchar = ' + tok.chr + ';' )
 
 		// normalize in prep for eval
@@ -796,15 +801,18 @@ VCP.assemble = function(options){
 
 	if(options.debug){
 		lines.unshift( 'try { \n' );
-		lines.push( '} catch(e){ (' 
-			+ VCP.reportError.toString()
-			+ ')(e, __vline, __vchar) } \n' )
+		lines.push( '} catch(e){ ('
+			, VCP.reportError.toString()
+			,')(e, __vline, __vchar, '
+			,'"' + this.originalMarkup
+				.replace(reLineBreak, '!LB!')
+				.replace(/(["'])/g, '\\$1') + '"'
+			,') } \n' )
 	}
 
 	lines.push('return __vout.join(\'\');');
 	body = lines.join('');
-	options.debug && console.log(body);
-	//console.log(body);
+	options.debugCompiler && console.log(body);
 
 	try {
 		func = new Function(options.modelName, body);
@@ -1013,11 +1021,29 @@ VCP.findMatchingIndex = function(list, startType, endType, startAt){
 
 // runtime-esque
 
-VCP.reportError = function(e, line, chr){
+// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
+VCP.reportError = function(e, lineno, chr, orig){
+
+	var lines = orig.split('!LB!')
+		,contextSize = 3
+		,start = Math.max(0, lineno - contextSize)
+		,end = Math.min(lines.length, lineno + contextSize);
+
+	console.log(start, end);
+
+	var contextStr = lines.slice(start, end).map(function(line, i, all){
+		var curr = i + start + 1;
+
+		return (curr === lineno ? '  > ' : '    ')
+			+ curr 
+			+ ' | '
+			+ line + '\n';
+	});
 
 	e.message = 'Problem while rendering template at line ' 
-		+ line + ', character ' + chr 
-		+ '. Original error: ' + e.message;
+		+ lineno + ', character ' + chr 
+		+ '.\nOriginal message: ' + e.message + '.'
+		+ '\nContext: \n\n' + contextStr;
 
 	throw e;
 }
@@ -1026,16 +1052,18 @@ VCP.reportError = function(e, line, chr){
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
-	exports["compile"] = function tpl(markup, options){
+	exports["compile"] = function compile(markup, options){
 
 		var  p
 			,c
 			,cmp;
 
 		options = options || {};
-		options.useWith = options.useWith || exports.config.useWith ;
+		options.useWith = options.useWith || exports.config.useWith;
 		options.modelName = options.modelName || exports.config.modelName;
 		options.debug = options.debug || exports.config.debug;
+		options.debugParser = options.debugParser || exports.config.debugParser;
+		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
 
 		p = new VParser(markup, options);
 		p.parse();
