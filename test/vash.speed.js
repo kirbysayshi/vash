@@ -136,7 +136,7 @@ suite = new Benchmark.Suite("vash vs doT compilation medium")
 	vash.compile(mediumVTemplateNoWith, false)
 })
 logSuiteName(suite);
-suite.run();
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("dot#template small", function(){
@@ -172,7 +172,7 @@ suite = new Benchmark.Suite("vash vs doT render medium")
 	mediumVTplNoWithNoEscape( mediumData )
 })
 logSuiteName(suite);
-suite.run();
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT render small")
 .add("dot#template small", function(){
@@ -184,31 +184,66 @@ suite = new Benchmark.Suite("vash vs doT render small")
 //logSuiteName(suite);
 //suite.run();
 
+var longString = Array(1000).join(Math.random())
+
 var indexed = function(){
+
     var idx = 0, out = [];
     
-    out[idx++] = Math.random()
-    out[idx++] = Math.random()
-    out[idx++] = Math.random()
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+
+    return out.join('')
 }
     
 var pushed = function(){
     var out = [];
     
-    out.push(Math.random())
-    out.push(Math.random())
-    out.push(Math.random())
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+
+    return out.join('')
 }
 
 var plussed = function(){
     var out = '';
     
-    out += '' + Math.random()
-    out += '' + Math.random()
-    out += '' + Math.random()
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+
+    return out;
 }
 
-suite = new Benchmark.Suite('array index vs push')
+var concated = function(){
+    var out = '';
+    
+    out += longString
+    + longString
+    + longString
+    + longString
+    + longString
+    + longString
+    + longString
+
+    return out;
+}
+
+suite = new Benchmark.Suite('string concat: index vs push vs += vs +')
 .add('indexed', function(){
 	indexed();
 })
@@ -217,10 +252,92 @@ suite = new Benchmark.Suite('array index vs push')
 })
 .add('plussed', function(){
 	plussed();
+})
+.add('concated', function(){
+	concated();
 });
 logSuiteName(suite);
 suite.run();
 
+var tpush = function anonymous(model) {
+    var __vout = [];
+
+    function f(i) {
+        __vout.push("<b>");
+        __vout.push(i.toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
+        __vout.push("</b> ");
+    }
+
+    __vout.push("<span>");
+    __vout.push(f(model.it));
+    __vout.push("</span>");
+    __vout.push(f(model.it));
+    return __vout.join("");
+}
+
+var tconcat = function anonymous(model) {
+
+    var __vout = '', __vback = '', __vtemp = '';
+
+
+    function f(i) {
+        __vout += "<b>"
+            + i.toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+            + "</b> "
+    }
+
+    __vout += "<span>";
+
+    // have to stop concat, because we don't know what side-effects f might have
+    __vback = __vout; // huge string copy
+    __vout = '';
+    __vtemp = f(model.it)
+    __vout = __vback + __vout + (__vtemp ? __vtemp : '')
+        + "</span>";
+
+    // an do the whole thing again...
+    __vback = __vout;
+    __vout = '';
+    __vtemp += f(model.it);
+    __vout = __vback + __vout + (__vtemp ? __vtemp : '')
+
+
+    return __vout;
+}
+
+var tconcatsimple = function anonymous(model) {
+
+    var __vout = '', __vback = '', __vtemp = '';
+
+
+    function f(i) {
+        __vout += "<b>"
+            + i.toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+            + "</b> "
+    }
+
+    __vout += "<span>";
+
+    // all of this is basically invalid, but sort of a comparison to doT
+    __vout += f(model.it)
+    __vout += "</span>";
+    __vout += f(model.it)
+
+    return __vout;
+}
+
+suite = new Benchmark.Suite('tpl concat vs push')
+.add('push', function(){
+	tpush( { it: 'what' } );
+})
+.add('concat', function(){
+	tconcat( { it: 'what' } );
+})
+.add('concat simple', function(){
+	tconcatsimple( { it: 'what' } );
+});
+logSuiteName(suite);
+suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));

@@ -182,23 +182,22 @@ VCP.insertFunctionBuffering = function(){
 
 		if( openBraceAt && closingBraceAt ){
 
-			// plus 1 because we want it after the brace
+			//// plus 1 because we want it after the brace
 			//this.tokens.splice(openBraceAt + 1, 0, { 
 			//	mode: VParser.modes.BLK
 			//	,type: 'BLK_GENERATED'
 			//	,touched: 1
-			//	,val: 'var __vout = [];'
+			//	,val: 'var __vout_cache = __vout, __vout = '';'
 			//	,line: this.tokens[openBraceAt + 1].line
 			//	,chr: this.tokens[openBraceAt + 1].chr
 			//});
 
-			// plus 1 because thee previous op has increased the index
+			//// plus 1 because thee previous op has increased the index
 			//this.tokens.splice(closingBraceAt + 1, 0, { 
-			//this.tokens.splice(closingBraceAt, 0, { 
 			//	mode: VParser.modes.BLK
 			//	,type: 'BLK_GENERATED'
 			//	,touched: 1
-			//	,val: '__vout.push.apply(__vout, );'
+			//	,val: '__vout += __vout_inner, );'
 			//	,line: this.tokens[closingBraceAt].line
 			//	,chr: this.tokens[closingBraceAt].chr
 			//});

@@ -11,7 +11,7 @@
 (function(exports){
 
 	
-	exports["version"] = "0.4.1-510";
+	exports["version"] = "0.4.1-520";
 
 	exports["config"] = {
 		 "useWith": false
@@ -921,25 +921,24 @@ VCP.insertFunctionBuffering = function(){
 		if( openBraceAt && closingBraceAt ){
 
 			// plus 1 because we want it after the brace
-			//this.tokens.splice(openBraceAt + 1, 0, { 
-			//	mode: VParser.modes.BLK
-			//	,type: 'BLK_GENERATED'
-			//	,touched: 1
-			//	,val: 'var __vout = [];'
-			//	,line: this.tokens[openBraceAt + 1].line
-			//	,chr: this.tokens[openBraceAt + 1].chr
-			//});
+			this.tokens.splice(openBraceAt + 1, 0, { 
+				mode: VParser.modes.BLK
+				,type: 'BLK_GENERATED'
+				,touched: 1
+				,val: 'var __vout_inner = [];'
+				,line: this.tokens[openBraceAt + 1].line
+				,chr: this.tokens[openBraceAt + 1].chr
+			});
 
 			// plus 1 because thee previous op has increased the index
-			//this.tokens.splice(closingBraceAt + 1, 0, { 
-			//this.tokens.splice(closingBraceAt, 0, { 
-			//	mode: VParser.modes.BLK
-			//	,type: 'BLK_GENERATED'
-			//	,touched: 1
-			//	,val: '__vout.push.apply(__vout, );'
-			//	,line: this.tokens[closingBraceAt].line
-			//	,chr: this.tokens[closingBraceAt].chr
-			//});
+			this.tokens.splice(closingBraceAt + 1, 0, { 
+				mode: VParser.modes.BLK
+				,type: 'BLK_GENERATED'
+				,touched: 1
+				,val: '__vout.push.apply(__vout_inner, );'
+				,line: this.tokens[closingBraceAt].line
+				,chr: this.tokens[closingBraceAt].chr
+			});
 		}
 	}
 
