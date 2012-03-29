@@ -167,7 +167,7 @@ VCP.insertHTMLExpressionEscape = function(){
 	return this.tokens;
 }
 
-VCP.insertFunctionBuffering = function(){
+/*VCP.insertFunctionBuffering = function(){
 	var i, openBraceAt, closingBraceAt, tok;
 
 	for(i = 0; i < this.tokens.length; i++){
@@ -205,7 +205,7 @@ VCP.insertFunctionBuffering = function(){
 	}
 
 	return this.tokens;
-}
+}*/
 
 VCP.buildSymbolTable = function(){
 	this.symbolTable = {};
