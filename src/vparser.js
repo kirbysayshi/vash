@@ -54,7 +54,7 @@ VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block, orderedTokens;
+		var curr, i, len, block, orderedTokens, topMsg = 'Top 30 tokens ordered by TOUCHING';
 
 		while( (curr = this.lex.advance()) ){
 			this.debug && console.log(this.mode, curr.type, curr, curr.val);
@@ -87,16 +87,15 @@ VParser.prototype = {
 		
 		if(this.debug){
 			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched });
-			(console.groupCollapsed 
-				? console.groupCollapsed('Top 30 tokens ordered by TOUCHING')
-				: console.group 
-					? console.group('Top 30 tokens ordered by TOUCHING') 
-					: console.log('Top 30 tokens ordered by TOUCHING'));
+			(console['groupCollapsed'] 
+				? console['groupCollapsed'](topMsg)
+				: console['group'] 
+					? console['group'](topMsg) 
+					: console.log(topMsg));
 			orderedTokens.slice(0, 30).forEach(function(tok){ console.log( tok.touched, tok ) });
-			console.groupEnd && console.groupEnd();
+			console['groupEnd'] && console['groupEnd']();
 		}
 		
-
 		return this.buffers;
 	}
 	
@@ -300,6 +299,7 @@ VParser.prototype = {
 				if(this.tks.HTML_TAG_CLOSE === curr.type) this._useToken(curr);
 
 				block = this.blockStack.peek();
+
 				if(
 					block !== null && block.type === VParser.modes.BLK 
 					&& (next.type === this.tks.WHITESPACE || next.type === this.tks.NEWLINE) 
@@ -439,9 +439,13 @@ VParser.prototype = {
 			
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
-				if(ahead && (ahead.type === this.tks.IDENTIFIER || ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION))
+				if(
+					ahead && (ahead.type === this.tks.IDENTIFIER 
+						|| ahead.type === this.tks.KEYWORD 
+						|| ahead.type === this.tks.FUNCTION)
+				) {
 					this._useToken(curr);
-				else {
+				} else {
 					this._endMode(VParser.modes.MKP);
 					this.lex.defer(curr);
 				}

@@ -1,6 +1,8 @@
 var vows = require('vows')
 	,assert = require('assert')
-	,vash = require('../build/vash');
+	,vash = process.argv[2]  
+		? require('../build/vash.' + process.argv[2] ) 
+		: require('../build/vash');
 
 vash.config.useWith = true;
 vash.config.debug = true;
@@ -244,6 +246,15 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'outputs 1yeah': function(topic){
 			assert.equal( topic({ what: '1'}), '<a href="1yeah"></a>');
+		}
+	}
+	,'explicit expression followed by bracket, @escape': {
+		topic: function(){
+			var str = '<a href="somename_@(what.how)@[0]"></a>';
+			return vash.compile(str);
+		}
+		,'outputs G': function(topic){
+			assert.equal( topic({ what: { how: '' }}), '<a href="somename_[0]"></a>');
 		}
 	}
 	,'empty anonymous block': {
@@ -745,7 +756,7 @@ vows.describe('vash templating library').addBatch({
 			assert.throws( function(){ vash.compile(topic) }, Error );
 		}
 	}
-	,'HTML5': {
+	,'HTML5:': {
 		'unclosed tags': {
 			topic: function(){
 				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i }';
@@ -815,7 +826,7 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	
-	,'html escaping': {
+	,'html escaping:': {
 
 		'basic': {
 			topic: function(){
@@ -829,6 +840,24 @@ vows.describe('vash templating library').addBatch({
 		,'force no escaping': {
 			topic: function(){
 				return vash.compile( '<span>@it</span>', { htmlEscape: false } );
+			}
+			,'is escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
+			}	
+		}
+
+		,'force no escaping per call (vash.raw)': {
+			topic: function(){
+				return vash.compile( '<span>@vash.raw(it)</span>' );
+			}
+			,'is escaped': function(topic){
+				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
+			}	
+		}
+
+		,'vash.raw call is ignored when forced no escaping': {
+			topic: function(){
+				return vash.compile( '<span>@vash.raw(it)</span>', { htmlEscape: false } );
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );

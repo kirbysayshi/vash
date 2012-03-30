@@ -8,10 +8,20 @@
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
-(function(exports){
+(function(vash){
 
-	
-	exports["version"] = "0.4.1-520";
+	// this pattern was inspired by LucidJS,
+	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
+
+	typeof define === 'function' && define.amd
+		? define(vash) // AMD
+		: typeof module === 'object' && module.exports
+			? module.exports = vash // NODEJS
+			: window['vash'] = vash // BROWSER
+
+})(function(exports){
+
+	exports["version"] = "0.4.1-575";
 
 	exports["config"] = {
 		 "useWith": false
@@ -331,7 +341,7 @@ VParser.modes = { MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block, orderedTokens;
+		var curr, i, len, block, orderedTokens, topMsg = 'Top 30 tokens ordered by TOUCHING';
 
 		while( (curr = this.lex.advance()) ){
 			this.debug && console.log(this.mode, curr.type, curr, curr.val);
@@ -364,16 +374,15 @@ VParser.prototype = {
 		
 		if(this.debug){
 			orderedTokens = this.consumedTokens.sort(function(a,b){ return b.touched - a.touched });
-			(console.groupCollapsed 
-				? console.groupCollapsed('Top 30 tokens ordered by TOUCHING')
-				: console.group 
-					? console.group('Top 30 tokens ordered by TOUCHING') 
-					: console.log('Top 30 tokens ordered by TOUCHING'));
+			(console['groupCollapsed'] 
+				? console['groupCollapsed'](topMsg)
+				: console['group'] 
+					? console['group'](topMsg) 
+					: console.log(topMsg));
 			orderedTokens.slice(0, 30).forEach(function(tok){ console.log( tok.touched, tok ) });
-			console.groupEnd && console.groupEnd();
+			console['groupEnd'] && console['groupEnd']();
 		}
 		
-
 		return this.buffers;
 	}
 	
@@ -577,6 +586,7 @@ VParser.prototype = {
 				if(this.tks.HTML_TAG_CLOSE === curr.type) this._useToken(curr);
 
 				block = this.blockStack.peek();
+
 				if(
 					block !== null && block.type === VParser.modes.BLK 
 					&& (next.type === this.tks.WHITESPACE || next.type === this.tks.NEWLINE) 
@@ -716,9 +726,13 @@ VParser.prototype = {
 			
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
-				if(ahead && (ahead.type === this.tks.IDENTIFIER || ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION))
+				if(
+					ahead && (ahead.type === this.tks.IDENTIFIER 
+						|| ahead.type === this.tks.KEYWORD 
+						|| ahead.type === this.tks.FUNCTION)
+				) {
 					this._useToken(curr);
-				else {
+				} else {
 					this._endMode(VParser.modes.MKP);
 					this.lex.defer(curr);
 				}
@@ -748,10 +762,8 @@ var VCP = VCompiler.prototype;
 
 VCP.generate = function(options){
 
-	if(options.htmlEscape !== false){
-		this.buildSymbolTable();
-		this.insertHTMLExpressionEscape();	
-	}
+	this.buildSymbolTable();
+	this.insertHTMLExpressionEscape(options);	
 	
 	//this.insertFunctionBuffering();
 	this.mergeTokens();
@@ -817,7 +829,7 @@ VCP.assemble = function(options){
 	try {
 		func = new Function(options.modelName, body);
 	} catch(e){
-		e.message += ' :::: GENERATED :::: ' + body;
+		e.message += ' -> ' + body;
 		throw e;	
 	}
 
@@ -850,19 +862,41 @@ VCP.mergeTokens = function(){
 
 // transform functions
 
-VCP.insertHTMLExpressionEscape = function(){
-	var i, tok, nextNotExp, edgeCase = false;
+VCP.insertHTMLExpressionEscape = function(options){
+	var i
+		,tok
+		,nextNotExp
+		,edgeCase = false
+		,nextOpenParen
+		,nextCloseParen;
 
 	for(i = 0; i < this.tokens.length; i++){
 		tok = this.tokens[i];
 		nextNotExp = -1;
 
 		if(tok.mode !== VParser.modes.EXP) continue;
-		if(tok.type === VLexer.tks.HTML_RAW || this.symbolTable[tok.val] === true) {
-			nextNotExp = Math.max(this.tokens.length - 1, this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i) - 1);
+
+		if(tok.type === VLexer.tks.HTML_RAW){
+			tok.val = '';
+
+			nextOpenParen = this.deeperIndexOf(this.tokens, 'type', VLexer.tks.PAREN_OPEN, i);
+			nextCloseParen = this.findMatchingIndex(this.tokens, VLexer.tks.PAREN_OPEN, VLexer.tks.PAREN_CLOSE, nextOpenParen);
+
+			this.tokens[nextOpenParen].val = '';
+			this.tokens[nextCloseParen].val = '';
+			i = nextCloseParen; // skip i ahead
+			continue;
+		}
+
+		if(this.symbolTable[tok.val] === true) {
+			nextNotExp = Math.max(
+				 this.tokens.length - 1
+				,this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i) - 1);
 			i = nextNotExp; // skip i ahead, remembering auto inc
 			continue; // named helper function, do not escape
 		}
+
+		if(options.htmlEscape === false) continue;
 
 		nextNotExp = this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i);
 
@@ -905,7 +939,7 @@ VCP.insertHTMLExpressionEscape = function(){
 	return this.tokens;
 }
 
-VCP.insertFunctionBuffering = function(){
+/*VCP.insertFunctionBuffering = function(){
 	var i, openBraceAt, closingBraceAt, tok;
 
 	for(i = 0; i < this.tokens.length; i++){
@@ -920,30 +954,30 @@ VCP.insertFunctionBuffering = function(){
 
 		if( openBraceAt && closingBraceAt ){
 
-			// plus 1 because we want it after the brace
-			this.tokens.splice(openBraceAt + 1, 0, { 
-				mode: VParser.modes.BLK
-				,type: 'BLK_GENERATED'
-				,touched: 1
-				,val: 'var __vout_inner = [];'
-				,line: this.tokens[openBraceAt + 1].line
-				,chr: this.tokens[openBraceAt + 1].chr
-			});
+			//// plus 1 because we want it after the brace
+			//this.tokens.splice(openBraceAt + 1, 0, { 
+			//	mode: VParser.modes.BLK
+			//	,type: 'BLK_GENERATED'
+			//	,touched: 1
+			//	,val: 'var __vout_cache = __vout, __vout = '';'
+			//	,line: this.tokens[openBraceAt + 1].line
+			//	,chr: this.tokens[openBraceAt + 1].chr
+			//});
 
-			// plus 1 because thee previous op has increased the index
-			this.tokens.splice(closingBraceAt + 1, 0, { 
-				mode: VParser.modes.BLK
-				,type: 'BLK_GENERATED'
-				,touched: 1
-				,val: '__vout.push.apply(__vout_inner, );'
-				,line: this.tokens[closingBraceAt].line
-				,chr: this.tokens[closingBraceAt].chr
-			});
+			//// plus 1 because thee previous op has increased the index
+			//this.tokens.splice(closingBraceAt + 1, 0, { 
+			//	mode: VParser.modes.BLK
+			//	,type: 'BLK_GENERATED'
+			//	,touched: 1
+			//	,val: '__vout += __vout_inner, );'
+			//	,line: this.tokens[closingBraceAt].line
+			//	,chr: this.tokens[closingBraceAt].chr
+			//});
 		}
 	}
 
 	return this.tokens;
-}
+}*/
 
 VCP.buildSymbolTable = function(){
 	this.symbolTable = {};
@@ -1076,4 +1110,5 @@ VCP.reportError = function(e, lineno, chr, orig){
 		return cmp;
 	};
 
-})(typeof exports === 'undefined' ? (this['vash'] = this['vash'] || {}) : exports);
+	return exports;
+}({}));

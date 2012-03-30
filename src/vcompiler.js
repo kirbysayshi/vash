@@ -10,10 +10,8 @@ var VCP = VCompiler.prototype;
 
 VCP.generate = function(options){
 
-	if(options.htmlEscape !== false){
-		this.buildSymbolTable();
-		this.insertHTMLExpressionEscape();	
-	}
+	this.buildSymbolTable();
+	this.insertHTMLExpressionEscape(options);	
 	
 	//this.insertFunctionBuffering();
 	this.mergeTokens();
@@ -79,7 +77,7 @@ VCP.assemble = function(options){
 	try {
 		func = new Function(options.modelName, body);
 	} catch(e){
-		e.message += ' :::: GENERATED :::: ' + body;
+		e.message += ' -> ' + body;
 		throw e;	
 	}
 
@@ -112,19 +110,41 @@ VCP.mergeTokens = function(){
 
 // transform functions
 
-VCP.insertHTMLExpressionEscape = function(){
-	var i, tok, nextNotExp, edgeCase = false;
+VCP.insertHTMLExpressionEscape = function(options){
+	var i
+		,tok
+		,nextNotExp
+		,edgeCase = false
+		,nextOpenParen
+		,nextCloseParen;
 
 	for(i = 0; i < this.tokens.length; i++){
 		tok = this.tokens[i];
 		nextNotExp = -1;
 
 		if(tok.mode !== VParser.modes.EXP) continue;
-		if(tok.type === VLexer.tks.HTML_RAW || this.symbolTable[tok.val] === true) {
-			nextNotExp = Math.max(this.tokens.length - 1, this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i) - 1);
+
+		if(tok.type === VLexer.tks.HTML_RAW){
+			tok.val = '';
+
+			nextOpenParen = this.deeperIndexOf(this.tokens, 'type', VLexer.tks.PAREN_OPEN, i);
+			nextCloseParen = this.findMatchingIndex(this.tokens, VLexer.tks.PAREN_OPEN, VLexer.tks.PAREN_CLOSE, nextOpenParen);
+
+			this.tokens[nextOpenParen].val = '';
+			this.tokens[nextCloseParen].val = '';
+			i = nextCloseParen; // skip i ahead
+			continue;
+		}
+
+		if(this.symbolTable[tok.val] === true) {
+			nextNotExp = Math.max(
+				 this.tokens.length - 1
+				,this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i) - 1);
 			i = nextNotExp; // skip i ahead, remembering auto inc
 			continue; // named helper function, do not escape
 		}
+
+		if(options.htmlEscape === false) continue;
 
 		nextNotExp = this.deeperIndexOfNot(this.tokens, 'mode', VParser.modes.EXP, i);
 

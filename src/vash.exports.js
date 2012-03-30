@@ -8,9 +8,19 @@
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
-(function(exports){
+(function(vash){
 
-	
+	// this pattern was inspired by LucidJS,
+	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
+
+	typeof define === 'function' && define.amd
+		? define(vash) // AMD
+		: typeof module === 'object' && module.exports
+			? module.exports = vash // NODEJS
+			: window['vash'] = vash // BROWSER
+
+})(function(exports){
+
 	exports["version"] = "0.4.1-?BUILDNUM?";
 
 	exports["config"] = {
@@ -53,4 +63,5 @@
 		return cmp;
 	};
 
-})(typeof exports === 'undefined' ? (this['vash'] = this['vash'] || {}) : exports);
+	return exports;
+}({}));
