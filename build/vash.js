@@ -21,7 +21,7 @@
 
 })(function(exports){
 
-	exports["version"] = "0.4.1-575";
+	exports["version"] = "0.4.1-576";
 
 	exports["config"] = {
 		 "useWith": false
