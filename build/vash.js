@@ -21,7 +21,7 @@
 
 })(function(exports){
 
-	exports["version"] = "0.4.1-576";
+	exports["version"] = "0.4.1-581";
 
 	exports["config"] = {
 		 "useWith": false
@@ -1062,21 +1062,19 @@ VCP.reportError = function(e, lineno, chr, orig){
 		,start = Math.max(0, lineno - contextSize)
 		,end = Math.min(lines.length, lineno + contextSize);
 
-	console.log(start, end);
-
 	var contextStr = lines.slice(start, end).map(function(line, i, all){
 		var curr = i + start + 1;
 
 		return (curr === lineno ? '  > ' : '    ')
 			+ curr 
 			+ ' | '
-			+ line + '\n';
-	});
+			+ line;
+	}).join('\n');
 
 	e.message = 'Problem while rendering template at line ' 
 		+ lineno + ', character ' + chr 
 		+ '.\nOriginal message: ' + e.message + '.'
-		+ '\nContext: \n\n' + contextStr;
+		+ '\nContext: \n\n' + contextStr + '\n\n';
 
 	throw e;
 }
