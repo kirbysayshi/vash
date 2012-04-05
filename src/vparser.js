@@ -304,6 +304,7 @@ VParser.prototype = {
 					block !== null && block.type === VParser.modes.BLK 
 					&& (next.type === this.tks.WHITESPACE || next.type === this.tks.NEWLINE) 
 				){
+					//this._advanceUntilNot(this.tks.WHITESPACE)
 					this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 					this._endMode(VParser.modes.BLK);
 				}
@@ -350,6 +351,7 @@ VParser.prototype = {
 				this.lex.defer(curr);
 				break;
 			
+			case this.tks.FAT_ARROW:
 			case this.tks.BRACE_OPEN:
 			case this.tks.PAREN_OPEN:
 				this.blockStack.push({ type: VParser.modes.BLK, tok: curr });
@@ -424,6 +426,7 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.PAREN_OPEN:
+				this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 				ahead = this.lex.lookahead(1);
 				if(ahead && (ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION) ){
 					this.lex.defer(curr);
@@ -437,6 +440,11 @@ VParser.prototype = {
 				}
 				break;
 			
+			case this.tks.FAT_ARROW:
+				this.lex.defer(curr);
+				this._retconMode(VParser.modes.BLK);
+				break;
+
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
 				if(

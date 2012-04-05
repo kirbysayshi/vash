@@ -85,6 +85,7 @@ VLexer.prototype = {
 			|| this.AT_COLON()
 			|| this.AT()
 			
+			|| this.FAT_ARROW()
 			|| this.PAREN_OPEN()
 			|| this.PAREN_CLOSE()
 			
@@ -182,6 +183,9 @@ VLexer.prototype = {
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
+	,FAT_ARROW: function(){
+		return this.scan(/^(\(.*?\)?\s*?=>)/, VLexer.tks.FAT_ARROW);
+	}
 	,FUNCTION: function(){
 		return this.scan(/^(function)(?![\d\w])/, VLexer.tks.FUNCTION);
 	}
@@ -241,6 +245,7 @@ VLexer.tks = {
 	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
 	,KEYWORD: 'KEYWORD'
 	,FUNCTION: 'FUNCTION'
+	,FAT_ARROW: 'FAT_ARROW'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
 	,CONTENT: 'CONTENT'

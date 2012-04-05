@@ -21,7 +21,7 @@
 
 })(function(exports){
 
-	exports["version"] = "0.4.1-581";
+	exports["version"] = "0.4.1-623";
 
 	exports["config"] = {
 		 "useWith": false
@@ -119,6 +119,7 @@ VLexer.prototype = {
 			|| this.AT_COLON()
 			|| this.AT()
 			
+			|| this.FAT_ARROW()
 			|| this.PAREN_OPEN()
 			|| this.PAREN_CLOSE()
 			
@@ -216,6 +217,9 @@ VLexer.prototype = {
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
+	,FAT_ARROW: function(){
+		return this.scan(/^(\(.*?\)?\s*?=>)/, VLexer.tks.FAT_ARROW);
+	}
 	,FUNCTION: function(){
 		return this.scan(/^(function)(?![\d\w])/, VLexer.tks.FUNCTION);
 	}
@@ -275,6 +279,7 @@ VLexer.tks = {
 	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
 	,KEYWORD: 'KEYWORD'
 	,FUNCTION: 'FUNCTION'
+	,FAT_ARROW: 'FAT_ARROW'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
 	,CONTENT: 'CONTENT'
@@ -591,6 +596,7 @@ VParser.prototype = {
 					block !== null && block.type === VParser.modes.BLK 
 					&& (next.type === this.tks.WHITESPACE || next.type === this.tks.NEWLINE) 
 				){
+					//this._advanceUntilNot(this.tks.WHITESPACE)
 					this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 					this._endMode(VParser.modes.BLK);
 				}
@@ -637,6 +643,7 @@ VParser.prototype = {
 				this.lex.defer(curr);
 				break;
 			
+			case this.tks.FAT_ARROW:
 			case this.tks.BRACE_OPEN:
 			case this.tks.PAREN_OPEN:
 				this.blockStack.push({ type: VParser.modes.BLK, tok: curr });
@@ -711,6 +718,7 @@ VParser.prototype = {
 				break;
 			
 			case this.tks.PAREN_OPEN:
+				this._useTokens(this._advanceUntilNot(this.tks.WHITESPACE));
 				ahead = this.lex.lookahead(1);
 				if(ahead && (ahead.type === this.tks.KEYWORD || ahead.type === this.tks.FUNCTION) ){
 					this.lex.defer(curr);
@@ -724,6 +732,11 @@ VParser.prototype = {
 				}
 				break;
 			
+			case this.tks.FAT_ARROW:
+				this.lex.defer(curr);
+				this._retconMode(VParser.modes.BLK);
+				break;
+
 			case this.tks.PERIOD:
 				ahead = this.lex.lookahead(1);
 				if(
@@ -763,10 +776,12 @@ var VCP = VCompiler.prototype;
 VCP.generate = function(options){
 
 	this.buildSymbolTable();
-	this.insertHTMLExpressionEscape(options);	
+	this.fatArrowTransform();
+	this.insertHTMLExpressionEscape(options);
 	
 	//this.insertFunctionBuffering();
 	this.mergeTokens();
+	this.insertBlockSemiColons();
 }
 
 VCP.assemble = function(options){
@@ -939,6 +954,70 @@ VCP.insertHTMLExpressionEscape = function(options){
 	return this.tokens;
 }
 
+VCP.fatArrowTransform = function(){
+	var i
+		,openParenAt
+		,closeParenAt
+		,openBraceAt
+		,openArgParenAt
+		,closeArgParenAt
+		,nextNonWhiteSpace
+		,fatIndex
+		,tok;
+
+	for(i = 0; i < this.tokens.length; i++){
+
+		tok = this.tokens[i];
+
+		if(tok.mode !== VParser.modes.BLK || tok.type !== VLexer.tks.FAT_ARROW) continue;
+
+		// ( is the first char of a FAT_ARROW always, because these are only supported as lambdas
+		// but arguments can be un-parenthesized if singular
+		openParenAt = i;
+		closeParenAt = this.findMatchingIndex(this.tokens, VLexer.tks.PAREN_OPEN, VLexer.tks.PAREN_CLOSE, i);
+		nextNonWhiteSpaceAt = this.deeperIndexOfNot(this.tokens, VLexer.tks.WHITE_SPACE, i);
+
+		fatIndex = tok.val.indexOf('=>');
+		openArgParenAt = tok.val.indexOf('(', 1); // looking for parenthetized args
+		closeArgParenAt = VCP.findMatchingStrIndex(tok.val, '(', ')', openArgParenAt); 
+
+		// ( i =>
+		tok.val = 
+			tok.val[0] 
+			+ 'function'
+			+ (openArgParenAt === -1 
+				? '(' + tok.val.substring(1, fatIndex) + ')' 
+				: tok.val.substring(openArgParenAt, closeArgParenAt + 1))
+			+ (this.tokens[nextNonWhiteSpaceAt].type !== VLexer.tks.BRACE_OPEN ? '{' : '');
+		// (function( i ){
+
+		if(this.tokens[nextNonWhiteSpaceAt].type !== VLexer.tks.BRACE_OPEN){
+			this.tokens.splice(closeParenAt, 0, { 
+				 mode: VParser.modes.BLK
+				,type: 'BLK_GENERATED BRACE_CLOSE'
+				,touched: 1
+				,val: "}"
+				,line: this.tokens[closeParenAt].line
+				,chr: this.tokens[closeParenAt].chr
+			})
+		}
+	}
+}
+
+VCP.insertBlockSemiColons = function(){
+	var i, openBraceAt, closingBraceAt, tok;
+
+	for(i = 0; i < this.tokens.length; i++){
+
+		tok = this.tokens[i];
+
+		// this is really a bit of a hack
+		if(tok.mode === VParser.modes.BLK){
+			tok.val = tok.val.replace(/\}\s*?\)(?!;)/, '});')
+		}		
+	}
+}
+
 /*VCP.insertFunctionBuffering = function(){
 	var i, openBraceAt, closingBraceAt, tok;
 
@@ -1043,6 +1122,7 @@ VCP.findMatchingIndex = function(list, startType, endType, startAt){
 
 	for(; i < list.length; i++){
 		tok = list[i];
+		if(tok.type !== startType && i === startAt) nstart++; // allow to start on a non matching char
 		if(tok.type === startType) nstart++;
 		if(tok.type === endType) nend++
 
@@ -1050,6 +1130,44 @@ VCP.findMatchingIndex = function(list, startType, endType, startAt){
 	}
 
 	return i;
+}
+
+VCP.findMatchingStrIndex = function(str, startChr, endChr, startAt){
+	var  list = str.split('')
+		,nstart = 0
+		,nend = 0
+		,i = startAt || 0
+		,chr;
+
+	for(; i < str.length; i++){
+		chr = list[i];
+		if(chr !== startChr && i === startAt) nstart++; // allow to start on a non matching char
+		if(chr === startChr) nstart++;
+		if(chr === endChr) nend++
+
+		if(nstart === nend) break;
+	}
+
+	return i;
+}
+
+// endType is actually before startType in terms of absolute index
+VCP.findPreviousMatchingIndex = function(list, startType, endType, startAt){
+	var nstart = 0
+		,nend = 0
+		,i = startAt || list.length - 1
+		,tok;
+
+	for(; i >= 0; i--){
+		tok = list[i];
+		if(tok.type !== startType && i === startAt) nstart--; // allow to start on a non matching char
+		if(tok.type === startType) nstart--;
+		if(tok.type === endType) nend--
+
+		if(nstart === nend) break;
+	}
+
+	return i + nstart; // nstart === nend and will be negative
 }
 
 // runtime-esque

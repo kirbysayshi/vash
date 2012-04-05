@@ -9,11 +9,12 @@
 		
 		<script src="../src/vlexer.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vparser.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vcompiler.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vruntime.js" type="text/javascript" charset="utf-8"></script>
+		<!--<script src="../build/vash.js" type="text/javascript" charset="utf-8"></script>-->
+		<!--<script type="text/javascript" src="http://closure-compiler.appspot.com/code/jsc29b5e4a24021c0352c9d9113aa18bf74/default.js"></script>-->
 		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">Hello @title. @name.</script>
-		<script id="test" type="text/razor-js" charset="utf-8">
-			@for(var i = 0; i < 10; i++){
-			}
-		</script>
+		<script id="test" type="text/razor-js" charset="utf-8"><ul>@arr.forEach( (i,(false || true)) => <li>@i</li> )</ul></script>
 
 		<script type="text/javascript" charset="utf-8">
 			
@@ -59,7 +60,10 @@
 			
 			var p = new VParser(lexerContent);
 			p.debug = true;
+			p.parse();
 
+			var c = new VCompiler(p.buffers, lexerContent);
+			//c.debug = true;
 
 		</script>
 	</body>

@@ -138,14 +138,27 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="odd">Some element, number 1, value b</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="even">Some element, number 2, value c</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="odd">Some element, number 3, value d</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> ');
 		}
 	}
-	,'forEach blocks and markup with complex interpolation/expression': {
-		topic: function(){
-			var str = '@model.forEach(function(p){ <li class="@(p.x % 2 == 0 ? \'blue\' : \'red\')">list item</li> });';
-			return vash.compile(str);
+	,'forEach': {
+		'and markup with complex interpolation/expression': {
+			topic: function(){
+				var str = '@model.forEach( function(p){ <li class="@(p.x % 2 == 0 ? \'blue\' : \'red\')">list item</li> })';
+				return vash.compile(str);
+			}
+			,'output markup': function(topic){
+				var model = [{ x: 0, y: 1 }];
+				assert.equal(topic(model), '<li class="blue">list item</li> ');
+			}
 		}
-		,'output markup': function(topic){
-			var model = [{ x: 0, y: 1 }];
-			assert.equal(topic(model), '<li class="blue">list item</li> ');
+		,'wrapped in tags': {
+			topic: function(){
+				var str = '<ul>@model.forEach( function(p){ <li>@p</li> })</ul>';
+				return str;
+			}
+			,'output markup': function(topic){
+				var topic = vash.compile(topic);
+				var model = ['a', 'b'];
+				assert.equal(topic(model), '<ul><li>a</li> <li>b</li> </ul>');
+			}
 		}
 	}
 	,'empty try/catch block': {
@@ -318,6 +331,24 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'outputs non-function defined markup': function(topic){
 			assert.equal( topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> ' );
+		}
+	}
+	,'immediate function invocation within expression': {
+		topic: function(){
+			var str = '<a>@(false || (function(){ <b>YES</b> })())</a>';
+			return vash.compile(str);
+		}
+		,'returns properly': function(topic){
+			assert.equal( topic(), '<a><b>YES</b></a>' )
+		}
+	}
+	,'function invocation within expression buffers': {
+		topic: function(){
+			var str = '<a>@["a", "b", "c"].map(function(l){ return <b>@l</b> }).join("")</a>';
+			return vash.compile(str);
+		}
+		,'returns properly': function(topic){
+			assert.equal( topic(), '<a><b>YES</b></a>' )
 		}
 	}
 	,'anonymous block and while loop with manual increment': {
@@ -826,6 +857,47 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	
+	,'fat arrow': {
+
+		'with single parameter': {
+			topic: function(){
+				return vash.compile( '<ul>@arr.forEach( i => <li>@i</li> )</ul>' );
+			}
+
+			,'succeeds': function(topic){
+				assert.equal( topic( { arr: ['a','b'] } ), '<ul><li>a</li> <li>b</li> </ul>' )
+			}
+		}
+		// this is technically incorrect, but pretty cool that you can do it
+		,'with multiple unparenthetized parameters': {
+			topic: function(){
+				return vash.compile( '<ul>@arr.forEach( i, k => <li>@i</li> )</ul>' );
+			}
+
+			,'succeeds': function(topic){
+				assert.equal( topic( { arr: ['a','b'] } ), '<ul><li>a</li> <li>b</li> </ul>' )
+			}
+		}
+		,'with multiple parameters': {
+			topic: function(){
+				return vash.compile( '<ul>@arr.forEach( (i,k) => <li>@i</li> )</ul>' );
+			}
+
+			,'succeeds': function(topic){
+				assert.equal( topic( { arr: ['a','b'] } ), '<ul><li>a</li> <li>b</li> </ul>' )
+			}
+		}
+		,'with multiple parameters with function block': {
+			topic: function(){
+				return vash.compile( '<ul>@arr.forEach( (i,k) => { <li>@i</li> } )</ul>' );
+			}
+
+			,'succeeds': function(topic){
+				assert.equal( topic( { arr: ['a','b'] } ), '<ul><li>a</li> <li>b</li> </ul>' )
+			}
+		}
+	}
+
 	,'html escaping:': {
 
 		'basic': {
