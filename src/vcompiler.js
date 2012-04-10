@@ -16,7 +16,7 @@ VCP.generate = function(options){
 	
 	//this.insertFunctionBuffering();
 	this.mergeTokens();
-	this.insertBlockSemiColons();
+	//this.insertBlockSemiColons();
 }
 
 VCP.assemble = function(options){
@@ -37,13 +37,13 @@ VCP.assemble = function(options){
 		tok = this.tokens[i];
 
 		options.debugCompiler && console.log(tok);
-		options.debug && lines.push( '__vline = ' + tok.line + '; __vchar = ' + tok.chr + ';' )
+		options.debug && lines.push( ';__vline = ' + tok.line + ';__vchar = ' + tok.chr + ';' )
 
 		// normalize in prep for eval
 		tok.val = tok.val.replace(reQuote, '\"');
 
 		if(tok.mode === VParser.modes.MKP){
-			lines.push( '__vout.push(\'' + tok.val.replace(reLineBreak, '\\n') + '\');' )
+			lines.push( ';__vout.push(\'' + tok.val.replace(reLineBreak, '\\n') + '\');' )
 		}
 
 		if(tok.mode === VParser.modes.BLK){
@@ -52,7 +52,7 @@ VCP.assemble = function(options){
 		}
 
 		if(tok.mode === VParser.modes.EXP){
-			lines.push( '__vout.push(' + tok.val.replace(reLineBreak, '\\n') + ');' )
+			lines.push( ';__vout.push(' + tok.val.replace(reLineBreak, '\\n') + ');' )
 		}
 	}
 
@@ -73,7 +73,7 @@ VCP.assemble = function(options){
 	}
 
 	lines.push('return __vout.join(\'\');');
-	body = lines.join('');
+	body = lines.join('').replace(';;', ';');
 	options.debugCompiler && console.log(body);
 
 	try {
@@ -225,6 +225,8 @@ VCP.fatArrowTransform = function(){
 				: tok.val.substring(openArgParenAt, closeArgParenAt + 1))
 			+ (this.tokens[nextNonWhiteSpaceAt].type !== VLexer.tks.BRACE_OPEN ? '{' : '');
 		// (function( i ){
+
+		// TODO: check for return statement, if not present, insert directly after function body begins?
 
 		if(this.tokens[nextNonWhiteSpaceAt].type !== VLexer.tks.BRACE_OPEN){
 			this.tokens.splice(closeParenAt, 0, { 

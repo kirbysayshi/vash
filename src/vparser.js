@@ -358,8 +358,8 @@ VParser.prototype = {
 				this._useToken(curr);
 				break;
 			
-			case this.tks.BRACE_CLOSE:
 			case this.tks.PAREN_CLOSE:
+			case this.tks.BRACE_CLOSE:
 				block = this.blockStack.pop();
 				
 				// try to find a block of type BLK. save non-BLKs for later...
@@ -381,6 +381,11 @@ VParser.prototype = {
 				next = this.lex.lookahead(1);
 				if( next && (next.type === this.tks.KEYWORD || next.type === this.tks.FUNCTION) )
 					break;
+
+				if( next && next.type === this.tks.PERIOD ){
+					this._endMode(VParser.modes.EXP);
+					break;
+				}
 
 				block = this.blockStack.peek();
 				if(block !== null && block.type === VParser.modes.MKP) 

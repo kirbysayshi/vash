@@ -336,19 +336,27 @@ vows.describe('vash templating library').addBatch({
 	,'immediate function invocation within expression': {
 		topic: function(){
 			var str = '<a>@(false || (function(){ <b>YES</b> })())</a>';
-			return vash.compile(str);
+			return vash.compile(str, { debugCompiler: false });
 		}
 		,'returns properly': function(topic){
 			assert.equal( topic(), '<a><b>YES</b></a>' )
 		}
 	}
+	,'array literal': {
+		topic: function(){
+			return vash.compile('<a>@["a", "b", "c"]</a>');
+		}
+		,'toStrings': function(topic){
+			assert.equal( topic(), '<a>a,b,c</a>' );
+		}
+	}
 	,'function invocation within expression buffers': {
 		topic: function(){
-			var str = '<a>@["a", "b", "c"].map(function(l){ return <b>@l</b> }).join("")</a>';
-			return vash.compile(str);
+			var str = '<a>@model.map(function(l){ return "__" + l + "__";  }).forEach(function(l){ <b>@l</b> })</a>';
+			return vash.compile(str, { debugCompiler: false });
 		}
 		,'returns properly': function(topic){
-			assert.equal( topic(), '<a><b>YES</b></a>' )
+			assert.equal( topic(["a", "b", "c"]), '<a><b>__a__</b> <b>__b__</b> <b>__c__</b> </a>' )
 		}
 	}
 	,'anonymous block and while loop with manual increment': {
