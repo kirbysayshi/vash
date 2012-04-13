@@ -21,6 +21,8 @@
 
 })(function(exports){
 
+	var vash = exports; // neccessary for nodejs references
+
 	exports["version"] = "0.4.1-?BUILDNUM?";
 
 	exports["config"] = {
@@ -32,15 +34,34 @@
 	};
 
 	/************** Begin injected code from build script */
-	?CODE?
+	/*?CODE?*/
 	/************** End injected code from build script */
+
+	exports['isArray'] = function(obj){
+		return Object.prototype.toString.call(obj) == '[object Array]'
+	}
+
+	exports['copyObj'] = function(obj){
+		var nObj = {};
+
+		for(var i in obj){
+			if(Object.prototype.hasOwnProperty(i)){
+				nObj[i] = obj[i]
+			}
+		}
+
+		return nObj;
+	}
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function compile(markup, options){
 
-		var  p
+		var  l
+			,tok
+			,tokens = []
+			,p
 			,c
 			,cmp;
 
@@ -51,11 +72,15 @@
 		options.debugParser = options.debugParser || exports.config.debugParser;
 		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
 
-		p = new VParser(markup, options);
+		l = new VLexer(markup);
+		while(tok = l.advance()) tokens.push(tok)
+		tokens.reverse(); // parser needs in reverse order for faster popping vs shift
+
+		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.buffers, p.lex.originalInput);
-		c.generate(options);
+		c = new VCompiler(p.ast, markup);
+		//c.generate(options);
 
 		// Express support
 		cmp = c.assemble(options);

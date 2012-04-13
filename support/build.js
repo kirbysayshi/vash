@@ -6,6 +6,7 @@ var fs = require('fs')
 	,exp = fs.readFileSync(__dirname + '/../src/vash.exports.js', 'utf8')
 	,commonFiles = [
 		 '../src/vlexer.js'
+		,'../src/vast.js'
 		,'../src/vparser.js'
 		,'../src/vcompiler.js'
 	];
@@ -31,7 +32,7 @@ function minify(str){
 
 common = combine(commonFiles);
 exp = exp
-	.replace('?CODE?', common)
+	.replace('/*?CODE?*/', common)
 	.replace('?BUILDNUM?', ++buildNum);
 
 fs.writeFileSync(__dirname + '/buildnum', buildNum.toString(), 'utf8');

@@ -20,7 +20,8 @@ var tryCompile = function(str){
 vows.describe('vash templating library').addBatch({
 	'a plain text template': {
 		topic: function(){
-			return vash.compile('<a href="">this is a <br /> simple template</a>');
+			var tpl = vash.compile('<a href="">this is a <br /> simple template</a>');
+			return tpl;
 		}
 		,'sends back the same plain text': function(topic){
 			assert.equal( topic(), '<a href="">this is a <br /> simple template</a>');
@@ -161,7 +162,7 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 	}
-	,'empty try/catch block': {
+	/*,'empty try/catch block': {
 		topic: function(){
 			var str = "@try { var i = 0; } catch(e){  }";
 			return vash.compile(str);
@@ -964,7 +965,7 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
-	}
+	}*/
 
 	//,'putting markup into a property': {
 	//	topic: function(){
