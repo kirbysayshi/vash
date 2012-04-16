@@ -41,25 +41,25 @@ fs.writeFileSync(__dirname + '/../build/vash.min.js', minify(exp), 'utf8');
 
 console.log('finished build #' + buildNum);
 
-//request.post({ 
-//	url: 'http://closure-compiler.appspot.com/compile'
-//	,method: 'POST'
-//	,form: {
-//		compilation_level: 'SIMPLE_OPTIMIZATIONS'
-//		,output_format: 'text'
-//		,output_info: 'compiled_code'
-//		,js_code: exp
-//		,js_externs: 'function define(){}function module(){}function exports(){}'
-//		//,formatting: 'pretty_print'
-//	}
-//}, function(err, resp, body){
-//	if(!err){
-//		fs.writeFileSync(__dirname + '/../build/vash.closure.min.js', body, 'utf8');		
-//		console.log('finished build #' + buildNum);
-//	} else {
-//		console.log('finished build #' + buildNum + ', but was unable to minify: ' + err);
-//	}
-//
-//	process.exit();
-//})
+/*request.post({ 
+	url: 'http://closure-compiler.appspot.com/compile'
+	,method: 'POST'
+	,form: {
+		compilation_level: 'ADVANCED_OPTIMIZATIONS'
+		,output_format: 'text'
+		,output_info: 'compiled_code'
+		,js_code: exp
+		,js_externs: 'function define(){}function module(){}function exports(){}'
+		,formatting: 'pretty_print'
+	}
+}, function(err, resp, body){
+	if(!err){
+		fs.writeFileSync(__dirname + '/../build/vash.closure.min.js', body, 'utf8');		
+		console.log('finished build #' + buildNum);
+	} else {
+		console.log('finished build #' + buildNum + ', but was unable to minify: ' + err);
+	}
+
+	process.exit();
+})*/
 

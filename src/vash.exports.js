@@ -13,10 +13,10 @@
 	// this pattern was inspired by LucidJS,
 	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
 
-	typeof define === 'function' && define.amd
+	typeof define === 'function' && define['amd']
 		? define(vash) // AMD
-		: typeof module === 'object' && module.exports
-			? module.exports = vash // NODEJS
+		: typeof module === 'object' && module['exports']
+			? module['exports'] = vash // NODEJS
 			: window['vash'] = vash // BROWSER
 
 })(function(exports){
