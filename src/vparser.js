@@ -8,15 +8,13 @@ function VParser(tokens, options){
 
 	this.tokens = tokens;
 
-	this.ast = new VAST();
+	this.ast = vQuery(VParser.modes.PRG);
 
 	//if(this.ast.current.type === VParser.modes.PRG){
 	//	this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );
 	//}
 
 	//delete this.options.initialMode;
-
-	this.debug = this.options.debugParser;
 }
 
 VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -24,42 +22,42 @@ VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION"
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block, orderedTokens, topMsg = 'Top 30 tokens ordered by TOUCHING';
+		var curr, i, len, block;
 
 		while( (curr = this.tokens.pop()) ){
 
-			if(this.debug){
-				console.log(this.ast.current && this.ast.current.type, curr.type, curr, curr.val);
+			if(this.options.debugParser){
+				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
 			}
 
-			if(this.ast.current.type === VParser.modes.PRG){
+			if(this.ast.mode === VParser.modes.PRG || this.ast.mode === null){
 				
-				this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );	
+				this.ast = this.ast.beget( this.options.initialMode || VParser.modes.MKP );	
 
 				if(this.options.initialMode === VParser.modes.EXP){
-					this.ast.openNewAsChild( VParser.modes.EXP, null, true ); // EXP needs to know it's within to continue
+					this.ast = this.ast.beget( VParser.modes.EXP ); // EXP needs to know it's within to continue
 				}
 
-				//delete this.options.initialMode; // always want to fallback to MKP after initial
+				//delete this.options.initialMode; // always want to fallback to MKP after initial?
 			}
 
-			if(this.ast.current.type === VParser.modes.MKP){
+			if(this.ast.mode === VParser.modes.MKP){
 				this.handleMKP(curr);
 				continue;
 			}
 			
-			if(this.ast.current.type === VParser.modes.BLK){
+			if(this.ast.mode === VParser.modes.BLK){
 				this.handleBLK(curr);
 				continue;
 			}
 			
-			if(this.ast.current.type === VParser.modes.EXP){
+			if(this.ast.mode === VParser.modes.EXP){
 				this.handleEXP(curr);	
 				continue;
 			}
 		}
 
-		this.ast.root();
+		this.ast = this.ast.root();
 
 		// TODO: some sort of node closed check
 		//for(i = 0, len = this.blockStack.count(); i < len; i++){
@@ -70,7 +68,10 @@ VParser.prototype = {
 		//		throw this.exceptionFactory(new Error, 'UNMATCHED', block.tok);
 		//}
 
-		if(this.debug){
+		if(this.options.debugParser && !this.options.initialMode){
+			// this should really only output on the true root
+
+			console.log(this.ast);
 			console.log(this.ast.toTreeString());
 		}
 		
@@ -142,19 +143,29 @@ VParser.prototype = {
 		return tks;
 	}
 
-	,advanceUntilMatched: function(curr, start, end){
-		var next = curr
+	,advanceUntilMatched: function(curr, start, end, escape){
+		var  next = curr
+			,prev = null
 			,nstart = 0
 			,nend = 0
 			,tks = [];
 		
 		while(next){
-			if(next.type === start) { nstart++; }
-			if(next.type === end) { nend++; }
-			
+
+			if( next.type === start ){
+				nstart++;
+				//if(prev && prev.type === escape){ nstart--; }
+			}
+
+			if( next.type === end ){
+				nend++;
+				if(prev && prev.type === escape){ nend--; }
+			}
+
 			tks.push(next);
 			
 			if(nstart === nend) { break; }
+			prev = next;
 			next = this.tokens.pop();
 			if(!next) { throw this.exceptionFactory(new Error, 'UNMATCHED', curr); }
 		}
@@ -171,7 +182,7 @@ VParser.prototype = {
 		switch(curr.type){
 			
 			case VLexer.tks.AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE);
+				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT);
 				break;
 			
 			case VLexer.tks.AT:
@@ -180,30 +191,42 @@ VParser.prototype = {
 					case VLexer.tks.PAREN_OPEN:
 					case VLexer.tks.IDENTIFIER:
 					case VLexer.tks.HTML_RAW:
-						this.ast.openNewAsChild( VParser.modes.EXP );
+
+						if(this.ast.length === 0) {
+							this.ast = this.ast.parent;
+							this.ast.pop(); // remove empty MKP block
+						}
+
+						this.ast = this.ast.beget( VParser.modes.EXP );
 						break;
 					
 					case VLexer.tks.KEYWORD:
 					case VLexer.tks.FUNCTION:
 					case VLexer.tks.BRACE_OPEN:
 					case VLexer.tks.BLOCK_GENERATOR:
-						this.ast.openNewAsChild( VParser.modes.BLK );
+
+						if(this.ast.length === 0) {
+							this.ast = this.ast.parent;
+							this.ast.pop(); // remove empty MKP block
+						}
+
+						this.ast = this.ast.beget( VParser.modes.BLK );
 						break;
 					
 					default:
-						this.ast.useToken(this.tokens.pop());
+						this.ast.push( this.tokens.pop() )
 						break;
 				}
 				break;		
 			
 			// TODO: are these really right?
 			case VLexer.tks.BRACE_OPEN:
-				this.ast.openNewAsChild( VParser.modes.BLK );
+				this.ast = this.ast.beget( VParser.modes.BLK );
 				this.tokens.push(curr); // defer
 				break;
 
 			case VLexer.tks.BRACE_CLOSE:
-				this.ast.closeCurrent();
+				this.ast = this.ast.parent;
 				this.tokens.push(curr); // defer
 				break;
 			
@@ -214,46 +237,65 @@ VParser.prototype = {
 				if(tagName === null && next && next.type === VLexer.tks.AT && ahead)
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
 
-				this.ast.openNewAsChild( VParser.modes.MKP );
-				this.ast.current.asTag( tagName[1] );
+				if(this.ast.tagName){
+					// current markup is already waiting for a close tag, make new child
+					this.ast = this.ast.beget(VParser.modes.MKP, tagName[1])	
+				} else {
+					this.ast.tagName = tagName[1];
+				}
 
 				if(VLexer.tks.HTML_TAG_OPEN === curr.type) {
-					this.ast.useToken(curr);
+					this.ast.push(curr);
 				}
+
 				break;
 			
 			case VLexer.tks.TEXT_TAG_CLOSE:
 			case VLexer.tks.HTML_TAG_CLOSE:
-				/*tagName = curr.val.match(/^<\/([^>]+)/i); 
+				tagName = curr.val.match(/^<\/([^>]+)/i); 
 				
-				if(tagName === null && next && next.type === VLexer.tks.AT && ahead)
+				if(tagName === null && next && next.type === VLexer.tks.AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for </@exp>
-				
-				opener = this.ast.searchParentsFor( 'tagName', tagName[1] );
-				
-				if(opener === null){
-					// couldn't find opening tag
-					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
 				}
-
-				this.ast.current = opener;*/
+				
+				opener = this.ast.closest( VParser.modes.MKP, tagName[1] );
+				
+				if(opener === null || opener.tagName !== tagName[1]){
+					// couldn't find opening tag
+					// could mean this closer is within a child parser
+					//throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
+				} else {
+					this.ast = opener;
+				}
 				
 				if(VLexer.tks.HTML_TAG_CLOSE === curr.type) { 
-					this.ast.useAsStopper(curr);
-					this.ast.closeCurrent();
+					this.ast.push( curr );
 				}
 
 				if(
-					this.ast.current.parent && this.ast.current.parent.type === VParser.modes.BLK
+					this.ast.parent && this.ast.parent.mode === VParser.modes.BLK
 					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
 				){
-					this.ast.useToken(this.advanceUntilNot(VLexer.tks.WHITESPACE));
-					this.ast.closeCurrent();
+					this.ast = this.ast.parent;
+					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
+				}
+				break;
+
+			case VLexer.tks.HTML_TAG_SELFCLOSE:
+
+				this.ast.push(curr);
+
+				if(
+					this.ast.parent && this.ast.parent.mode === VParser.modes.BLK
+					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
+				){
+					this.ast = this.ast.parent;
+					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
 				}
 				break;
 
 			default:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				break;
 		}
 		
@@ -263,6 +305,7 @@ VParser.prototype = {
 		
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,opener
+			,closer
 			,subTokens
 			,parseOpts
 			,miniParse
@@ -278,14 +321,13 @@ VParser.prototype = {
 					
 					default:
 						this.tokens.push(curr); // defer
-						this.ast.closeCurrent();
-						this.ast.openNewAsChild(VParser.modes.MKP);
+						this.ast = this.ast.beget(VParser.modes.MKP);
 						break;
 				}
 				break;
 			
 			case VLexer.tks.AT_COLON:
-				this.ast.openNewAsChild(VParser.modes.MKP);
+				this.ast = this.ast.beget(VParser.modes.MKP);
 				break;
 			
 			case VLexer.tks.TEXT_TAG_OPEN:
@@ -293,39 +335,47 @@ VParser.prototype = {
 			case VLexer.tks.HTML_TAG_SELFCLOSE:
 			case VLexer.tks.HTML_TAG_OPEN:
 			case VLexer.tks.HTML_TAG_CLOSE:
-				this.ast.openNewAsChild(VParser.modes.MKP);
+				this.ast = this.ast.beget(VParser.modes.MKP);
 				this.tokens.push(curr); // defer
 				break;
 			
 			case VLexer.tks.FAT_ARROW:
-				this.ast.openNewAsChild(VParser.modes.BLK, curr);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			case VLexer.tks.BRACE_OPEN:
 			case VLexer.tks.PAREN_OPEN:
-
-				if(this.ast.current.closed()){
-					this.ast.openNewAsSibling(VParser.modes.BLK, curr);
-				} else {
-					this.ast.useToken(curr);
-				}
 				
-				parseOpts = vash.copyObj(this.options);
+				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.BLK;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
 				subTokens.pop(); // remove (
-				this.ast.useAsStopper( subTokens.shift() );
+				closer = subTokens.shift();
+
+				this.ast.push(curr);
+				
 				miniParse = new VParser( subTokens, parseOpts );
 				miniParse.parse();
-				this.ast.current.children.push.apply(this.ast.current.children, miniParse.ast.current.children);
 
-				// correct parent of mini
-				for(i = this.ast.current.children.length-1; i >= 0; i--){
-					this.ast.current.children[i].parent = this.ast.current;
+				this.ast.pushFlatten(miniParse.ast);
+				this.ast.push( closer );
+				
+				subTokens = this.advanceUntilNot(VLexer.tks.WHITESPACE);
+				next = this.tokens[ this.tokens.length - 1 ];
+
+				if( 
+					next 
+					&& next.type !== VLexer.tks.KEYWORD 
+					&& next.type !== VLexer.tks.FUNCTION 
+					&& next.type !== VLexer.tks.BRACE_OPEN 
+					&& curr.type !== VLexer.tks.PAREN_OPEN 
+				){
+					this.tokens.push.apply(this.tokens, subTokens.reverse());
+					this.ast = this.ast.parent;	
+				} else {
+					this.ast.push(subTokens);
 				}
 
-				this.ast.closeCurrent();
-				
 				break;
 			
 			/*case VLexer.tks.PAREN_CLOSE:
@@ -361,12 +411,12 @@ VParser.prototype = {
 				break;*/
 
 			case VLexer.tks.WHITESPACE:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				this.advanceUntilNot(VLexer.tks.WHITESPACE);
 				break;
 
 			default:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				break;
 		}
 		
@@ -376,6 +426,8 @@ VParser.prototype = {
 		
 		var ahead = null
 			,opener
+			,closer
+			,parseOpts
 			,miniParse
 			,subTokens
 			,i;
@@ -384,7 +436,7 @@ VParser.prototype = {
 			
 			case VLexer.tks.KEYWORD:
 			case VLexer.tks.FUNCTION:	
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				this.tokens.push(curr); // defer
 				break;
 			
@@ -392,21 +444,36 @@ VParser.prototype = {
 			case VLexer.tks.ASSIGN_OPERATOR:
 			case VLexer.tks.OPERATOR:
 			case VLexer.tks.NUMERIC_CONTENT:
+				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
+
+					this.ast.push(curr);
+				} else {
+
+					// if not contained within a parent EXP, must be end of EXP
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
+				}
+
+				break;
+
 			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.IDENTIFIER:
 			case VLexer.tks.HTML_RAW:
-				this.ast.useToken(curr);		
+				this.ast.push(curr);
 				break;
 			
 			case VLexer.tks.SINGLE_QUOTE:
 			case VLexer.tks.DOUBLE_QUOTE:
-
-				if(this.ast.current.parent.type !== VParser.modes.EXP){
-					// probably end of expression
-					this.ast.closeCurrent();
-					this.tokens.push(curr); // defer
-				
+				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
+					this.ast.push(curr);
+					
 				} else {
+					// probably end of expression
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
+				}
+
+				/* else {
 
 					if(this.ast.current.closed()){
 						this.ast.closeCurrent();
@@ -415,41 +482,47 @@ VParser.prototype = {
 						subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
 						this.ast.useToken(subTokens);	
 					}	
-				}
+				}*/
 
 				break;
 
 			case VLexer.tks.HARD_PAREN_OPEN:
 			case VLexer.tks.PAREN_OPEN:
 
-				if(this.ast.current.closed()){
-					this.ast.openNewAsSibling(VParser.modes.EXP, curr);
-				} else {
-					this.ast.useToken(curr);
-				}
-
-				parseOpts = vash.copyObj(this.options);
+				//if(this.ast.parent && this.ast.parent.parent && this.ast.parent.mode !== VParser.modes.EXP && this.ast.parent.parent.mode !== VParser.modes.EXP){
+				//	this.ast = this.ast.beget(VParser.modes.EXP);
+				//}
+				
+				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.EXP;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
 				subTokens.pop();
-				this.ast.useAsStopper( subTokens.shift() );
+				closer = subTokens.shift();
+
+				this.ast.push(curr);
+
 				miniParse = new VParser( subTokens, parseOpts );
 				miniParse.parse();
 
 				// EXP miniparsers automatically are double-nested for the parsing process
 				// but it's not needed once merging back in
-				this.ast.current.children.push.apply(this.ast.current.children, miniParse.ast.current.children[0].children);
+				this.ast.pushFlatten(miniParse.ast);
+				this.ast.push(closer);
 
-				// correct parent of mini
-				for(i = this.ast.current.children.length-1; i >= 0; i--){
-					this.ast.current.children[i].parent = this.ast.current;
+				ahead = this.tokens[ this.tokens.length - 1 ];
+
+				if(
+					this.ast.parent && this.ast.parent.mode !== VParser.modes.EXP 
+					&& (ahead && ahead.type !== VLexer.tks.HARD_PAREN_OPEN && ahead.type !== VLexer.tks.PERIOD )
+				){
+					this.ast = this.ast.parent;
 				}
 
 				break;
 			
 			case VLexer.tks.BRACE_OPEN:
 				this.tokens.push(curr); // defer
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			/*case VLexer.tks.HARD_PAREN_CLOSE:
@@ -467,29 +540,34 @@ VParser.prototype = {
 
 			case VLexer.tks.FAT_ARROW:
 				this.tokens.push(curr); // defer
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			case VLexer.tks.PERIOD:
-				ahead = this.tokens[ this.tokens.length - 1 ]
+				ahead = this.tokens[ this.tokens.length - 1 ];
 				if(
 					ahead && (ahead.type === VLexer.tks.IDENTIFIER 
 						|| ahead.type === VLexer.tks.KEYWORD 
 						|| ahead.type === VLexer.tks.FUNCTION)
 				) {
-					this.ast.useToken(curr);
+					this.ast.push(curr);
 				} else {
 					//this.ast.openNewAsChild(VParser.modes.MKP);
-					this.ast.closeCurrent();
+					this.ast = this.ast.parent;
 					this.tokens.push(curr); // defer
 				}
 				break;
 			
 			default:
-				// assume end of expression
-				this.ast.closeCurrent();
-				//this.ast.openNewAsChild(VParser.modes.MKP);
-				this.tokens.push(curr); // defer
+
+				if( this.ast.parent && this.ast.parent.mode !== VParser.modes.EXP ){
+					// assume end of expression
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
+				} else {
+					this.ast.push(curr);
+				}
+
 				break;
 				
 		}

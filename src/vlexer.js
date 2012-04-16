@@ -1,12 +1,13 @@
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // This pattern and basic lexer code are taken from the Jade lexer:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
-	this.tokens = [];
+	//this.tokens = [];
 	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
-	this.deferredTokens = [];
-	this.stash = [];
+	//this.deferredTokens = [];
+	//this.stash = [];
 	this.lineno = 1;
 	this.charno = 0;
 }
@@ -19,19 +20,21 @@ VLexer.prototype = {
 			,line: this.lineno
 			,chr: this.charno
 			,val: val
-			,touched: 0
-		}
+			,toString: function(){
+				return (this.mode ? this.mode : '') + '[' + this.type + ' (' + this.line + ',' + this.chr + '): ' + this.val + ']';
+			}
+		};
 	}
 	
 	,scan: function(regexp, type){
 		var captures, token;
-	    if (captures = regexp.exec(this.input)) {
+		if (captures = regexp.exec(this.input)) {
 			this.consume(captures[0].length);
 			
 			token = this.tok(type, captures[1]);
 			this.charno += captures[0].length;
 			return token;
-	    }
+		}
 	}
 	
 	,spew: function(str){
@@ -47,12 +50,10 @@ VLexer.prototype = {
 		var parts;
 
 		if(tok){
-			tok.touched += 1;
 			parts = tok.val.split(ifStr);
 
 			if(parts.length > 1){
 				tok.val = parts.shift();
-				tok.touched += 1;
 				this.spew(ifStr + parts.join(ifStr));
 			}
 		}
@@ -61,12 +62,13 @@ VLexer.prototype = {
 	}
 
 	,advance: function(){
-		return this.deferred()
+		return this.next();
+		/*return this.deferred()
 			|| this.stashed()
-			|| this.next();
+			|| this.next();*/
 	}
 
-	,defer: function(tok){
+	/*,defer: function(tok){
 		tok.touched += 1;
 		this.deferredTokens.push(tok);
 	}
@@ -75,7 +77,7 @@ VLexer.prototype = {
 		var fetch = n - this.stash.length;
 		while (fetch-- > 0) this.stash.push(this.next());
 		return this.stash[--n];
-	}
+	}*/
 
 	,next: function() {
 		return this.EMAIL()
@@ -110,11 +112,20 @@ VLexer.prototype = {
 			|| this.HTML_RAW()
 			//|| this.BLOCK_GENERATOR()
 			|| this.IDENTIFIER()
+
+			|| this.OPERATOR()
+			|| this.ASSIGN_OPERATOR()
+			|| this.LOGICAL()
+
+			|| this.DOUBLE_QUOTE()
+			|| this.SINGLE_QUOTE()
+
+			|| this.NUMERIC_CONTENT()
 			|| this.CONTENT()
 			//|| this.EOF()
 	}
 
-	,deferred: function() {
+	/*,deferred: function() {
 
 		var tok = this.deferredTokens.shift();
 
@@ -136,7 +147,7 @@ VLexer.prototype = {
 		} else {
 			return false;
 		}
-	}
+	}*/
 	
 	,AT: function(){
 		return this.scan(/^(@)/, VLexer.tks.AT);
@@ -207,6 +218,24 @@ VLexer.prototype = {
 	,EMAIL: function(){
 		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, VLexer.tks.EMAIL);
 	}
+	,ASSIGN_OPERATOR: function(){
+		return this.scan(/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/, VLexer.tks.ASSIGN_OPERATOR);
+	}
+	,OPERATOR: function(){
+		return this.scan(/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/, VLexer.tks.OPERATOR);
+	}
+	,LOGICAL: function(){
+		return this.scan(/^(&&|\|\||&|\||\^)/, VLexer.tks.LOGICAL);
+	}
+	,SINGLE_QUOTE: function(){
+		return this.scan(/^(\\?')/, VLexer.tks.SINGLE_QUOTE)
+	}
+	,DOUBLE_QUOTE: function(){
+		return this.scan(/^(\\?")/, VLexer.tks.DOUBLE_QUOTE)
+	}
+	,NUMERIC_CONTENT: function(){
+		return this.scan(/^([0-9]+)/, VLexer.tks.NUMERIC_CONTENT);
+	}
 	,CONTENT: function(){
 		return this.scan(/^([^\s})@.]+?)/, VLexer.tks.CONTENT);
 	}
@@ -248,10 +277,25 @@ VLexer.tks = {
 	,FAT_ARROW: 'FAT_ARROW'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
+	,ASSIGN_OPERATOR: 'ASSIGN_OPERATOR'
+	,SINGLE_QUOTE: 'SINGLE_QUOTE'
+	,DOUBLE_QUOTE: 'DOUBLE_QUOTE'
+	,NUMERIC_CONTENT: 'NUMERIC_CONTENT'
+	,OPERATOR: 'OPERATOR'
+	,LOGICAL: 'LOGICAL'
 	,CONTENT: 'CONTENT'
 	,WHITESPACE: 'WHITESPACE'
 	,NEWLINE: 'NEWLINE'
 	,EOF: 'EOF'
 	,HTML_RAW: 'HTML_RAW'
 	//,BLOCK_GENERATOR: 'BLOCK_GENERATOR'
+};
+
+VLexer.pairs = {
+	 AT_STAR_OPEN: VLexer.tks.AT_STAR_CLOSE
+	,PAREN_OPEN: VLexer.tks.PAREN_CLOSE
+	,BRACE_OPEN: VLexer.tks.BRACE_CLOSE
+	,HARD_PAREN_OPEN: VLexer.tks.HARD_PAREN_CLOSE
+	,DOUBLE_QUOTE: VLexer.tks.DOUBLE_QUOTE
+	,SINGLE_QUOTE: VLexer.tks.SINGLE_QUOTE
 };

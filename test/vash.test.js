@@ -90,7 +90,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'output markup': function(topic){
-			assert.equal(topic(), '<li class="">list item</li> ');
+			assert.equal(topic(), '<li class="">list item</li>');
 		}
 	}
 	,'for blocks and markup with interpolation/expression': {
@@ -99,7 +99,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'output markup': function(topic){
-			assert.equal(topic(), '<li class="0">list item</li> ');
+			assert.equal(topic(), '<li class="0">list item</li>');
 		}
 	}
 	,'for blocks and markup with complex interpolation/expression': {
@@ -108,7 +108,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'output markup': function(topic){
-			assert.equal(topic(), '<li class="blue">list item</li> ');
+			assert.equal(topic(), '<li class="blue">list item</li>');
 		}
 	}
 	,'nested for blocks and markup with complex interpolation/expression': {
@@ -117,7 +117,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'output markup': function(topic){
-			assert.equal(topic(), '<li class="blue">list item</li> <li class="blue">list item</li> ');
+			assert.equal(topic(), '<li class="blue">list item</li><li class="blue">list item</li>');
 		}
 	}
 	,'nested for blocks on new lines with markup and even more complex interpolation/expressions': {
@@ -132,11 +132,11 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'output markup': function(topic){
 			var model = {
-				somearr: ['a', 'b', 'c', 'd']
-				,anotherarr: ['z', 'y', 'x', 'w']
+				somearr: ['a', 'b']
+				,anotherarr: ['z', 'y']
 			};
 			
-			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="odd">Some element, number 1, value b</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="even">Some element, number 2, value c</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> <li class="odd">Some element, number 3, value d</li> <li class="0-what">some text, even, value z</li> <li class="1-what">some text, odd, value y</li> <li class="2-what">some text, even, value x</li> <li class="3-what">some text, odd, value w</li> ');
+			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="odd">Some element, number 1, value b</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li>');
 		}
 	}
 	,'forEach': {
@@ -147,7 +147,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'output markup': function(topic){
 				var model = [{ x: 0, y: 1 }];
-				assert.equal(topic(model), '<li class="blue">list item</li> ');
+				assert.equal(topic(model), '<li class="blue">list item</li>');
 			}
 		}
 		,'wrapped in tags': {
@@ -158,11 +158,11 @@ vows.describe('vash templating library').addBatch({
 			,'output markup': function(topic){
 				var topic = vash.compile(topic);
 				var model = ['a', 'b'];
-				assert.equal(topic(model), '<ul><li>a</li> <li>b</li> </ul>');
+				assert.equal(topic(model), '<ul><li>a</li><li>b</li></ul>');
 			}
 		}
 	}
-	/*,'empty try/catch block': {
+	,'empty try/catch block': {
 		topic: function(){
 			var str = "@try { var i = 0; } catch(e){  }";
 			return vash.compile(str);
@@ -177,7 +177,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'catch block outputs markup': function(topic){
-			assert.equal(topic(), '<li>list item</li> ')
+			assert.equal(topic(), '<li>list item</li>')
 		}
 	}
 	,'when try/catch block does not throw exception': {
@@ -186,7 +186,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'try block outputs markup': function(topic){
-			assert.equal(topic(), '<li>list item</li> ')
+			assert.equal(topic(), '<li>list item</li>')
 		}
 	}
 	,'when try/catch/finally block does not throw exception': {
@@ -195,7 +195,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'try block outputs markup': function(topic){
-			assert.equal(topic(), '<li>list item</li> <li>list item 2</li> ')
+			assert.equal(topic(), '<li>list item</li><li>list item 2</li>')
 		}
 	}
 	,'simple expression': {
@@ -286,7 +286,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li>list item</li> ');
+			assert.equal(topic(), '<li>list item</li>');
 		}
 	}
 	,'anonymous block': {
@@ -295,7 +295,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li class="1">list item</li> ');
+			assert.equal(topic(), '<li class="1">list item</li>');
 		}
 	}
 	,'nested markup and anonymous block': {
@@ -304,7 +304,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> ');
+			assert.equal(topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>');
 		}
 	}
 	,'anonymous block and nested for loop': {
@@ -313,7 +313,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> ' );
+			assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
 		}
 	}
 	,'anonymous block and named function defined': {
@@ -322,7 +322,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs non-function defined markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li> ' );
+			assert.equal( topic(), '<li class=\"1\">list item</li>' );
 		}
 	}
 	,'anonymous block and named function defined and called': {
@@ -331,7 +331,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs non-function defined markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li> <li class=\"2\">list item</li> ' );
+			assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
 		}
 	}
 	,'immediate function invocation within expression': {
@@ -343,21 +343,21 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<a><b>YES</b></a>' )
 		}
 	}
-	,'array literal': {
-		topic: function(){
-			return vash.compile('<a>@["a", "b", "c"]</a>');
-		}
-		,'toStrings': function(topic){
-			assert.equal( topic(), '<a>a,b,c</a>' );
-		}
-	}
+	//,'array literal': {
+	//	topic: function(){
+	//		return vash.compile('<a>@["a", "b", "c"]</a>');
+	//	}
+	//	,'toStrings': function(topic){
+	//		assert.equal( topic(), '<a>a,b,c</a>' );
+	//	}
+	//}
 	,'function invocation within expression buffers': {
 		topic: function(){
 			var str = '<a>@model.map(function(l){ return "__" + l + "__";  }).forEach(function(l){ <b>@l</b> })</a>';
 			return vash.compile(str, { debugCompiler: false });
 		}
 		,'returns properly': function(topic){
-			assert.equal( topic(["a", "b", "c"]), '<a><b>__a__</b> <b>__b__</b> <b>__c__</b> </a>' )
+			assert.equal( topic(["a", "b", "c"]), '<a><b>__a__</b><b>__b__</b><b>__c__</b></a>' )
 		}
 	}
 	,'anonymous block and while loop with manual increment': {
@@ -366,7 +366,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs 1 line': function(topic){
-			assert.equal( topic(), '<p>Line #1</p> ');
+			assert.equal( topic(), '<p>Line #1</p>');
 		}
 	}
 	,'anonymous block and while loop with manual increment post': {
@@ -375,7 +375,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs 1 line': function(topic){
-			assert.equal( topic(), '<p>Line #1</p> ');
+			assert.equal( topic(), '<p>Line #1</p>');
 		}
 	}
 	,'mixing code and plain text, <text> escape': {
@@ -410,7 +410,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span> ');
+			assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span>');
 		}
 	}
 	,'markup within a code block followed by else': {
@@ -425,7 +425,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span> ');
+			assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span>');
 		}
 	}
 	,'markup within a code block followed by else with markup': {
@@ -440,7 +440,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl(), '<span>different text</span> ');
+			assert.equal(tpl(), '<span>different text</span>');
 		}
 	}
 	,'markup within a code block followed by else with an expression': {
@@ -455,7 +455,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl( { name: {how: 'you' } } ), 'you \n ');
+			assert.equal(tpl( { name: {how: 'you' } } ), 'you');
 		}
 	}
 	,'markup within a complex if code block followed by else with an expression': {
@@ -469,12 +469,12 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl( { heyo: { ya: true }, name: {how: 'you' }, item: { id: 0, quantity: 23 } } ), 'you \n ');
+			assert.equal(tpl( { heyo: { ya: true }, name: {how: 'you' }, item: { id: 0, quantity: 23 } } ), 'you');
 		}
 	}
 	,'markup within a complex if code block followed by else with an expression, all within markup': {
 		topic: function(){
-			var str = '<td> @if( false ){ } else { @name.how } </td>';
+			var str = '<td>@if( false ){ } else { @name.how }</td>';
 			return str;
 		}
 		,'"else" is a keyword': function(topic){
@@ -483,7 +483,7 @@ vows.describe('vash templating library').addBatch({
 				name: {
 					how: 'you' 
 				}
-			} ), '<td> you </td>');
+			} ), '<td>you</td>');
 		}
 	}
 	,'markup within a code block with an expression in the tag name': {
@@ -512,7 +512,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'parses': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what> \n<span class="what">this is text \nthat spans multiple lines</span> ');
+			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what> \n<span class="what">this is text \nthat spans multiple lines</span> \n');
 		}
 	}
 	,'markup within a code block within markup within a code block': {
@@ -526,7 +526,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'nests properly': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl(), '<span>this is text \n<b>important</b> that spans multiple lines</span> ');
+			assert.equal(tpl(), '<span>this is text \n<b>important</b> that spans multiple lines</span>');
 		}
 	}
 	,'markup within a code block within markup within a code block with keyword': {
@@ -540,7 +540,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'nests properly': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl(), '<span>this is text \n<b>delete</b> that spans multiple lines</span> ');
+			assert.equal(tpl(), '<span>this is text \n<b>delete</b> that spans multiple lines</span>');
 		}
 	}
 	,'markup within markup within a block': {
@@ -549,7 +549,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'is consumed by markup, not block': function(topic){
-			assert.equal(vash.compile(topic)(), '<p>This is content that is <strong>important</strong> but outside.</p> ');
+			assert.equal(vash.compile(topic)(), '<p>This is content that is <strong>important</strong> but outside.</p>');
 		}
 	}
 	,'markup with numbers': {
@@ -743,7 +743,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'does not bork the block stack': function(topic){
 			//assert.doesNotThrow( function(){ vash.compile(topic); }, vash._err.MALFORMEDHTML );
-			assert.equal( vash.compile(topic)(), '<img src="" /> \n' );
+			assert.equal( vash.compile(topic)(), '<img src="" />' );
 		}
 	}
 	,'nested self closing html tag inside block': {
@@ -753,7 +753,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'does not bork the block stack': function(topic){
 			//assert.doesNotThrow( function(){ vash.compile(topic); }, vash._err.MALFORMEDHTML );
-			assert.equal( vash.compile(topic)(), '<li><img src="" /></li> ' );
+			assert.equal( vash.compile(topic)(), '<li><img src="" /></li>' );
 		}
 	}
 	,'content } in closed markup': {
@@ -764,7 +764,7 @@ vows.describe('vash templating library').addBatch({
 		,'does not need to be escaped': function(topic){
 			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
-			assert.equal( vash.compile(topic)(), '<li> } </li> ');
+			assert.equal( vash.compile(topic)(), '<li> } </li>');
 		}
 	}
 	,'content } in open markup': {
@@ -774,7 +774,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'can be escaped with @': function(topic){
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
-			assert.equal( vash.compile(topic)(), '<img src="" /> } ');
+			assert.equal( vash.compile(topic)(), '<img src="" />} ');
 		}
 	}
 	,'markup followed by for loop': {
@@ -803,7 +803,7 @@ vows.describe('vash templating library').addBatch({
 				return str;
 			}
 			,'do not bork': function(topic){
-				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0 ' );
+				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0' );
 			}
 		}
 		,'unclosed tag followed by previous closing tag does not bork': {
@@ -822,6 +822,16 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'does not throw UNMATCHED': function(topic){
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
+			}
+		}
+		,'closing tag within block': {
+			topic: function(){
+				var str = '<div>This is content @if(true){ </div> } else { </div> }';
+				return str;
+			}
+			,'closes parent': function(topic){
+				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
+				assert.equal( vash.compile(topic)(), '<div>This is content </div>' );
 			}
 		}
 	}
@@ -848,12 +858,13 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'@function': {
+		// the space before @ counts as markup
 		topic: function(){ return '@function doWhat(){ return "what"; } @doWhat()' }
 		,compiles: function(topic){
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)(), 'what' );
+			assert.equal( vash.compile(topic)(), ' what' );
 		}
 	}
 	,'@function with markup': {
@@ -862,11 +873,11 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li> ' );
+			assert.equal( vash.compile(topic)({ name: 'what' }), ' <li>what</li>' );
 		}
 	}
 	
-	,'fat arrow': {
+	/*,'fat arrow': {
 
 		'with single parameter': {
 			topic: function(){
@@ -905,7 +916,7 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( topic( { arr: ['a','b'] } ), '<ul><li>a</li> <li>b</li> </ul>' )
 			}
 		}
-	}
+	}*/
 
 	,'html escaping:': {
 
@@ -951,7 +962,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'are escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), 
-					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b> </span><b>&lt;b&gt;texted&lt;/b&gt;</b> ' );
+					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
 
@@ -961,11 +972,11 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'are escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), 
-					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b> <b>&lt;b&gt;texted&lt;/b&gt;</b>  </span><b>&lt;b&gt;texted&lt;/b&gt;</b> <b>&lt;b&gt;texted&lt;/b&gt;</b>  ' );
+					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
 
-	}*/
+	}
 
 	//,'putting markup into a property': {
 	//	topic: function(){

@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.1-672";
+	exports["version"] = "0.4.1-808";
 
 	exports["config"] = {
 		 "useWith": false
@@ -335,8 +335,378 @@ VLexer.pairs = {
 	,DOUBLE_QUOTE: VLexer.tks.DOUBLE_QUOTE
 	,SINGLE_QUOTE: VLexer.tks.SINGLE_QUOTE
 };
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VAST(root){
+var vQuery = function(node){
+	return new vQuery.prototype.init(node);
+}
+
+vQuery.prototype.vquery = 'yep';
+vQuery.prototype.constructor = vQuery;
+vQuery.prototype.length = 0;
+vQuery.prototype.parent = null;
+vQuery.prototype.mode = null;
+vQuery.prototype.tagName = null;
+
+vQuery.prototype.init = function(astNode){
+
+	// handle falsy
+	if(!astNode) return this;
+
+	// handle mode string
+	if(typeof astNode === 'string'){
+		this.mode = astNode;
+		return this;
+	}
+
+	// handle plain token?
+	if(!vQuery.isArray(astNode) && astNode.vquery !== this.vquery){
+		astNode = [astNode];
+	} else {
+
+		// protect against ridiculous bugs
+		if( astNode.length >= vQuery.maxSize ){
+			throw { name: 'vQuery Error', message: 'Maximum number of elements exceeded' };
+		}
+	}
+
+	if( astNode.vquery === this.vquery ){
+		return astNode;
+	}
+
+	return vQuery.makeArray(astNode, this);
+}
+
+vQuery.prototype.init.prototype = vQuery.prototype;
+
+vQuery.prototype.beget = function(mode, tagName){
+	var child = vQuery();
+	child.mode = mode;
+	child.parent = this;
+	this.push( child );
+
+	if(tagName) child.tagName = tagName;
+
+	return child;
+}
+
+vQuery.prototype.every = function(fun /*, thisp */) {  
+	"use strict";  
+
+	if (this == null)
+		throw new TypeError();
+
+	var t = Object(this);
+	var len = t.length >>> 0;
+	if (typeof fun != "function")
+		throw new TypeError();
+
+	var thisp = arguments[1];
+	for (var i = 0; i < len; i++){
+		if (i in t && !fun.call(thisp, t[i], i, t))
+			return false;
+	}
+
+	return true;
+};  
+
+vQuery.prototype.each = function(cb){
+	vQuery.each(this, cb, this);
+	return this;
+}
+
+vQuery.prototype.closest = function(mode, tagName){
+	var p = this;
+
+	if(!tagName){
+		while( p && (p.mode !== mode || p == this) && p.parent && (p = p.parent) );
+	} else {
+
+		while(p){
+
+			if( p.tagName !== tagName && p.parent ){
+				p = p.parent;
+			} else {
+				break;
+			}
+		}
+
+		//while( p && (p.mode !== mode || p == this) && p.tagName !== tagName && p.parent && (p = p.parent) );
+	}
+
+	return vQuery(p);
+}
+
+vQuery.prototype.pushFlatten = function(node){
+	var n = node, i, children;
+
+	while( n.length === 1 && n[0].vquery ){
+		n = n[0];
+	}
+
+	if(n.mode !== VParser.modes.PRG){
+		this.push(n);	
+	} else {
+
+		for(i = 0; i < n.length; i++){
+			this.push( n[i] )
+		}
+	}
+
+	return this;
+}
+
+vQuery.prototype.push = function(nodes){
+
+	if(vQuery.isArray(nodes)){
+		if(nodes.vquery){
+			vQuery.each(nodes, function(node){ node.parent = this; }, this);	
+		}
+		
+		Array.prototype.push.apply(this, nodes)
+	} else {
+		if(nodes.vquery){
+			nodes.parent = this;	
+		}
+		
+		Array.prototype.push.call(this, nodes)
+	}
+
+	return this.length;
+}
+
+// [mode=BLK], [mode=EXP], [type=PAREN_OPEN]
+vQuery.prototype.find = function(selector, results){
+
+	var i, j, child;
+
+	results = results || [];
+
+	if( !vQuery.isArray(selector) ){
+		selector = vQuery.parseSelector(selector);
+	}
+
+	for(i = 0; i < this.length; i++){
+		child = this[i];
+
+		if(child.vquery){
+			child.find(selector, results);
+		} 
+
+		for(j = 0; j < selector.length; j++){
+
+			if( selector[j](child) === true ){
+				results.push(child);
+			}
+		}
+	}
+
+	return results;
+}
+
+vQuery.prototype.root = function(){
+	var p = this;
+
+	while(p && p.parent && (p = p.parent));
+
+	return p;
+}
+
+vQuery.prototype.toTreeString = function(){
+	var  buffer = []
+		,indent = 1;
+
+	function visitNode(node){
+		var  children
+			,child
+
+		buffer.push( Array(indent).join(' |') + ' +' + node.mode + ' ' + ( node.tagName || '' ) );
+
+		indent += 1;
+		children = node.slice();
+		while( (child = children.shift()) ){
+
+			if(child.vquery === vQuery.prototype.vquery){
+				// recurse
+				visitNode(child);
+			} else {
+				buffer.push( Array(indent).join(' |') + ' ' 
+					+ (child
+						?  child.toString()
+						: '[empty]') 
+				);
+			}
+
+		}
+
+		indent -= 1;
+	}
+
+	visitNode(this);
+
+	return buffer.join('\n');
+}
+
+vQuery.maxSize = 500000;
+
+vQuery.parseSelector = function(selector){
+
+	var  groups = selector.split(',')
+		,group
+		,eqIndex
+		,i
+		,child
+		,tests = [];
+
+	for(i = 0; i < groups.length; i++){
+
+		// trim
+		group = groups[i].replace(/^\s+/, '').replace(/\s+$/, '');
+
+		// HANDLE: 'attribute'
+		if(group[0] === '[' && group[group.length-1] === ']'){
+
+			// remove []
+			group = group.substring(1, group.length - 1);
+
+			// HANDLE: attribute !=
+			if( (eqIndex = group.indexOf('!=')) ){
+
+				tests.push( (function(property, value){ 
+					return function(node){
+						return node[ property ] !== value
+					}
+				})( group.substring(0, eqIndex), group.substring(eqIndex + 2)) )
+
+			// HANDLE: attribute =
+			} else if( (eqIndex = group.indexOf('=')) ){
+
+				tests.push( (function(property, value){ 
+					return function(node){
+						return node[ property ] === value
+					}
+				})( group.substring(0, eqIndex), group.substring(eqIndex + 2)) )
+			}
+		}
+	}
+
+	return tests;
+}
+
+// via jQuery
+vQuery.makeArray = function( array, results ) {
+	array = Array.prototype.slice.call( array, 0 );
+
+	if ( results ) {
+		results.push.apply( results, array );
+		results.mode = array.mode;
+		results.parent = array.parent;
+		results.tagName = array.tagName;
+		return results;
+	}
+	
+	return array;
+};
+
+vQuery.isArray = function(obj){
+	return Object.prototype.toString.call(obj) == '[object Array]'
+}
+
+vQuery.each = function(nodes, cb, scope){
+	var i, node;
+
+	for(i = 0; i < nodes.length; i++){
+		node = nodes[i];
+		cb.call( (scope || node), node, i );
+	}
+}
+
+vQuery.copyObj = function(obj){
+	var nObj = {};
+
+	for(var i in obj){
+		if(Object.prototype.hasOwnProperty.call(obj, i)){
+			nObj[i] = obj[i];
+		}
+	}
+
+	return nObj;
+}
+
+vQuery.takeMethodsFromArray = function(){
+	var methods = [
+		'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift',
+		'concat', 'join', 'slice', 'indexOf', 'lastIndexOf',
+		'filter', 'forEach', 'every', 'map', 'some', 'reduce', 'reduceRight'
+	]
+
+		,arr = []
+		,m;
+
+	for (var i = 0; i < methods.length; i++){
+		m = methods[i];
+		if( typeof arr[m] === 'function' && !vQuery.prototype[m] ){
+			(function(methodName){ 
+				vQuery.prototype[methodName] = function(){
+					return arr[methodName].apply(this, vQuery.makeArray(arguments));
+				}
+			})(m);
+		}
+	}
+
+}
+
+vQuery.takeMethodsFromArray(); // run on page load
+
+var VAST = {
+
+	makeNode: function(mode, parent){
+		var n = [];
+		n.mode = mode;
+		n.isASTNode = true;
+		n.parent = parent || null;
+
+		return n;
+	}
+
+	,makeMarkupNode: function(tagName, parent){
+		var n = VAST.makeNode(VParser.modes.MKP, parent);
+		n.tagName = tagName;
+
+		return n;
+	}
+
+	,findNodeOfMode: function(node, mode){
+		var i, child;
+
+		for(i = 0; i < node.length; i++){
+			child = node[i];
+
+			if(child.isASTNode && child.mode === mode){
+				return child;
+			}
+		}
+	}
+
+	,findAncestor: function(node, mode){
+		var p = node.parent;
+
+		while(p && p.mode !== mode && p.parent && (p = p.parent));
+
+		return p;
+	}
+
+	,root: function(node){
+		var p = node.parent;
+
+		while(p && p.parent && (p = p.parent));
+
+		return p;
+	}
+
+}
+
+/*function VAST(root){
 	
 	this.current = this.openNew( VParser.modes.PRG );
 	this.rootNode = this.current;	
@@ -512,7 +882,7 @@ VASTNode.prototype.closed = function(){
 
 VASTNode.prototype.asTag = function(tagName){
 	this.tagName = tagName;
-}
+}*/
 
 
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
@@ -525,15 +895,13 @@ function VParser(tokens, options){
 
 	this.tokens = tokens;
 
-	this.ast = new VAST();
+	this.ast = vQuery(VParser.modes.PRG);
 
 	//if(this.ast.current.type === VParser.modes.PRG){
 	//	this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );
 	//}
 
 	//delete this.options.initialMode;
-
-	this.debug = this.options.debugParser;
 }
 
 VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -541,42 +909,42 @@ VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION"
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block, orderedTokens, topMsg = 'Top 30 tokens ordered by TOUCHING';
+		var curr, i, len, block;
 
 		while( (curr = this.tokens.pop()) ){
 
-			if(this.debug){
-				console.log(this.ast.current && this.ast.current.type, curr.type, curr, curr.val);
+			if(this.options.debugParser){
+				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
 			}
 
-			if(this.ast.current.type === VParser.modes.PRG){
+			if(this.ast.mode === VParser.modes.PRG || this.ast.mode === null){
 				
-				this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );	
+				this.ast = this.ast.beget( this.options.initialMode || VParser.modes.MKP );	
 
 				if(this.options.initialMode === VParser.modes.EXP){
-					this.ast.openNewAsChild( VParser.modes.EXP, null, true ); // EXP needs to know it's within to continue
+					this.ast = this.ast.beget( VParser.modes.EXP ); // EXP needs to know it's within to continue
 				}
 
-				//delete this.options.initialMode; // always want to fallback to MKP after initial
+				//delete this.options.initialMode; // always want to fallback to MKP after initial?
 			}
 
-			if(this.ast.current.type === VParser.modes.MKP){
+			if(this.ast.mode === VParser.modes.MKP){
 				this.handleMKP(curr);
 				continue;
 			}
 			
-			if(this.ast.current.type === VParser.modes.BLK){
+			if(this.ast.mode === VParser.modes.BLK){
 				this.handleBLK(curr);
 				continue;
 			}
 			
-			if(this.ast.current.type === VParser.modes.EXP){
+			if(this.ast.mode === VParser.modes.EXP){
 				this.handleEXP(curr);	
 				continue;
 			}
 		}
 
-		this.ast.root();
+		this.ast = this.ast.root();
 
 		// TODO: some sort of node closed check
 		//for(i = 0, len = this.blockStack.count(); i < len; i++){
@@ -587,7 +955,10 @@ VParser.prototype = {
 		//		throw this.exceptionFactory(new Error, 'UNMATCHED', block.tok);
 		//}
 
-		if(this.debug){
+		if(this.options.debugParser && !this.options.initialMode){
+			// this should really only output on the true root
+
+			console.log(this.ast);
 			console.log(this.ast.toTreeString());
 		}
 		
@@ -659,19 +1030,29 @@ VParser.prototype = {
 		return tks;
 	}
 
-	,advanceUntilMatched: function(curr, start, end){
-		var next = curr
+	,advanceUntilMatched: function(curr, start, end, escape){
+		var  next = curr
+			,prev = null
 			,nstart = 0
 			,nend = 0
 			,tks = [];
 		
 		while(next){
-			if(next.type === start) { nstart++; }
-			if(next.type === end) { nend++; }
-			
+
+			if( next.type === start ){
+				nstart++;
+				//if(prev && prev.type === escape){ nstart--; }
+			}
+
+			if( next.type === end ){
+				nend++;
+				if(prev && prev.type === escape){ nend--; }
+			}
+
 			tks.push(next);
 			
 			if(nstart === nend) { break; }
+			prev = next;
 			next = this.tokens.pop();
 			if(!next) { throw this.exceptionFactory(new Error, 'UNMATCHED', curr); }
 		}
@@ -688,7 +1069,7 @@ VParser.prototype = {
 		switch(curr.type){
 			
 			case VLexer.tks.AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE);
+				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT);
 				break;
 			
 			case VLexer.tks.AT:
@@ -697,30 +1078,42 @@ VParser.prototype = {
 					case VLexer.tks.PAREN_OPEN:
 					case VLexer.tks.IDENTIFIER:
 					case VLexer.tks.HTML_RAW:
-						this.ast.openNewAsChild( VParser.modes.EXP );
+
+						if(this.ast.length === 0) {
+							this.ast = this.ast.parent;
+							this.ast.pop(); // remove empty MKP block
+						}
+
+						this.ast = this.ast.beget( VParser.modes.EXP );
 						break;
 					
 					case VLexer.tks.KEYWORD:
 					case VLexer.tks.FUNCTION:
 					case VLexer.tks.BRACE_OPEN:
 					case VLexer.tks.BLOCK_GENERATOR:
-						this.ast.openNewAsChild( VParser.modes.BLK );
+
+						if(this.ast.length === 0) {
+							this.ast = this.ast.parent;
+							this.ast.pop(); // remove empty MKP block
+						}
+
+						this.ast = this.ast.beget( VParser.modes.BLK );
 						break;
 					
 					default:
-						this.ast.useToken(this.tokens.pop());
+						this.ast.push( this.tokens.pop() )
 						break;
 				}
 				break;		
 			
 			// TODO: are these really right?
 			case VLexer.tks.BRACE_OPEN:
-				this.ast.openNewAsChild( VParser.modes.BLK );
+				this.ast = this.ast.beget( VParser.modes.BLK );
 				this.tokens.push(curr); // defer
 				break;
 
 			case VLexer.tks.BRACE_CLOSE:
-				this.ast.closeCurrent();
+				this.ast = this.ast.parent;
 				this.tokens.push(curr); // defer
 				break;
 			
@@ -731,46 +1124,65 @@ VParser.prototype = {
 				if(tagName === null && next && next.type === VLexer.tks.AT && ahead)
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
 
-				this.ast.openNewAsChild( VParser.modes.MKP )
-				this.ast.current.asTag( tagName[1] );
+				if(this.ast.tagName){
+					// current markup is already waiting for a close tag, make new child
+					this.ast = this.ast.beget(VParser.modes.MKP, tagName[1])	
+				} else {
+					this.ast.tagName = tagName[1];
+				}
 
 				if(VLexer.tks.HTML_TAG_OPEN === curr.type) {
-					this.ast.useToken(curr);
+					this.ast.push(curr);
 				}
+
 				break;
 			
 			case VLexer.tks.TEXT_TAG_CLOSE:
 			case VLexer.tks.HTML_TAG_CLOSE:
-				/*tagName = curr.val.match(/^<\/([^>]+)/i); 
+				tagName = curr.val.match(/^<\/([^>]+)/i); 
 				
-				if(tagName === null && next && next.type === VLexer.tks.AT && ahead)
+				if(tagName === null && next && next.type === VLexer.tks.AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for </@exp>
-				
-				opener = this.ast.searchParentsFor( 'tagName', tagName[1] );
-				
-				if(opener === null){
-					// couldn't find opening tag
-					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
 				}
-
-				this.ast.current = opener;*/
+				
+				opener = this.ast.closest( VParser.modes.MKP, tagName[1] );
+				
+				if(opener === null || opener.tagName !== tagName[1]){
+					// couldn't find opening tag
+					// could mean this closer is within a child parser
+					//throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
+				} else {
+					this.ast = opener;
+				}
 				
 				if(VLexer.tks.HTML_TAG_CLOSE === curr.type) { 
-					this.ast.useAsStopper(curr);
-					this.ast.closeCurrent();
+					this.ast.push( curr );
 				}
 
 				if(
-					this.ast.current.parent && this.ast.current.parent.type === VParser.modes.BLK
+					this.ast.parent && this.ast.parent.mode === VParser.modes.BLK
 					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
 				){
-					this.ast.useToken(this.advanceUntilNot(VLexer.tks.WHITESPACE));
-					this.ast.closeCurrent();
+					this.ast = this.ast.parent;
+					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
+				}
+				break;
+
+			case VLexer.tks.HTML_TAG_SELFCLOSE:
+
+				this.ast.push(curr);
+
+				if(
+					this.ast.parent && this.ast.parent.mode === VParser.modes.BLK
+					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
+				){
+					this.ast = this.ast.parent;
+					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
 				}
 				break;
 
 			default:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				break;
 		}
 		
@@ -780,6 +1192,7 @@ VParser.prototype = {
 		
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,opener
+			,closer
 			,subTokens
 			,parseOpts
 			,miniParse
@@ -795,14 +1208,13 @@ VParser.prototype = {
 					
 					default:
 						this.tokens.push(curr); // defer
-						this.ast.closeCurrent();
-						this.ast.openNewAsChild(VParser.modes.MKP);
+						this.ast = this.ast.beget(VParser.modes.MKP);
 						break;
 				}
 				break;
 			
 			case VLexer.tks.AT_COLON:
-				this.ast.openNewAsChild(VParser.modes.MKP);
+				this.ast = this.ast.beget(VParser.modes.MKP);
 				break;
 			
 			case VLexer.tks.TEXT_TAG_OPEN:
@@ -810,39 +1222,47 @@ VParser.prototype = {
 			case VLexer.tks.HTML_TAG_SELFCLOSE:
 			case VLexer.tks.HTML_TAG_OPEN:
 			case VLexer.tks.HTML_TAG_CLOSE:
-				this.ast.openNewAsChild(VParser.modes.MKP);
+				this.ast = this.ast.beget(VParser.modes.MKP);
 				this.tokens.push(curr); // defer
 				break;
 			
 			case VLexer.tks.FAT_ARROW:
-				this.ast.openNewAsChild(VParser.modes.BLK, curr);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			case VLexer.tks.BRACE_OPEN:
 			case VLexer.tks.PAREN_OPEN:
-
-				if(this.ast.current.closed()){
-					this.ast.openNewAsSibling(VParser.modes.BLK, curr);
-				} else {
-					this.ast.useToken(curr);
-				}
 				
-				parseOpts = vash.copyObj(this.options);
+				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.BLK;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
 				subTokens.pop(); // remove (
-				this.ast.useAsStopper( subTokens.shift() );
+				closer = subTokens.shift();
+
+				this.ast.push(curr);
+				
 				miniParse = new VParser( subTokens, parseOpts );
 				miniParse.parse();
-				this.ast.current.children.push.apply(this.ast.current.children, miniParse.ast.current.children);
 
-				// correct parent of mini
-				for(i = this.ast.current.children.length-1; i >= 0; i--){
-					this.ast.current.children[i].parent = this.ast.current;
+				this.ast.pushFlatten(miniParse.ast);
+				this.ast.push( closer );
+				
+				subTokens = this.advanceUntilNot(VLexer.tks.WHITESPACE);
+				next = this.tokens[ this.tokens.length - 1 ];
+
+				if( 
+					next 
+					&& next.type !== VLexer.tks.KEYWORD 
+					&& next.type !== VLexer.tks.FUNCTION 
+					&& next.type !== VLexer.tks.BRACE_OPEN 
+					&& curr.type !== VLexer.tks.PAREN_OPEN 
+				){
+					this.tokens.push.apply(this.tokens, subTokens.reverse());
+					this.ast = this.ast.parent;	
+				} else {
+					this.ast.push(subTokens);
 				}
 
-				this.ast.closeCurrent();
-				
 				break;
 			
 			/*case VLexer.tks.PAREN_CLOSE:
@@ -878,12 +1298,12 @@ VParser.prototype = {
 				break;*/
 
 			case VLexer.tks.WHITESPACE:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				this.advanceUntilNot(VLexer.tks.WHITESPACE);
 				break;
 
 			default:
-				this.ast.useToken(curr);
+				this.ast.push(curr);
 				break;
 		}
 		
@@ -893,6 +1313,8 @@ VParser.prototype = {
 		
 		var ahead = null
 			,opener
+			,closer
+			,parseOpts
 			,miniParse
 			,subTokens
 			,i;
@@ -901,7 +1323,7 @@ VParser.prototype = {
 			
 			case VLexer.tks.KEYWORD:
 			case VLexer.tks.FUNCTION:	
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				this.tokens.push(curr); // defer
 				break;
 			
@@ -909,63 +1331,85 @@ VParser.prototype = {
 			case VLexer.tks.ASSIGN_OPERATOR:
 			case VLexer.tks.OPERATOR:
 			case VLexer.tks.NUMERIC_CONTENT:
+				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
+
+					this.ast.push(curr);
+				} else {
+
+					// if not contained within a parent EXP, must be end of EXP
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
+				}
+
+				break;
+
 			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.IDENTIFIER:
 			case VLexer.tks.HTML_RAW:
-				this.ast.useToken(curr);		
+				this.ast.push(curr);
 				break;
 			
 			case VLexer.tks.SINGLE_QUOTE:
 			case VLexer.tks.DOUBLE_QUOTE:
-
-				if(this.ast.current.parent.type !== VParser.modes.EXP){
-					// probably end of expression
-					this.ast.closeCurrent();
-					this.tokens.push(curr); // defer
-					break;
-				}
-
-				if(this.ast.current.closed()){
-					this.ast.closeCurrent();
-					this.tokens.push(curr); // defer
+				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
+					this.ast.push(curr);
+					
 				} else {
-					subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
-					this.ast.useToken(subTokens);	
+					// probably end of expression
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
 				}
+
+				/* else {
+
+					if(this.ast.current.closed()){
+						this.ast.closeCurrent();
+						this.tokens.push(curr); // defer
+					} else {
+						subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
+						this.ast.useToken(subTokens);	
+					}	
+				}*/
 
 				break;
 
 			case VLexer.tks.HARD_PAREN_OPEN:
 			case VLexer.tks.PAREN_OPEN:
 
-				if(this.ast.current.closed()){
-					this.ast.openNewAsSibling(VParser.modes.EXP, curr);
-				} else {
-					this.ast.useToken(curr);
-				}
-
-				parseOpts = vash.copyObj(this.options);
+				//if(this.ast.parent && this.ast.parent.parent && this.ast.parent.mode !== VParser.modes.EXP && this.ast.parent.parent.mode !== VParser.modes.EXP){
+				//	this.ast = this.ast.beget(VParser.modes.EXP);
+				//}
+				
+				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.EXP;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
 				subTokens.pop();
-				this.ast.useAsStopper( subTokens.shift() );
+				closer = subTokens.shift();
+
+				this.ast.push(curr);
+
 				miniParse = new VParser( subTokens, parseOpts );
 				miniParse.parse();
 
 				// EXP miniparsers automatically are double-nested for the parsing process
 				// but it's not needed once merging back in
-				this.ast.current.children.push.apply(this.ast.current.children, miniParse.ast.current.children[0].children);
+				this.ast.pushFlatten(miniParse.ast);
+				this.ast.push(closer);
 
-				// correct parent of mini
-				for(i = this.ast.current.children.length-1; i >= 0; i--){
-					this.ast.current.children[i].parent = this.ast.current;
+				ahead = this.tokens[ this.tokens.length - 1 ];
+
+				if(
+					this.ast.parent && this.ast.parent.mode !== VParser.modes.EXP 
+					&& (ahead && ahead.type !== VLexer.tks.HARD_PAREN_OPEN && ahead.type !== VLexer.tks.PERIOD )
+				){
+					this.ast = this.ast.parent;
 				}
 
 				break;
 			
 			case VLexer.tks.BRACE_OPEN:
 				this.tokens.push(curr); // defer
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			/*case VLexer.tks.HARD_PAREN_CLOSE:
@@ -983,29 +1427,34 @@ VParser.prototype = {
 
 			case VLexer.tks.FAT_ARROW:
 				this.tokens.push(curr); // defer
-				this.ast.openNewAsChild(VParser.modes.BLK);
+				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
 			case VLexer.tks.PERIOD:
-				ahead = this.tokens[ this.tokens.length - 1 ]
+				ahead = this.tokens[ this.tokens.length - 1 ];
 				if(
 					ahead && (ahead.type === VLexer.tks.IDENTIFIER 
 						|| ahead.type === VLexer.tks.KEYWORD 
 						|| ahead.type === VLexer.tks.FUNCTION)
 				) {
-					this.ast.useToken(curr);
+					this.ast.push(curr);
 				} else {
 					//this.ast.openNewAsChild(VParser.modes.MKP);
-					this.ast.closeCurrent();
+					this.ast = this.ast.parent;
 					this.tokens.push(curr); // defer
 				}
 				break;
 			
 			default:
-				// assume end of expression
-				this.ast.closeCurrent();
-				//this.ast.openNewAsChild(VParser.modes.MKP);
-				this.tokens.push(curr); // defer
+
+				if( this.ast.parent && this.ast.parent.mode !== VParser.modes.EXP ){
+					// assume end of expression
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer
+				} else {
+					this.ast.push(curr);
+				}
+
 				break;
 				
 		}
@@ -1027,6 +1476,7 @@ VCP.assemble = function(options){
 	//options.modelName = options.modelName || 'model';
 
 	var buffer = []
+		,escapeStack = []
 
 		,reQuote = /["']/gi
 		,reEscapedQuote = /(\\?)(["'])/gi
@@ -1034,97 +1484,130 @@ VCP.assemble = function(options){
 		,joined
 		,func;
 
-	function pluckTokVals(toks){
-		var i, tok, all = [];
-
-		for(i = 0; i < toks.length; i++){
-			all.push(toks[i].val)
+	function insertDebugVars(tok){
+		if(options.debug){
+			buffer.push( '__vline = ' + tok.line + ', ');
+			buffer.push( '__vchar = ' + tok.chr + '; \n' );
 		}
-		return all.join('');
 	}
 
-	function visitMarkupNode(node){
+	function visitMarkupTok(tok, parentNode, index){
 
-		if(node.starter.length === 0 && node.stopper.length === 0 && node.children.length === 0){
-			return;
-		}
-
-		if(node.starter.length > 0){
-			options.debug 
-				&& buffer.push( ';__vline = ' + node.starter[0].line + '; \n')
-				&& buffer.push( ';__vchar = ' + node.starter[0].chr + '; \n' );	
-		}
-		
-		buffer.push( "__vout.push('" + pluckTokVals(node.starter)
-			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
-
-		visitChildren(node)
-
-		if(node.stopper.length > 0){
-			options.debug 
-				&& buffer.push( ';__vline = ' + node.stopper[0].line + '; \n')
-				&& buffer.push( ';__vchar = ' + node.stopper[0].chr + '; \n' );
-		}
-
-		buffer.push( "__vout.push('" + pluckTokVals(node.stopper)
+		insertDebugVars(tok);
+		buffer.push( "__vout.push('" + tok.val
 			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
 	}
 
-	function visitBlockNode(node){
+	function visitBlockTok(tok, parentNode, index){
 		
-		buffer.push( pluckTokVals(node.starter).replace(reQuote, '\"') );
-		visitChildren(node)
-		buffer.push( pluckTokVals(node.stopper).replace(reQuote, '\"') );
+		buffer.push( tok.val.replace(reQuote, '\"') );
 	}
 
-	function visitExpressionNode(node){
+	function visitExpressionTok(tok, parentNode, index, isHomogenous){
 
-		var start = '', end = '';
+		var 
+			 start = ''
+			,end = ''
+			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== VParser.modes.EXP;
 
-		// deepest, this is also where escaping would be applied, I think...
-		if(node.children.length === 0){
-			
-			if(options.htmlEscape !== false){
-				start += "(";
-				end += ").toString()\n"
-					+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
-					+ ".replace(/</g, '&lt;')\n"
-					+ ".replace(/>/g, '&gt;')\n"
-					+ ".replace(/\"/g, '&quot;') \n";
-			} else {
-				
+		if(options.htmlEscape !== false){
+
+			if(tok.type === VLexer.tks.HTML_RAW){
+				escapeStack.push(true);
 			}
+
+			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
+
+				if(escapeStack.length === 0){
+					start += '( typeof (__vtemp = ';	
+				}
+			}
+
+			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
+
+				if(escapeStack.length > 0){
+					escapeStack.pop();
+				} else {
+					end += ") !== 'undefined' ? __vtemp : '' ).toString()\n"
+						+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
+						+ ".replace(/</g, '&lt;')\n"
+						+ ".replace(/>/g, '&gt;')\n"
+						+ ".replace(/\"/g, '&quot;') \n";
+				}
+			}	
 		}
 
-		if(node.parent && node.parent.type !== VParser.modes.EXP){
-			start += "__vout.push(";
+		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === VLexer.tks.HTML_RAW) ) ){
+			insertDebugVars(tok)
+			start = "__vout.push(" + start;	
+		}
+
+		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === VLexer.tks.HTML_RAW) ) ){
 			end += "); \n";
 		}
 
-		buffer.push( start + pluckTokVals(node.starter).replace(reQuote, '"').replace(reEscapedQuote, '"') );
-		visitChildren(node)
-		buffer.push( pluckTokVals(node.stopper).replace(reQuote, '"').replace(reEscapedQuote, '"') + end );
+		if(tok.type !== VLexer.tks.HTML_RAW){
+			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );	
+		}
+
+		if(parentParentIsNotEXP && index === parentNode.length - 1){
+			insertDebugVars(tok)
+		}
 	}
 
-	function visitChildren(node){
+	function visitNode(node){
 
-		var n, children;
+		var n, children = node.slice(0), nonExp, i, child;
 
-		children = node.children.slice();
-		while( (n = children.shift()) ){
+		if(node.mode === VParser.modes.EXP && (node.parent && node.parent.mode !== VParser.modes.EXP)){
+			// see if this node's children are all EXP
+			nonExp = node.filter(findNonExp).length
+		}
 
-			if(n.type === VParser.modes.MKP) { visitMarkupNode(n); }
-			if(n.type === VParser.modes.BLK) { visitBlockNode(n); }
-			if(n.type === VParser.modes.EXP) { visitExpressionNode(n); }
+		for(i = 0; i < children.length; i++){
+			child = children[i];
+
+			if(child.vquery){
+				visitNode(child);
+				continue;
+			}
+
+			if(node.mode === VParser.modes.MKP){
+
+				visitMarkupTok(child, node, i);
+
+			} else if(node.mode === VParser.modes.BLK){
+
+				visitBlockTok(child, node, i);
+
+			} else if(node.mode === VParser.modes.EXP){
+				
+				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
+
+			}
+		}
+
+	}
+
+	function findNonExp(node){
+
+		if(node.vquery && node.mode === VParser.modes.EXP){
+			return node.filter(findNonExp).length > 0;
+		}
+
+		if(node.vquery && node.mode !== VParser.modes.EXP){
+			return true
+		} else {
+			return false;
 		}
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.unshift("var __vout = []; \n");
+	buffer.unshift("var __vout = [], __vtemp; \n");
 
 	options.debug && buffer.push('var __vline = 0, __vchar = 0; \n');
 
-	visitChildren(this.ast.current);
+	visitNode(this.ast);
 
 	if(options.useWith === true){
 		buffer.unshift( "with(" + options.modelName + " || {}){ \n" );
@@ -1186,7 +1669,7 @@ VCP.reportError = function(e, lineno, chr, orig){
 }
 	/************** End injected code from build script */
 
-	exports['isArray'] = function(obj){
+	/*exports['isArray'] = function(obj){
 		return Object.prototype.toString.call(obj) == '[object Array]'
 	}
 
@@ -1200,12 +1683,14 @@ VCP.reportError = function(e, lineno, chr, orig){
 		}
 
 		return nObj;
-	}
+	}*/
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function compile(markup, options){
+
+		if(markup === '' || typeof markup !== 'string') throw new Error('Empty or non-string cannot be compiled');
 
 		var  l
 			,tok

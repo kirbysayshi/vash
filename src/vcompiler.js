@@ -13,6 +13,7 @@ VCP.assemble = function(options){
 	//options.modelName = options.modelName || 'model';
 
 	var buffer = []
+		,escapeStack = []
 
 		,reQuote = /["']/gi
 		,reEscapedQuote = /(\\?)(["'])/gi
@@ -20,97 +21,130 @@ VCP.assemble = function(options){
 		,joined
 		,func;
 
-	function pluckTokVals(toks){
-		var i, tok, all = [];
-
-		for(i = 0; i < toks.length; i++){
-			all.push(toks[i].val)
+	function insertDebugVars(tok){
+		if(options.debug){
+			buffer.push( '__vline = ' + tok.line + ', ');
+			buffer.push( '__vchar = ' + tok.chr + '; \n' );
 		}
-		return all.join('');
 	}
 
-	function visitMarkupNode(node){
+	function visitMarkupTok(tok, parentNode, index){
 
-		if(node.starter.length === 0 && node.stopper.length === 0 && node.children.length === 0){
-			return;
-		}
-
-		if(node.starter.length > 0){
-			options.debug 
-				&& buffer.push( ';__vline = ' + node.starter[0].line + '; \n')
-				&& buffer.push( ';__vchar = ' + node.starter[0].chr + '; \n' );	
-		}
-		
-		buffer.push( "__vout.push('" + pluckTokVals(node.starter)
-			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
-
-		visitChildren(node)
-
-		if(node.stopper.length > 0){
-			options.debug 
-				&& buffer.push( ';__vline = ' + node.stopper[0].line + '; \n')
-				&& buffer.push( ';__vchar = ' + node.stopper[0].chr + '; \n' );
-		}
-
-		buffer.push( "__vout.push('" + pluckTokVals(node.stopper)
+		insertDebugVars(tok);
+		buffer.push( "__vout.push('" + tok.val
 			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
 	}
 
-	function visitBlockNode(node){
+	function visitBlockTok(tok, parentNode, index){
 		
-		buffer.push( pluckTokVals(node.starter).replace(reQuote, '\"') );
-		visitChildren(node)
-		buffer.push( pluckTokVals(node.stopper).replace(reQuote, '\"') );
+		buffer.push( tok.val.replace(reQuote, '\"') );
 	}
 
-	function visitExpressionNode(node){
+	function visitExpressionTok(tok, parentNode, index, isHomogenous){
 
-		var start = '', end = '';
+		var 
+			 start = ''
+			,end = ''
+			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== VParser.modes.EXP;
 
-		// deepest, this is also where escaping would be applied, I think...
-		if(node.children.length === 0){
-			
-			if(options.htmlEscape !== false){
-				start += "(";
-				end += ").toString()\n"
-					+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
-					+ ".replace(/</g, '&lt;')\n"
-					+ ".replace(/>/g, '&gt;')\n"
-					+ ".replace(/\"/g, '&quot;') \n";
-			} else {
-				
+		if(options.htmlEscape !== false){
+
+			if(tok.type === VLexer.tks.HTML_RAW){
+				escapeStack.push(true);
 			}
+
+			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
+
+				if(escapeStack.length === 0){
+					start += '( typeof (__vtemp = ';	
+				}
+			}
+
+			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
+
+				if(escapeStack.length > 0){
+					escapeStack.pop();
+				} else {
+					end += ") !== 'undefined' ? __vtemp : '' ).toString()\n"
+						+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
+						+ ".replace(/</g, '&lt;')\n"
+						+ ".replace(/>/g, '&gt;')\n"
+						+ ".replace(/\"/g, '&quot;') \n";
+				}
+			}	
 		}
 
-		if(node.parent && node.parent.type !== VParser.modes.EXP){
-			start += "__vout.push(";
+		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === VLexer.tks.HTML_RAW) ) ){
+			insertDebugVars(tok)
+			start = "__vout.push(" + start;	
+		}
+
+		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === VLexer.tks.HTML_RAW) ) ){
 			end += "); \n";
 		}
 
-		buffer.push( start + pluckTokVals(node.starter).replace(reQuote, '"').replace(reEscapedQuote, '"') );
-		visitChildren(node)
-		buffer.push( pluckTokVals(node.stopper).replace(reQuote, '"').replace(reEscapedQuote, '"') + end );
+		if(tok.type !== VLexer.tks.HTML_RAW){
+			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );	
+		}
+
+		if(parentParentIsNotEXP && index === parentNode.length - 1){
+			insertDebugVars(tok)
+		}
 	}
 
-	function visitChildren(node){
+	function visitNode(node){
 
-		var n, children;
+		var n, children = node.slice(0), nonExp, i, child;
 
-		children = node.children.slice();
-		while( (n = children.shift()) ){
+		if(node.mode === VParser.modes.EXP && (node.parent && node.parent.mode !== VParser.modes.EXP)){
+			// see if this node's children are all EXP
+			nonExp = node.filter(findNonExp).length
+		}
 
-			if(n.type === VParser.modes.MKP) { visitMarkupNode(n); }
-			if(n.type === VParser.modes.BLK) { visitBlockNode(n); }
-			if(n.type === VParser.modes.EXP) { visitExpressionNode(n); }
+		for(i = 0; i < children.length; i++){
+			child = children[i];
+
+			if(child.vquery){
+				visitNode(child);
+				continue;
+			}
+
+			if(node.mode === VParser.modes.MKP){
+
+				visitMarkupTok(child, node, i);
+
+			} else if(node.mode === VParser.modes.BLK){
+
+				visitBlockTok(child, node, i);
+
+			} else if(node.mode === VParser.modes.EXP){
+				
+				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
+
+			}
+		}
+
+	}
+
+	function findNonExp(node){
+
+		if(node.vquery && node.mode === VParser.modes.EXP){
+			return node.filter(findNonExp).length > 0;
+		}
+
+		if(node.vquery && node.mode !== VParser.modes.EXP){
+			return true
+		} else {
+			return false;
 		}
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.unshift("var __vout = []; \n");
+	buffer.unshift("var __vout = [], __vtemp; \n");
 
 	options.debug && buffer.push('var __vline = 0, __vchar = 0; \n');
 
-	visitChildren(this.ast.current);
+	visitNode(this.ast);
 
 	if(options.useWith === true){
 		buffer.unshift( "with(" + options.modelName + " || {}){ \n" );

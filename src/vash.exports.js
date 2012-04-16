@@ -37,7 +37,7 @@
 	/*?CODE?*/
 	/************** End injected code from build script */
 
-	exports['isArray'] = function(obj){
+	/*exports['isArray'] = function(obj){
 		return Object.prototype.toString.call(obj) == '[object Array]'
 	}
 
@@ -51,12 +51,14 @@
 		}
 
 		return nObj;
-	}
+	}*/
 
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function compile(markup, options){
+
+		if(markup === '' || typeof markup !== 'string') throw new Error('Empty or non-string cannot be compiled');
 
 		var  l
 			,tok
