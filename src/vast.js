@@ -1,15 +1,8 @@
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 var vQuery = function(node){
-	return new vQuery.prototype.init(node);
+	return new vQuery.fn.init(node);
 }
-
-vQuery.prototype.vquery = 'yep';
-vQuery.prototype.constructor = vQuery;
-vQuery.prototype.length = 0;
-vQuery.prototype.parent = null;
-vQuery.prototype.mode = null;
-vQuery.prototype.tagName = null;
 
 vQuery.prototype.init = function(astNode){
 
@@ -40,20 +33,27 @@ vQuery.prototype.init = function(astNode){
 	return vQuery.makeArray(astNode, this);
 }
 
-vQuery.prototype.init.prototype = vQuery.prototype;
+vQuery.fn = vQuery.prototype.init.prototype = vQuery.prototype;
 
-vQuery.prototype.beget = function(mode, tagName){
+vQuery.fn.vquery = 'yep';
+vQuery.fn.constructor = vQuery;
+vQuery.fn.length = 0;
+vQuery.fn.parent = null;
+vQuery.fn.mode = null;
+vQuery.fn.tagName = null;
+
+vQuery.fn.beget = function(mode, tagName){
 	var child = vQuery();
 	child.mode = mode;
 	child.parent = this;
 	this.push( child );
 
-	if(tagName) child.tagName = tagName;
+	if(tagName) { child.tagName = tagName; }
 
 	return child;
 }
 
-vQuery.prototype.every = function(fun /*, thisp */) {  
+vQuery.fn.every = function(fun /*, thisp */) {  
 	"use strict";  
 
 	if (this == null)
@@ -73,12 +73,12 @@ vQuery.prototype.every = function(fun /*, thisp */) {
 	return true;
 };  
 
-vQuery.prototype.each = function(cb){
+vQuery.fn.each = function(cb){
 	vQuery.each(this, cb, this);
 	return this;
 }
 
-vQuery.prototype.closest = function(mode, tagName){
+vQuery.fn.closest = function(mode, tagName){
 	var p = this;
 
 	if(!tagName){
@@ -97,10 +97,10 @@ vQuery.prototype.closest = function(mode, tagName){
 		//while( p && (p.mode !== mode || p == this) && p.tagName !== tagName && p.parent && (p = p.parent) );
 	}
 
-	return vQuery(p);
+	return p;
 }
 
-vQuery.prototype.pushFlatten = function(node){
+vQuery.fn.pushFlatten = function(node){
 	var n = node, i, children;
 
 	while( n.length === 1 && n[0].vquery ){
@@ -119,26 +119,26 @@ vQuery.prototype.pushFlatten = function(node){
 	return this;
 }
 
-vQuery.prototype.push = function(nodes){
+vQuery.fn.push = function(nodes){
 
 	if(vQuery.isArray(nodes)){
 		if(nodes.vquery){
 			vQuery.each(nodes, function(node){ node.parent = this; }, this);	
 		}
 		
-		Array.prototype.push.apply(this, nodes)
+		Array.prototype.push.apply(this, nodes);
 	} else {
 		if(nodes.vquery){
 			nodes.parent = this;	
 		}
 		
-		Array.prototype.push.call(this, nodes)
+		Array.prototype.push.call(this, nodes);
 	}
 
 	return this.length;
 }
 
-vQuery.prototype.root = function(){
+vQuery.fn.root = function(){
 	var p = this;
 
 	while(p && p.parent && (p = p.parent));
@@ -146,7 +146,7 @@ vQuery.prototype.root = function(){
 	return p;
 }
 
-vQuery.prototype.toTreeString = function(){
+vQuery.fn.toTreeString = function(){
 	var  buffer = []
 		,indent = 1;
 
@@ -160,7 +160,7 @@ vQuery.prototype.toTreeString = function(){
 		children = node.slice();
 		while( (child = children.shift()) ){
 
-			if(child.vquery === vQuery.prototype.vquery){
+			if(child.vquery === vQuery.fn.vquery){
 				// recurse
 				visitNode(child);
 			} else {
@@ -236,9 +236,9 @@ vQuery.takeMethodsFromArray = function(){
 	for (var i = 0; i < methods.length; i++){
 		m = methods[i];
 		if( typeof arr[m] === 'function' ){
-			if( !vQuery.prototype[m] ){
+			if( !vQuery.fn[m] ){
 				(function(methodName){ 
-					vQuery.prototype[methodName] = function(){
+					vQuery.fn[methodName] = function(){
 						return arr[methodName].apply(this, vQuery.makeArray(arguments));
 					}
 				})(m);

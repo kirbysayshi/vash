@@ -10,7 +10,6 @@ var VCP = VCompiler.prototype;
 VCP.assemble = function(options){
 
 	options = options || {};
-	//options.modelName = options.modelName || 'model';
 
 	var buffer = []
 		,escapeStack = []

@@ -59,15 +59,6 @@ VParser.prototype = {
 
 		this.ast = this.ast.root();
 
-		// TODO: some sort of node closed check
-		//for(i = 0, len = this.blockStack.count(); i < len; i++){
-		//	block = this.blockStack.pop();
-		//	
-		//	// only throw errors if there is an unclosed block
-		//	if(block.type === VParser.modes.BLK)
-		//		throw this.exceptionFactory(new Error, 'UNMATCHED', block.tok);
-		//}
-
 		if(this.options.debugParser && !this.options.initialMode){
 			// this should really only output on the true root
 
@@ -82,47 +73,21 @@ VParser.prototype = {
 
 		// second param is either a token or string?
 
-		//var context = this.lex.originalInput.split('\n')[tok.line - 1].substring(0, tok.chr + 1);
-		//var context = '', i;
-//
-//		//for(i = 0; i < this.buffers.length; i++){
-//		//	context += this.buffers[i].value;
-//		//}
-//
-//		//if(context.length > 100){
-//		//	context = context.substring( context.length - 100 );
-		//}
+		if(type == 'UNMATCHED'){
 
-		switch(type){
+			e.name = "UnmatchedCharacterError";
 
-			case 'UNMATCHED':
-				e.name = "UnmatchedCharacterError";
+			this.ast.root();
 
-				this.ast.root();
-
-				if(tok){
-					e.message = 'Unmatched ' + tok.type
-						//+ ' near: "' + context + '"'
-						+ ' at line ' + tok.line
-						+ ', character ' + tok.chr
-						+ '. Value: ' + tok.val
-						+ '\n ' + this.ast.toTreeString();
-					e.lineNumber = tok.line;
-				}
-
-				break;
-
-			case 'INVALIDINPUT':
-				e.name = "InvalidParserInputError";
-				
-				if(tok){
-					this.message = 'Asked to parse invalid or non-string input: '
-						+ tok;
-				}
-				
-				this.lineNumber = 0;
-				break;
-
+			if(tok){
+				e.message = 'Unmatched ' + tok.type
+					//+ ' near: "' + context + '"'
+					+ ' at line ' + tok.line
+					+ ', character ' + tok.chr
+					+ '. Value: ' + tok.val
+					+ '\n ' + this.ast.toTreeString();
+				e.lineNumber = tok.line;
+			}
 		}
 
 		return e;
@@ -214,12 +179,11 @@ VParser.prototype = {
 						break;
 					
 					default:
-						this.ast.push( this.tokens.pop() )
+						this.ast.push( this.tokens.pop() );
 						break;
 				}
 				break;		
 			
-			// TODO: are these really right?
 			case VLexer.tks.BRACE_OPEN:
 				this.ast = this.ast.beget( VParser.modes.BLK );
 				this.tokens.push(curr); // defer
@@ -234,12 +198,13 @@ VParser.prototype = {
 			case VLexer.tks.HTML_TAG_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i); 
 				
-				if(tagName === null && next && next.type === VLexer.tks.AT && ahead)
+				if(tagName === null && next && next.type === VLexer.tks.AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
+				}
 
 				if(this.ast.tagName){
 					// current markup is already waiting for a close tag, make new child
-					this.ast = this.ast.beget(VParser.modes.MKP, tagName[1])	
+					this.ast = this.ast.beget(VParser.modes.MKP, tagName[1]);
 				} else {
 					this.ast.tagName = tagName[1];
 				}
@@ -277,7 +242,6 @@ VParser.prototype = {
 					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
 				){
 					this.ast = this.ast.parent;
-					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
 				}
 				break;
 
@@ -290,7 +254,6 @@ VParser.prototype = {
 					&& (next.type === VLexer.tks.WHITESPACE || next.type === VLexer.tks.NEWLINE) 
 				){
 					this.ast = this.ast.parent;
-					//this.ast.push(this.advanceUntilNot(VLexer.tks.WHITESPACE));
 				}
 				break;
 
@@ -377,38 +340,6 @@ VParser.prototype = {
 				}
 
 				break;
-			
-			/*case VLexer.tks.PAREN_CLOSE:
-			case VLexer.tks.BRACE_CLOSE:
-				opener = this.ast.searchParentsByTypeFor( VParser.modes.BLK, 'closed', false );
-
-				if(opener === null || (opener !== null && opener.type !== VParser.modes.BLK))
-					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
-
-				this.ast.useAsStopper(curr);
-				this.ast.closeCurrent();
-				
-				// check for: } KEYWORD, ).
-
-				this.advanceUntilNot(VLexer.tks.WHITESPACE);
-				next = this.tokens[ this.tokens.length - 1 ]
-				if( next && (next.type === VLexer.tks.KEYWORD || next.type === VLexer.tks.FUNCTION) ){
-					this.ast.openNewAsChild( VParser.modes.BLK );
-					break;
-				}
-
-				if( next && next.type === VLexer.tks.PERIOD ){
-					this.ast.openNewAsChild( VParser.modes.EXP )
-					break;
-				}
-
-				//if(this.ast.current !== null && this.ast.current.parent.type === VParser.modes.MKP){
-				//	this.ast.closeCurrent();
-				//	this.ast.openNewAsChild( VParser.modes.MKP );
-				//}
-					
-					
-				break;*/
 
 			case VLexer.tks.WHITESPACE:
 				this.ast.push(curr);
@@ -473,25 +404,10 @@ VParser.prototype = {
 					this.tokens.push(curr); // defer
 				}
 
-				/* else {
-
-					if(this.ast.current.closed()){
-						this.ast.closeCurrent();
-						this.tokens.push(curr); // defer
-					} else {
-						subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ] );
-						this.ast.useToken(subTokens);	
-					}	
-				}*/
-
 				break;
 
 			case VLexer.tks.HARD_PAREN_OPEN:
 			case VLexer.tks.PAREN_OPEN:
-
-				//if(this.ast.parent && this.ast.parent.parent && this.ast.parent.mode !== VParser.modes.EXP && this.ast.parent.parent.mode !== VParser.modes.EXP){
-				//	this.ast = this.ast.beget(VParser.modes.EXP);
-				//}
 				
 				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.EXP;
@@ -525,19 +441,6 @@ VParser.prototype = {
 				this.ast = this.ast.beget(VParser.modes.BLK);
 				break;
 
-			/*case VLexer.tks.HARD_PAREN_CLOSE:
-			case VLexer.tks.PAREN_CLOSE:
-				opener = this.ast.searchParentsByTypeFor( VParser.modes.EXP, 'closed', false );
-				if(opener){
-					this.ast.current = opener;
-					this.ast.useAsStopper(curr);
-					this.ast.closeCurrent();
-				} else {
-					throw this.exceptionFactory(new Error, 'UNMATCHED', curr);
-				}
-				
-				break;*/
-
 			case VLexer.tks.FAT_ARROW:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(VParser.modes.BLK);
@@ -552,7 +455,6 @@ VParser.prototype = {
 				) {
 					this.ast.push(curr);
 				} else {
-					//this.ast.openNewAsChild(VParser.modes.MKP);
 					this.ast = this.ast.parent;
 					this.tokens.push(curr); // defer
 				}
@@ -568,9 +470,7 @@ VParser.prototype = {
 					this.ast.push(curr);
 				}
 
-				break;
-				
+				break;	
 		}
-		
 	}
 }

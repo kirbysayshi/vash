@@ -4,10 +4,7 @@
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
-	//this.tokens = [];
 	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
-	//this.deferredTokens = [];
-	//this.stash = [];
 	this.lineno = 1;
 	this.charno = 0;
 }
@@ -21,7 +18,7 @@ VLexer.prototype = {
 			,chr: this.charno
 			,val: val
 			,toString: function(){
-				return (this.mode ? this.mode : '') + '[' + this.type + ' (' + this.line + ',' + this.chr + '): ' + this.val + ']';
+				return '[' + this.type + ' (' + this.line + ',' + this.chr + '): ' + this.val + ']';
 			}
 		};
 	}
@@ -63,21 +60,7 @@ VLexer.prototype = {
 
 	,advance: function(){
 		return this.next();
-		/*return this.deferred()
-			|| this.stashed()
-			|| this.next();*/
 	}
-
-	/*,defer: function(tok){
-		tok.touched += 1;
-		this.deferredTokens.push(tok);
-	}
-
-	,lookahead: function(n){
-		var fetch = n - this.stash.length;
-		while (fetch-- > 0) this.stash.push(this.next());
-		return this.stash[--n];
-	}*/
 
 	,next: function() {
 		return this.EMAIL()
@@ -110,7 +93,6 @@ VLexer.prototype = {
 			|| this.FUNCTION()
 			|| this.KEYWORD()
 			|| this.HTML_RAW()
-			//|| this.BLOCK_GENERATOR()
 			|| this.IDENTIFIER()
 
 			|| this.OPERATOR()
@@ -122,32 +104,8 @@ VLexer.prototype = {
 
 			|| this.NUMERIC_CONTENT()
 			|| this.CONTENT()
-			//|| this.EOF()
 	}
 
-	/*,deferred: function() {
-
-		var tok = this.deferredTokens.shift();
-
-		if(tok){
-			tok.touched += 1;
-			return tok;
-		} else {
-			return false;
-		}
-	}
-
-	,stashed: function() {
-		
-		var tok = this.stash.shift();
-
-		if(tok) {
-			tok.touched += 1;
-			return tok;
-		} else {
-			return false;
-		}
-	}*/
 	
 	,AT: function(){
 		return this.scan(/^(@)/, VLexer.tks.AT);
@@ -209,9 +167,6 @@ VLexer.prototype = {
 	,HTML_RAW: function(){
 		return this.scan(/^(vash\.raw)(?![\d\w])/, VLexer.tks.HTML_RAW);
 	}
-	//,BLOCK_GENERATOR: function(){
-	//	return this.scan(/^(helper)(?![\d\w])/, VLexer.tks.BLOCK_GENERATOR);
-	//}
 	,PERIOD: function(){
 		return this.scan(/^(\.)/, VLexer.tks.PERIOD);
 	}
@@ -288,7 +243,6 @@ VLexer.tks = {
 	,NEWLINE: 'NEWLINE'
 	,EOF: 'EOF'
 	,HTML_RAW: 'HTML_RAW'
-	//,BLOCK_GENERATOR: 'BLOCK_GENERATOR'
 };
 
 VLexer.pairs = {
