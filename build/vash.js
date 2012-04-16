@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.1-821";
+	exports["version"] = "0.4.1-825";
 
 	exports["config"] = {
 		 "useWith": false
@@ -388,7 +388,7 @@ vQuery.fn.closest = function(mode, tagName){
 		//while( p && (p.mode !== mode || p == this) && p.tagName !== tagName && p.parent && (p = p.parent) );
 	}
 
-	return vQuery(p);
+	return p;
 }
 
 vQuery.fn.pushFlatten = function(node){
@@ -417,13 +417,13 @@ vQuery.fn.push = function(nodes){
 			vQuery.each(nodes, function(node){ node.parent = this; }, this);	
 		}
 		
-		Array.prototype.push.apply(this, nodes)
+		Array.prototype.push.apply(this, nodes);
 	} else {
 		if(nodes.vquery){
 			nodes.parent = this;	
 		}
 		
-		Array.prototype.push.call(this, nodes)
+		Array.prototype.push.call(this, nodes);
 	}
 
 	return this.length;
@@ -554,12 +554,6 @@ function VParser(tokens, options){
 	this.tokens = tokens;
 
 	this.ast = vQuery(VParser.modes.PRG);
-
-	//if(this.ast.current.type === VParser.modes.PRG){
-	//	this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );
-	//}
-
-	//delete this.options.initialMode;
 }
 
 VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -582,8 +576,6 @@ VParser.prototype = {
 				if(this.options.initialMode === VParser.modes.EXP){
 					this.ast = this.ast.beget( VParser.modes.EXP ); // EXP needs to know it's within to continue
 				}
-
-				//delete this.options.initialMode; // always want to fallback to MKP after initial?
 			}
 
 			if(this.ast.mode === VParser.modes.MKP){
@@ -1031,7 +1023,6 @@ var VCP = VCompiler.prototype;
 VCP.assemble = function(options){
 
 	options = options || {};
-	//options.modelName = options.modelName || 'model';
 
 	var buffer = []
 		,escapeStack = []

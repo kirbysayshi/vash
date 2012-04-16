@@ -9,12 +9,6 @@ function VParser(tokens, options){
 	this.tokens = tokens;
 
 	this.ast = vQuery(VParser.modes.PRG);
-
-	//if(this.ast.current.type === VParser.modes.PRG){
-	//	this.ast.openNewAsChild( this.options.initialMode || VParser.modes.MKP );
-	//}
-
-	//delete this.options.initialMode;
 }
 
 VParser.modes = { PRG: "PROGRAM", MKP: "MARKUP", BLK: "BLOCK", EXP: "EXPRESSION" };
@@ -37,8 +31,6 @@ VParser.prototype = {
 				if(this.options.initialMode === VParser.modes.EXP){
 					this.ast = this.ast.beget( VParser.modes.EXP ); // EXP needs to know it's within to continue
 				}
-
-				//delete this.options.initialMode; // always want to fallback to MKP after initial?
 			}
 
 			if(this.ast.mode === VParser.modes.MKP){

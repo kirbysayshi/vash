@@ -53,9 +53,9 @@ var  Benchmark = require('benchmark')
 	,mediumVConfig = { debug: false, useWith: false, htmlEscape: false }
 	,mediumVConfigHtmlEscape = { debug: false, useWith: false, htmlEscape: true }
 
-	,largeTokens = new vash.VParser(largeVTemplate).parse()
-	,mediumTokens = new vash.VParser(mediumVTemplate).parse()
-	,smallTokens = new vash.VParser(smallVTemplate).parse()
+	//,largeTokens = new vash.VParser(largeVTemplate).parse()
+	//,mediumTokens = new vash.VParser(mediumVTemplate).parse()
+	//,smallTokens = new vash.VParser(smallVTemplate).parse()
 
 	,suite;
 
@@ -155,8 +155,8 @@ suite = new Benchmark.Suite("vash vs doT render large")
 .add("vash#tpl large", function(){
 	largeVTpl( largeData );
 })
-//logSuiteName(suite);
-//suite.run();
+logSuiteName(suite);
+suite.run();
 
 suite = new Benchmark.Suite("vash vs doT render medium")
 .add("dot#template medium", function(){
@@ -172,7 +172,7 @@ suite = new Benchmark.Suite("vash vs doT render medium")
 	mediumVTplNoWithNoEscape( mediumData )
 })
 logSuiteName(suite);
-//suite.run();
+suite.run();
 
 suite = new Benchmark.Suite("vash vs doT render small")
 .add("dot#template small", function(){
@@ -257,7 +257,7 @@ suite = new Benchmark.Suite('string concat: index vs push vs += vs +')
 	concated();
 });
 logSuiteName(suite);
-suite.run();
+//suite.run();
 
 var tpush = function anonymous(model) {
     var __vout = [];
@@ -337,7 +337,7 @@ suite = new Benchmark.Suite('tpl concat vs push')
 	tconcatsimple( { it: 'what' } );
 });
 logSuiteName(suite);
-suite.run();
+//suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));
