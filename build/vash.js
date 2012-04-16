@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.1-825";
+	exports["version"] = "0.4.1-826";
 
 	exports["config"] = {
 		 "useWith": false
@@ -1035,15 +1035,15 @@ VCP.assemble = function(options){
 
 	function insertDebugVars(tok){
 		if(options.debug){
-			buffer.push( '__vline = ' + tok.line + ', ');
-			buffer.push( '__vchar = ' + tok.chr + '; \n' );
+			buffer.push( '__vl = ' + tok.line + ', ');
+			buffer.push( '__vc = ' + tok.chr + '; \n' );
 		}
 	}
 
 	function visitMarkupTok(tok, parentNode, index){
 
 		insertDebugVars(tok);
-		buffer.push( "__vout.push('" + tok.val
+		buffer.push( "__vo.push('" + tok.val
 			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
 	}
 
@@ -1068,7 +1068,7 @@ VCP.assemble = function(options){
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
 
 				if(escapeStack.length === 0){
-					start += '( typeof (__vtemp = ';	
+					start += '( typeof (__vt = ';	
 				}
 			}
 
@@ -1077,7 +1077,7 @@ VCP.assemble = function(options){
 				if(escapeStack.length > 0){
 					escapeStack.pop();
 				} else {
-					end += ") !== 'undefined' ? __vtemp : '' ).toString()\n"
+					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
 						+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
 						+ ".replace(/</g, '&lt;')\n"
 						+ ".replace(/>/g, '&gt;')\n"
@@ -1088,7 +1088,7 @@ VCP.assemble = function(options){
 
 		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === VLexer.tks.HTML_RAW) ) ){
 			insertDebugVars(tok)
-			start = "__vout.push(" + start;	
+			start = "__vo.push(" + start;	
 		}
 
 		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === VLexer.tks.HTML_RAW) ) ){
@@ -1152,9 +1152,9 @@ VCP.assemble = function(options){
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.unshift("var __vout = [], __vtemp; \n");
+	buffer.unshift("var __vo = [], __vt; \n");
 
-	options.debug && buffer.push('var __vline = 0, __vchar = 0; \n');
+	options.debug && buffer.push('var __vl = 0, __vc = 0; \n');
 
 	visitNode(this.ast);
 
@@ -1167,14 +1167,14 @@ VCP.assemble = function(options){
 		buffer.unshift( 'try { \n' );
 		buffer.push( '} catch(e){ ('
 			,VCP.reportError.toString()
-			,')(e, __vline, __vchar, '
+			,')(e, __vl, __vc, '
 			,'"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reEscapedQuote, '\\$2') + '"'
 			,') } \n' )
 	}
 
-	buffer.push("return __vout.join('');")
+	buffer.push("return __vo.join('');")
 
 	joined = buffer.join('');
 
