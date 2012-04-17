@@ -1,59 +1,19 @@
 
-vash parse times by template size
------------------------------------------------
-
-    > vash#parse large x 122 ops/sec ±0.47% (85 runs sampled)
-    > vash#parse medium x 2,260 ops/sec ±0.80% (93 runs sampled)
-    > vash#parse small x 11,900 ops/sec ±1.10% (92 runs sampled)
-
-    Fastest is vash#parse small
-
-vash vs doT compilation large
------------------------------------------------
-
-    > dot#template large x 1,604 ops/sec ±1.39% (90 runs sampled)
-    > vash#tpl large x 116 ops/sec ±0.89% (82 runs sampled)
-
-    Fastest is dot#template large
-
 vash vs doT compilation medium
 -----------------------------------------------
 
-    > dot#template medium x 9,083 ops/sec ±1.81% (86 runs sampled)
-    > vash#tpl medium x 1,838 ops/sec ±1.27% (87 runs sampled)
-    > vash#tpl medium no with x 1,637 ops/sec ±0.93% (91 runs sampled)
+    > dot#template medium x 8,603 ops/sec ±1.87% (84 runs sampled)
+    > vash#tpl medium x 1,455 ops/sec ±1.53% (87 runs sampled)
+    > vash#tpl medium no with x 1,245 ops/sec ±1.31% (92 runs sampled)
 
     Fastest is dot#template medium
-
-vash vs doT compilation small
------------------------------------------------
-
-    > dot#template small x 15,112 ops/sec ±2.22% (77 runs sampled)
-    > vash#tpl small x 6,782 ops/sec ±1.92% (87 runs sampled)
-
-    Fastest is dot#template small
-
-vash vs doT render large
------------------------------------------------
-
-    > dot#template large x 4,753 ops/sec ±1.06% (92 runs sampled)
-    > vash#tpl large x 1,029 ops/sec ±1.04% (92 runs sampled)
-
-    Fastest is dot#template large
 
 vash vs doT render medium
 -----------------------------------------------
 
-    > dot#template medium x 1,795,989 ops/sec ±1.07% (89 runs sampled)
-    > vash#tpl medium x 112,119 ops/sec ±0.61% (92 runs sampled)
-    > vash#tpl medium no with x 1,777,502 ops/sec ±1.26% (91 runs sampled)
+    > dot#template medium x 1,834,229 ops/sec ±0.55% (92 runs sampled)
+    > vash#tpl medium x 53,855 ops/sec ±0.57% (92 runs sampled)
+    > vash#tpl medium no with x 121,491 ops/sec ±0.47% (94 runs sampled)
+    > vash#tpl medium no with no htmlescape x 432,124 ops/sec ±0.56% (92 runs sampled)
 
-    Fastest is dot#template medium,vash#tpl medium no with
-
-vash vs doT render small
------------------------------------------------
-
-    > dot#template small x 17,182,595 ops/sec ±0.56% (91 runs sampled)
-    > vash#tpl small x 1,533,888 ops/sec ±1.76% (89 runs sampled)
-
-    Fastest is dot#template small
+    Fastest is dot#template medium

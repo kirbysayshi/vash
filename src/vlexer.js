@@ -1,12 +1,10 @@
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // This pattern and basic lexer code are taken from the Jade lexer:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
-	this.tokens = [];
 	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
-	this.deferredTokens = [];
-	this.stash = [];
 	this.lineno = 1;
 	this.charno = 0;
 }
@@ -19,19 +17,21 @@ VLexer.prototype = {
 			,line: this.lineno
 			,chr: this.charno
 			,val: val
-			,touched: 0
-		}
+			,toString: function(){
+				return '[' + this.type + ' (' + this.line + ',' + this.chr + '): ' + this.val + ']';
+			}
+		};
 	}
 	
 	,scan: function(regexp, type){
 		var captures, token;
-	    if (captures = regexp.exec(this.input)) {
+		if (captures = regexp.exec(this.input)) {
 			this.consume(captures[0].length);
 			
 			token = this.tok(type, captures[1]);
 			this.charno += captures[0].length;
 			return token;
-	    }
+		}
 	}
 	
 	,spew: function(str){
@@ -47,12 +47,10 @@ VLexer.prototype = {
 		var parts;
 
 		if(tok){
-			tok.touched += 1;
 			parts = tok.val.split(ifStr);
 
 			if(parts.length > 1){
 				tok.val = parts.shift();
-				tok.touched += 1;
 				this.spew(ifStr + parts.join(ifStr));
 			}
 		}
@@ -61,20 +59,7 @@ VLexer.prototype = {
 	}
 
 	,advance: function(){
-		return this.deferred()
-			|| this.stashed()
-			|| this.next();
-	}
-
-	,defer: function(tok){
-		tok.touched += 1;
-		this.deferredTokens.push(tok);
-	}
-
-	,lookahead: function(n){
-		var fetch = n - this.stash.length;
-		while (fetch-- > 0) this.stash.push(this.next());
-		return this.stash[--n];
+		return this.next();
 	}
 
 	,next: function() {
@@ -85,6 +70,7 @@ VLexer.prototype = {
 			|| this.AT_COLON()
 			|| this.AT()
 			
+			|| this.FAT_ARROW()
 			|| this.PAREN_OPEN()
 			|| this.PAREN_CLOSE()
 			
@@ -104,34 +90,22 @@ VLexer.prototype = {
 			|| this.PERIOD()
 			|| this.NEWLINE()
 			|| this.WHITESPACE()
+			|| this.FUNCTION()
 			|| this.KEYWORD()
+			|| this.HTML_RAW()
 			|| this.IDENTIFIER()
+
+			|| this.OPERATOR()
+			|| this.ASSIGN_OPERATOR()
+			|| this.LOGICAL()
+
+			|| this.DOUBLE_QUOTE()
+			|| this.SINGLE_QUOTE()
+
+			|| this.NUMERIC_CONTENT()
 			|| this.CONTENT()
 	}
 
-	,deferred: function() {
-
-		var tok = this.deferredTokens.shift();
-
-		if(tok){
-			tok.touched += 1;
-			return tok;
-		} else {
-			return false;
-		}
-	}
-
-	,stashed: function() {
-		
-		var tok = this.stash.shift();
-
-		if(tok) {
-			tok.touched += 1;
-			return tok;
-		} else {
-			return false;
-		}
-	}
 	
 	,AT: function(){
 		return this.scan(/^(@)/, VLexer.tks.AT);
@@ -178,6 +152,9 @@ VLexer.prototype = {
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
+	,FAT_ARROW: function(){
+		return this.scan(/^(\(.*?\)?\s*?=>)/, VLexer.tks.FAT_ARROW);
+	}
 	,FUNCTION: function(){
 		return this.scan(/^(function)(?![\d\w])/, VLexer.tks.FUNCTION);
 	}
@@ -187,11 +164,32 @@ VLexer.prototype = {
 	,IDENTIFIER: function(){
 		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, VLexer.tks.IDENTIFIER);
 	}
+	,HTML_RAW: function(){
+		return this.scan(/^(vash\.raw)(?![\d\w])/, VLexer.tks.HTML_RAW);
+	}
 	,PERIOD: function(){
 		return this.scan(/^(\.)/, VLexer.tks.PERIOD);
 	}
 	,EMAIL: function(){
 		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, VLexer.tks.EMAIL);
+	}
+	,ASSIGN_OPERATOR: function(){
+		return this.scan(/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/, VLexer.tks.ASSIGN_OPERATOR);
+	}
+	,OPERATOR: function(){
+		return this.scan(/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/, VLexer.tks.OPERATOR);
+	}
+	,LOGICAL: function(){
+		return this.scan(/^(&&|\|\||&|\||\^)/, VLexer.tks.LOGICAL);
+	}
+	,SINGLE_QUOTE: function(){
+		return this.scan(/^(\\?')/, VLexer.tks.SINGLE_QUOTE)
+	}
+	,DOUBLE_QUOTE: function(){
+		return this.scan(/^(\\?")/, VLexer.tks.DOUBLE_QUOTE)
+	}
+	,NUMERIC_CONTENT: function(){
+		return this.scan(/^([0-9]+)/, VLexer.tks.NUMERIC_CONTENT);
 	}
 	,CONTENT: function(){
 		return this.scan(/^([^\s})@.]+?)/, VLexer.tks.CONTENT);
@@ -206,6 +204,9 @@ VLexer.prototype = {
 			this.charno = 0;
 		}
 		return token;
+	}
+	,EOF: function(){
+		return this.scan(/^$/, VLexer.tks.EOF);
 	}
 }
 
@@ -228,9 +229,27 @@ VLexer.tks = {
 	,HTML_TAG_CLOSE: 'HTML_TAG_CLOSE'
 	,KEYWORD: 'KEYWORD'
 	,FUNCTION: 'FUNCTION'
+	,FAT_ARROW: 'FAT_ARROW'
 	,IDENTIFIER: 'IDENTIFIER'
 	,PERIOD: 'PERIOD'
+	,ASSIGN_OPERATOR: 'ASSIGN_OPERATOR'
+	,SINGLE_QUOTE: 'SINGLE_QUOTE'
+	,DOUBLE_QUOTE: 'DOUBLE_QUOTE'
+	,NUMERIC_CONTENT: 'NUMERIC_CONTENT'
+	,OPERATOR: 'OPERATOR'
+	,LOGICAL: 'LOGICAL'
 	,CONTENT: 'CONTENT'
 	,WHITESPACE: 'WHITESPACE'
 	,NEWLINE: 'NEWLINE'
+	,EOF: 'EOF'
+	,HTML_RAW: 'HTML_RAW'
+};
+
+VLexer.pairs = {
+	 AT_STAR_OPEN: VLexer.tks.AT_STAR_CLOSE
+	,PAREN_OPEN: VLexer.tks.PAREN_CLOSE
+	,BRACE_OPEN: VLexer.tks.BRACE_CLOSE
+	,HARD_PAREN_OPEN: VLexer.tks.HARD_PAREN_CLOSE
+	,DOUBLE_QUOTE: VLexer.tks.DOUBLE_QUOTE
+	,SINGLE_QUOTE: VLexer.tks.SINGLE_QUOTE
 };

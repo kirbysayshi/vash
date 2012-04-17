@@ -9,11 +9,12 @@
 		
 		<script src="../src/vlexer.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vparser.js" type="text/javascript" charset="utf-8"></script>
-		<script id="test-exp-simple" type="text/razor-js" charset="utf-8">Hello @title. @name.</script>
-		<script id="test" type="text/razor-js" charset="utf-8">
-			@for(var i = 0; i < 10; i++){
-			}
-		</script>
+		<script src="../src/vast.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vcompiler.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vash.exports.js" type="text/javascript" charset="utf-8"></script>
+		<!--<script src="../build/vash.closure.min.js" type="text/javascript" charset="utf-8"></script>-->
+		
+		<script id="test" type="text/razor-js" charset="utf-8"><span>@vash.raw(it)</span></script>
 
 		<script type="text/javascript" charset="utf-8">
 			
@@ -53,13 +54,21 @@
 			//	,i: 2
 			//}) )
 			
+			var opts = { debugParser: true, debugCompiler: true, debug: true, modelName: 'model' }
+
 			var lexerContent = document.querySelectorAll('#test')[0].innerHTML;
 			console.log(lexerContent);
 			var l = new VLexer(lexerContent);
 			
-			var p = new VParser(lexerContent);
-			p.debug = true;
+			var tokens = [], tok;
+			while(tok = l.advance()) tokens.push(tok);
+			tokens.reverse();
 
+			var p = new VParser(tokens, opts);
+			var ast = p.parse();
+
+			var c = new VCompiler(ast, lexerContent);
+			c.debug = true;
 
 		</script>
 	</body>

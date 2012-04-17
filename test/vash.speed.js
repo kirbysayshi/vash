@@ -1,6 +1,7 @@
 var  Benchmark = require('benchmark')
 	,vash = require('../build/vash')
 	,dot = require('dot')
+	,jshtml = require('jshtml')
 	,fs = require('fs')
 
 	,largeVTemplate = fs.readFileSync(__dirname + '/fixtures/largeTemplate.vash', 'utf8')
@@ -8,6 +9,8 @@ var  Benchmark = require('benchmark')
 	,mediumVTemplateNoWith = fs.readFileSync(__dirname + '/fixtures/mediumTemplate.nowith.vash', 'utf8')
 	,smallVTemplate = fs.readFileSync(__dirname + '/fixtures/smallTemplate.vash', 'utf8')
 	
+	,mediumJSHTMLTemplateNoWith = fs.readFileSync(__dirname + '/fixtures/mediumTemplate.nowith.jshtml', 'utf8')
+
 	,largeDTemplate = fs.readFileSync(__dirname + '/fixtures/largeTemplate.dot.html', 'utf8')
 	,mediumDTemplate = fs.readFileSync(__dirname + '/fixtures/mediumTemplate.dot.html', 'utf8')
 	,smallDTemplate = fs.readFileSync(__dirname + '/fixtures/smallTemplate.dot.html', 'utf8')
@@ -15,7 +18,13 @@ var  Benchmark = require('benchmark')
 	,largeVTpl = vash.compile(largeVTemplate, { useWith: true })
 	,mediumVTpl = vash.compile(mediumVTemplate, { useWith: true })
 	,mediumVTplNoWith = vash.compile(mediumVTemplateNoWith)
+	,mediumVTplNoWithNoEscape = vash.compile( mediumVTemplateNoWith, { debug: false, useWith: false, htmlEscape: false } )
 	,smallVTpl = vash.compile(smallVTemplate, { useWith: true })
+
+	,largeJSHTMLTpl = jshtml.compile(largeVTemplate, { 'with': true })
+	//,mediumJSHTMLTpl = jshtml.compile(mediumVTemplate, {})
+	,mediumJSHTMLTplNoWith = jshtml.compile(mediumJSHTMLTemplateNoWith, { 'with': false })
+	,smallJSHTMLTpl = jshtml.compile(smallVTemplate, { 'with': true })
 
 	,largeDTpl = dot.template(largeDTemplate)
 	,mediumDTpl = dot.template(mediumDTemplate)
@@ -49,9 +58,12 @@ var  Benchmark = require('benchmark')
 		,anothervar: 'there is another'
 	}
 
-	,largeTokens = new vash.VParser(largeVTemplate).parse()
-	,mediumTokens = new vash.VParser(mediumVTemplate).parse()
-	,smallTokens = new vash.VParser(smallVTemplate).parse()
+	,mediumVConfig = { debug: false, useWith: false, htmlEscape: false }
+	,mediumVConfigHtmlEscape = { debug: false, useWith: false, htmlEscape: true }
+
+	//,largeTokens = new vash.VParser(largeVTemplate).parse()
+	//,mediumTokens = new vash.VParser(mediumVTemplate).parse()
+	//,smallTokens = new vash.VParser(smallVTemplate).parse()
 
 	,suite;
 
@@ -95,8 +107,8 @@ suite = new Benchmark.Suite("vash parse times by template size")
 .add("vash#parse small", function(){
 	new vash.VParser(smallVTemplate).parse()
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 //suite = new Benchmark.Suite("vash generate times by template size")
 //.add("vash#generate tokens large", function(){
@@ -118,8 +130,8 @@ suite = new Benchmark.Suite("vash vs doT compilation large")
 .add("vash#tpl large", function(){
 	vash.compile(largeVTemplate)
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation medium")
 .add("dot#template medium", function(){
@@ -131,8 +143,8 @@ suite = new Benchmark.Suite("vash vs doT compilation medium")
 .add("vash#tpl medium no with", function(){
 	vash.compile(mediumVTemplateNoWith, false)
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("dot#template small", function(){
@@ -141,20 +153,23 @@ suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("vash#tpl small", function(){
 	vash.compile(smallVTemplate)
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
-suite = new Benchmark.Suite("vash vs doT render large")
+suite = new Benchmark.Suite("vash vs ... render large")
 .add("dot#template large", function(){
 	largeDTpl( largeData );
 })
 .add("vash#tpl large", function(){
 	largeVTpl( largeData );
 })
+.add("jshtml#template large", function(){
+	largeJSHTMLTpl( largeData )
+})
 logSuiteName(suite);
 suite.run();
 
-suite = new Benchmark.Suite("vash vs doT render medium")
+suite = new Benchmark.Suite("vash vs ... render medium")
 .add("dot#template medium", function(){
 	mediumDTpl( mediumData )
 })
@@ -164,19 +179,194 @@ suite = new Benchmark.Suite("vash vs doT render medium")
 .add("vash#tpl medium no with", function(){
 	mediumVTplNoWith( mediumData )
 })
+.add("vash#tpl medium no with no htmlescape", function(){
+	mediumVTplNoWithNoEscape( mediumData )
+})
+//.add("jshtml#template medium", function(){
+//	mediumJSHTMLTpl( mediumData, {} )
+//})
+.add("jshtml#template medium no with", function(){
+	mediumJSHTMLTplNoWith( mediumData, { 'with': false } )
+})
 logSuiteName(suite);
 suite.run();
 
-suite = new Benchmark.Suite("vash vs doT render small")
+suite = new Benchmark.Suite("vash vs ... render small")
 .add("dot#template small", function(){
 	smallDTpl( smallData )
 })
 .add("vash#tpl small", function(){
 	smallVTpl( smallData )
 })
+.add("jshtml#tpl small", function(){
+	smallJSHTMLTpl( smallData, {} )
+})
 logSuiteName(suite);
 suite.run();
 
+var longString = Array(1000).join(Math.random())
+
+var indexed = function(){
+
+    var idx = 0, out = [];
+    
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+    out[idx++] = longString;
+
+    return out.join('')
+}
+    
+var pushed = function(){
+    var out = [];
+    
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+    out.push(longString)
+
+    return out.join('')
+}
+
+var plussed = function(){
+    var out = '';
+    
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+    out += longString
+
+    return out;
+}
+
+var concated = function(){
+    var out = '';
+    
+    out += longString
+    + longString
+    + longString
+    + longString
+    + longString
+    + longString
+    + longString
+
+    return out;
+}
+
+suite = new Benchmark.Suite('string concat: index vs push vs += vs +')
+.add('indexed', function(){
+	indexed();
+})
+.add('pushed', function(){
+	pushed();
+})
+.add('plussed', function(){
+	plussed();
+})
+.add('concated', function(){
+	concated();
+});
+//logSuiteName(suite);
+//suite.run();
+
+var tpush = function anonymous(model) {
+    var __vout = [], __vtemp;
+    __vout.push("<div class=\"how\">");
+    __vout.push(" ");
+    for (var i = 0; i < 1; i++) {
+        __vout.push("<div class=\"item-");
+        __vout.push((typeof (__vtemp = i) !== "undefined" ? __vtemp : "").toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
+        __vout.push("\"");
+        __vout.push(">");
+        __vout.push("I");
+        __vout.push(" ");
+        __vout.push("be");
+        __vout.push(" ");
+        __vout.push("an");
+        __vout.push(" ");
+        __vout.push("item");
+        __vout.push("!");
+        __vout.push("</div>");
+    }
+    __vout.push(" ");
+    __vout.push("</div>");
+    return __vout.join("");
+}
+
+var tconcatsimple = function anonymous(model) {
+    var __vout = '', __vtemp;
+    __vout += "<div class=\"how\">" + " ";
+    for (var i = 0; i < 1; i++) {
+        __vout += "<div class=\"item-"
+        + (typeof (__vtemp = i) !== "undefined" ? __vtemp : "").toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+        + "\""
+        + ">"
+        + "I"
+        + " "
+        + "be"
+        + " "
+        + "an"
+        + " "
+        + "item"
+        + "!"
+        + "</div>"
+    }
+    __vout += " " + "</div>";
+    return __vout;
+}
+
+var tconcat = function anonymous(model) {
+
+    var __vout = '', __vback = '', __vtemp = '';
+
+
+    function f(i) {
+        __vout += "<b>"
+            + i.toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+            + "</b> "
+    }
+
+    __vout += "<span>";
+
+    // have to stop concat, because we don't know what side-effects f might have
+    __vback = __vout; // huge string copy
+    __vout = '';
+    __vtemp = f(model.it)
+    __vout = __vback + __vout + (__vtemp ? __vtemp : '')
+        + "</span>";
+
+    // an do the whole thing again...
+    __vback = __vout;
+    __vout = '';
+    __vtemp += f(model.it);
+    __vout = __vback + __vout + (__vtemp ? __vtemp : '')
+
+
+    return __vout;
+}
+
+suite = new Benchmark.Suite('tpl concat vs push')
+.add('push', function(){
+	tpush( { it: 'what' } );
+})
+.add('concat', function(){
+	tconcat( { it: 'what' } );
+})
+.add('concat simple', function(){
+	tconcatsimple( { it: 'what' } );
+});
+//logSuiteName(suite);
+//suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));

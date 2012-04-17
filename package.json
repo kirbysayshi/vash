@@ -7,5 +7,11 @@
   "repository": "git://github.com/kirbysayshi/vash",
   "main": "build/vash",
   "files": ["build", "test/vash.test.js"],
-  "engines": { "node": ">= 0.4.1" }
+  "engines": { "node": ">= 0.4.1" },
+  "devDependencies": {
+  	"benchmark": ">=0.2.2",
+  	"dot": ">=0.1.7",
+  	"express": ">=2.4.3<=3",
+  	"vows": ">=0.6.2"
+  }
 }
