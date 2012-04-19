@@ -1,13 +1,9 @@
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 function VParser(tokens, options){
-	
-	var n;
 
 	this.options = options || {};
-
 	this.tokens = tokens;
-
 	this.ast = vQuery(VParser.modes.PRG);
 }
 
@@ -100,23 +96,29 @@ VParser.prototype = {
 		return tks;
 	}
 
-	,advanceUntilMatched: function(curr, start, end, escape){
+	,advanceUntilMatched: function(curr, start, end, startEscape, endEscape){
 		var  next = curr
 			,prev = null
 			,nstart = 0
 			,nend = 0
 			,tks = [];
 		
+		// this is fairly convoluted because the start and end for single/double
+		// quotes is the same, and can also be escaped
+
 		while(next){
 
 			if( next.type === start ){
-				nstart++;
-				//if(prev && prev.type === escape){ nstart--; }
-			}
 
-			if( next.type === end ){
+				if( (prev && prev.type !== escape && start !== end) || !prev ){
+					nstart++;
+				} else if( start === end ) {
+					nend++;
+				}
+				
+			} else if( next.type === end ){
 				nend++;
-				if(prev && prev.type === escape){ nend--; }
+				if(prev && prev.type === endEscape){ nend--; }
 			}
 
 			tks.push(next);
@@ -139,7 +141,7 @@ VParser.prototype = {
 		switch(curr.type){
 			
 			case VLexer.tks.AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT);
+				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT, VLexer.tks.AT);
 				break;
 			
 			case VLexer.tks.AT:
@@ -303,7 +305,7 @@ VParser.prototype = {
 				
 				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.BLK;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], null, VLexer.tks.AT );
 				subTokens.pop(); // remove (
 				closer = subTokens.shift();
 
@@ -387,9 +389,16 @@ VParser.prototype = {
 			
 			case VLexer.tks.SINGLE_QUOTE:
 			case VLexer.tks.DOUBLE_QUOTE:
+
 				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
-					this.ast.push(curr);
-					
+					subTokens = this.advanceUntilMatched( 
+						 curr
+						,curr.type
+						,VLexer.pairs[ curr.type ]
+						,VLexer.tks.BACKSLASH
+						,VLexer.tks.BACKSLASH );
+					this.ast.pushFlatten(subTokens.reverse());
+
 				} else {
 					// probably end of expression
 					this.ast = this.ast.parent;
@@ -403,7 +412,12 @@ VParser.prototype = {
 				
 				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.EXP;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
+				subTokens = this.advanceUntilMatched( 
+					curr
+					,curr.type
+					,VLexer.pairs[ curr.type ]
+					,null
+					,VLexer.tks.AT );
 				subTokens.pop();
 				closer = subTokens.shift();
 
@@ -443,7 +457,8 @@ VParser.prototype = {
 				if(
 					ahead && (ahead.type === VLexer.tks.IDENTIFIER 
 						|| ahead.type === VLexer.tks.KEYWORD 
-						|| ahead.type === VLexer.tks.FUNCTION)
+						|| ahead.type === VLexer.tks.FUNCTION
+						|| ahead.type === VLexer.tks.PERIOD)
 				) {
 					this.ast.push(curr);
 				} else {

@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.1-826";
+	exports["version"] = "0.4.1-855";
 
 	exports["config"] = {
 		 "useWith": false
@@ -135,6 +135,7 @@ VLexer.prototype = {
 			|| this.ASSIGN_OPERATOR()
 			|| this.LOGICAL()
 
+			|| this.BACKSLASH()
 			|| this.DOUBLE_QUOTE()
 			|| this.SINGLE_QUOTE()
 
@@ -219,10 +220,13 @@ VLexer.prototype = {
 		return this.scan(/^(&&|\|\||&|\||\^)/, VLexer.tks.LOGICAL);
 	}
 	,SINGLE_QUOTE: function(){
-		return this.scan(/^(\\?')/, VLexer.tks.SINGLE_QUOTE)
+		return this.scan(/^(')/, VLexer.tks.SINGLE_QUOTE)
 	}
 	,DOUBLE_QUOTE: function(){
-		return this.scan(/^(\\?")/, VLexer.tks.DOUBLE_QUOTE)
+		return this.scan(/^(")/, VLexer.tks.DOUBLE_QUOTE)
+	}
+	,BACKSLASH: function(){
+		return this.scan(/^(\\)/, VLexer.tks.BACKSLASH)
 	}
 	,NUMERIC_CONTENT: function(){
 		return this.scan(/^([0-9]+)/, VLexer.tks.NUMERIC_CONTENT);
@@ -271,6 +275,7 @@ VLexer.tks = {
 	,ASSIGN_OPERATOR: 'ASSIGN_OPERATOR'
 	,SINGLE_QUOTE: 'SINGLE_QUOTE'
 	,DOUBLE_QUOTE: 'DOUBLE_QUOTE'
+	,BACKSLASH: 'BACKSLASH'
 	,NUMERIC_CONTENT: 'NUMERIC_CONTENT'
 	,OPERATOR: 'OPERATOR'
 	,LOGICAL: 'LOGICAL'
@@ -321,7 +326,9 @@ vQuery.prototype.init = function(astNode){
 		return astNode;
 	}
 
-	return vQuery.makeArray(astNode, this);
+	var self = vQuery.makeArray(astNode, this);
+	this.maxCheck();
+	return self;
 }
 
 vQuery.fn = vQuery.prototype.init.prototype = vQuery.prototype;
@@ -341,28 +348,10 @@ vQuery.fn.beget = function(mode, tagName){
 
 	if(tagName) { child.tagName = tagName; }
 
+	this.maxCheck();
+
 	return child;
 }
-
-vQuery.fn.every = function(fun /*, thisp */) {  
-	"use strict";  
-
-	if (this == null)
-		throw new TypeError();
-
-	var t = Object(this);
-	var len = t.length >>> 0;
-	if (typeof fun != "function")
-		throw new TypeError();
-
-	var thisp = arguments[1];
-	for (var i = 0; i < len; i++){
-		if (i in t && !fun.call(thisp, t[i], i, t))
-			return false;
-	}
-
-	return true;
-};  
 
 vQuery.fn.each = function(cb){
 	vQuery.each(this, cb, this);
@@ -407,6 +396,8 @@ vQuery.fn.pushFlatten = function(node){
 		}
 	}
 
+	this.maxCheck();
+
 	return this;
 }
 
@@ -414,7 +405,7 @@ vQuery.fn.push = function(nodes){
 
 	if(vQuery.isArray(nodes)){
 		if(nodes.vquery){
-			vQuery.each(nodes, function(node){ node.parent = this; }, this);	
+			nodes.forEach(function(node){ node.parent = this; }, this);	
 		}
 		
 		Array.prototype.push.apply(this, nodes);
@@ -425,6 +416,8 @@ vQuery.fn.push = function(nodes){
 		
 		Array.prototype.push.call(this, nodes);
 	}
+
+	this.maxCheck();
 
 	return this.length;
 }
@@ -472,7 +465,16 @@ vQuery.fn.toTreeString = function(){
 	return buffer.join('\n');
 }
 
-vQuery.maxSize = 500000;
+vQuery.fn.maxCheck = function(){
+	if( this.length >= vQuery.maxSize ){
+		var e = new Error();
+		e.message = 'Maximum number of elements exceeded';
+		e.name = 'vQueryDepthException';
+		throw e;
+	}
+}
+
+vQuery.maxSize = 1000;
 
 // via jQuery
 vQuery.makeArray = function( array, results ) {
@@ -491,15 +493,6 @@ vQuery.makeArray = function( array, results ) {
 
 vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]'
-}
-
-vQuery.each = function(nodes, cb, scope){
-	var i, node;
-
-	for(i = 0; i < nodes.length; i++){
-		node = nodes[i];
-		cb.call( (scope || node), node, i );
-	}
 }
 
 vQuery.copyObj = function(obj){
@@ -546,13 +539,9 @@ vQuery.takeMethodsFromArray(); // run on page load
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 function VParser(tokens, options){
-	
-	var n;
 
 	this.options = options || {};
-
 	this.tokens = tokens;
-
 	this.ast = vQuery(VParser.modes.PRG);
 }
 
@@ -645,23 +634,29 @@ VParser.prototype = {
 		return tks;
 	}
 
-	,advanceUntilMatched: function(curr, start, end, escape){
+	,advanceUntilMatched: function(curr, start, end, startEscape, endEscape){
 		var  next = curr
 			,prev = null
 			,nstart = 0
 			,nend = 0
 			,tks = [];
 		
+		// this is fairly convoluted because the start and end for single/double
+		// quotes is the same, and can also be escaped
+
 		while(next){
 
 			if( next.type === start ){
-				nstart++;
-				//if(prev && prev.type === escape){ nstart--; }
-			}
 
-			if( next.type === end ){
+				if( (prev && prev.type !== escape && start !== end) || !prev ){
+					nstart++;
+				} else if( start === end ) {
+					nend++;
+				}
+				
+			} else if( next.type === end ){
 				nend++;
-				if(prev && prev.type === escape){ nend--; }
+				if(prev && prev.type === endEscape){ nend--; }
 			}
 
 			tks.push(next);
@@ -684,7 +679,7 @@ VParser.prototype = {
 		switch(curr.type){
 			
 			case VLexer.tks.AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT);
+				this.advanceUntilMatched(curr, VLexer.tks.AT_STAR_OPEN, VLexer.tks.AT_STAR_CLOSE, VLexer.tks.AT, VLexer.tks.AT);
 				break;
 			
 			case VLexer.tks.AT:
@@ -848,7 +843,7 @@ VParser.prototype = {
 				
 				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.BLK;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
+				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], null, VLexer.tks.AT );
 				subTokens.pop(); // remove (
 				closer = subTokens.shift();
 
@@ -932,9 +927,16 @@ VParser.prototype = {
 			
 			case VLexer.tks.SINGLE_QUOTE:
 			case VLexer.tks.DOUBLE_QUOTE:
+
 				if(this.ast.parent && this.ast.parent.mode === VParser.modes.EXP){
-					this.ast.push(curr);
-					
+					subTokens = this.advanceUntilMatched( 
+						 curr
+						,curr.type
+						,VLexer.pairs[ curr.type ]
+						,VLexer.tks.BACKSLASH
+						,VLexer.tks.BACKSLASH );
+					this.ast.pushFlatten(subTokens.reverse());
+
 				} else {
 					// probably end of expression
 					this.ast = this.ast.parent;
@@ -948,7 +950,12 @@ VParser.prototype = {
 				
 				parseOpts = vQuery.copyObj(this.options);
 				parseOpts.initialMode = VParser.modes.EXP;
-				subTokens = this.advanceUntilMatched( curr, curr.type, VLexer.pairs[ curr.type ], VLexer.tks.AT );
+				subTokens = this.advanceUntilMatched( 
+					curr
+					,curr.type
+					,VLexer.pairs[ curr.type ]
+					,null
+					,VLexer.tks.AT );
 				subTokens.pop();
 				closer = subTokens.shift();
 
@@ -988,7 +995,8 @@ VParser.prototype = {
 				if(
 					ahead && (ahead.type === VLexer.tks.IDENTIFIER 
 						|| ahead.type === VLexer.tks.KEYWORD 
-						|| ahead.type === VLexer.tks.FUNCTION)
+						|| ahead.type === VLexer.tks.FUNCTION
+						|| ahead.type === VLexer.tks.PERIOD)
 				) {
 					this.ast.push(curr);
 				} else {

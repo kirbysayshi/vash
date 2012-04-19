@@ -75,6 +75,33 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ model: {name: 'what'}}), "<li>what</li>" );
 		}
 	}
+	,'deep property references': {
+		topic: function(){
+			return '@model.repository.url/tree/@model.payload.ref'
+		}
+		,'are fine': function(topic){
+			var tpl = vash.compile(topic, { useWith: false });
+			assert.equal( tpl({ repository: { url: 'URL' }, payload: { ref: 'REF' } }), 'URL/tree/REF' );
+		}
+	}
+	,'ellipses': {
+		topic: function(){
+			return "@(model.payload.desc.substring(0, 4) + '...')";
+		}
+		,'are not infinite': function(topic){
+			var tpl = vash.compile(topic, { useWith: false });
+			assert.equal( tpl({ payload: { desc: 'description!!!' } }), 'desc...' );
+		}
+	}
+	,'..': {
+		topic: function(){
+			return "@( false || 1..toString() )";
+		}
+		,'is valid in expression': function(topic){
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '1' );
+		}
+	}
 	,'for blocks': {
 		topic: function(){
 			var str = '@for(var i = 0; i < 10; i++){ \n }';
@@ -268,9 +295,18 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'outputs G': function(topic){
-			assert.equal( topic({ what: { how: '' }}), '<a href="somename_[0]"></a>');
+			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
 		}
 	}
+	//,'explicit expression followed by bracket': {
+	//	topic: function(){
+	//		var str = '<a href="somename_@(what.how)[0]"></a>';
+	//		return vash.compile(str);
+	//	}
+	//	,'outputs G': function(topic){
+	//		assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
+	//	}
+	//}
 	,'empty anonymous block': {
 		topic: function(){
 			var str = "@{ }";
@@ -775,6 +811,28 @@ vows.describe('vash templating library').addBatch({
 		,'can be escaped with @': function(topic){
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 			assert.equal( vash.compile(topic)(), '<img src="" />} ');
+		}
+	}
+	,'content } in expression': {
+		topic: function(){
+			var str = '@( false || "}" )';
+			return str;
+		}
+		,'does not need to be escaped': function(topic){
+			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
+			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
+			assert.equal( vash.compile(topic)(), '}');
+		}
+	}
+	,'content \ in expression': {
+		topic: function(){
+			var str = '@( false || "\\ " )';
+			return str;
+		}
+		,'is not forgotten': function(topic){
+			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
+			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
+			assert.equal( vash.compile(topic)(), '\ ');
 		}
 	}
 	,'markup followed by for loop': {

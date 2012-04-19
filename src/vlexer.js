@@ -99,6 +99,7 @@ VLexer.prototype = {
 			|| this.ASSIGN_OPERATOR()
 			|| this.LOGICAL()
 
+			|| this.BACKSLASH()
 			|| this.DOUBLE_QUOTE()
 			|| this.SINGLE_QUOTE()
 
@@ -183,10 +184,13 @@ VLexer.prototype = {
 		return this.scan(/^(&&|\|\||&|\||\^)/, VLexer.tks.LOGICAL);
 	}
 	,SINGLE_QUOTE: function(){
-		return this.scan(/^(\\?')/, VLexer.tks.SINGLE_QUOTE)
+		return this.scan(/^(')/, VLexer.tks.SINGLE_QUOTE)
 	}
 	,DOUBLE_QUOTE: function(){
-		return this.scan(/^(\\?")/, VLexer.tks.DOUBLE_QUOTE)
+		return this.scan(/^(")/, VLexer.tks.DOUBLE_QUOTE)
+	}
+	,BACKSLASH: function(){
+		return this.scan(/^(\\)/, VLexer.tks.BACKSLASH)
 	}
 	,NUMERIC_CONTENT: function(){
 		return this.scan(/^([0-9]+)/, VLexer.tks.NUMERIC_CONTENT);
@@ -235,6 +239,7 @@ VLexer.tks = {
 	,ASSIGN_OPERATOR: 'ASSIGN_OPERATOR'
 	,SINGLE_QUOTE: 'SINGLE_QUOTE'
 	,DOUBLE_QUOTE: 'DOUBLE_QUOTE'
+	,BACKSLASH: 'BACKSLASH'
 	,NUMERIC_CONTENT: 'NUMERIC_CONTENT'
 	,OPERATOR: 'OPERATOR'
 	,LOGICAL: 'LOGICAL'
