@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.1-?BUILDNUM?";
+	exports["version"] = "0.4.2-?BUILDNUM?";
 
 	exports["config"] = {
 		 "useWith": false
