@@ -30,7 +30,9 @@ vQuery.prototype.init = function(astNode){
 		return astNode;
 	}
 
-	return vQuery.makeArray(astNode, this);
+	var self = vQuery.makeArray(astNode, this);
+	this.maxCheck();
+	return self;
 }
 
 vQuery.fn = vQuery.prototype.init.prototype = vQuery.prototype;
@@ -50,28 +52,10 @@ vQuery.fn.beget = function(mode, tagName){
 
 	if(tagName) { child.tagName = tagName; }
 
+	this.maxCheck();
+
 	return child;
 }
-
-vQuery.fn.every = function(fun /*, thisp */) {  
-	"use strict";  
-
-	if (this == null)
-		throw new TypeError();
-
-	var t = Object(this);
-	var len = t.length >>> 0;
-	if (typeof fun != "function")
-		throw new TypeError();
-
-	var thisp = arguments[1];
-	for (var i = 0; i < len; i++){
-		if (i in t && !fun.call(thisp, t[i], i, t))
-			return false;
-	}
-
-	return true;
-};  
 
 vQuery.fn.each = function(cb){
 	vQuery.each(this, cb, this);
@@ -116,6 +100,8 @@ vQuery.fn.pushFlatten = function(node){
 		}
 	}
 
+	this.maxCheck();
+
 	return this;
 }
 
@@ -123,7 +109,7 @@ vQuery.fn.push = function(nodes){
 
 	if(vQuery.isArray(nodes)){
 		if(nodes.vquery){
-			vQuery.each(nodes, function(node){ node.parent = this; }, this);	
+			nodes.forEach(function(node){ node.parent = this; }, this);	
 		}
 		
 		Array.prototype.push.apply(this, nodes);
@@ -134,6 +120,8 @@ vQuery.fn.push = function(nodes){
 		
 		Array.prototype.push.call(this, nodes);
 	}
+
+	this.maxCheck();
 
 	return this.length;
 }
@@ -181,7 +169,16 @@ vQuery.fn.toTreeString = function(){
 	return buffer.join('\n');
 }
 
-vQuery.maxSize = 500000;
+vQuery.fn.maxCheck = function(){
+	if( this.length >= vQuery.maxSize ){
+		var e = new Error();
+		e.message = 'Maximum number of elements exceeded';
+		e.name = 'vQueryDepthException';
+		throw e;
+	}
+}
+
+vQuery.maxSize = 1000;
 
 // via jQuery
 vQuery.makeArray = function( array, results ) {
@@ -200,15 +197,6 @@ vQuery.makeArray = function( array, results ) {
 
 vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]'
-}
-
-vQuery.each = function(nodes, cb, scope){
-	var i, node;
-
-	for(i = 0; i < nodes.length; i++){
-		node = nodes[i];
-		cb.call( (scope || node), node, i );
-	}
 }
 
 vQuery.copyObj = function(obj){
