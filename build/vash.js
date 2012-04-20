@@ -8,7 +8,7 @@
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
-(function(vash){
+;(function(vash){
 
 	// this pattern was inspired by LucidJS,
 	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.2-856";
+	exports["version"] = "0.4.2-862";
 
 	exports["config"] = {
 		 "useWith": false
@@ -903,6 +903,7 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 			
+			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.LOGICAL:
 			case VLexer.tks.ASSIGN_OPERATOR:
 			case VLexer.tks.OPERATOR:
@@ -919,7 +920,6 @@ VParser.prototype = {
 
 				break;
 
-			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.IDENTIFIER:
 			case VLexer.tks.HTML_RAW:
 				this.ast.push(curr);

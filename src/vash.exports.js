@@ -8,7 +8,7 @@
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
-(function(vash){
+;(function(vash){
 
 	// this pattern was inspired by LucidJS,
 	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js

@@ -84,6 +84,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( tpl({ repository: { url: 'URL' }, payload: { ref: 'REF' } }), 'URL/tree/REF' );
 		}
 	}
+	,'property references with whitespace': {
+		topic: function(){
+			return '@model.actor created a @model.payload'
+		}
+		,'are not contiguous': function(topic){
+			var tpl = vash.compile(topic, { useWith: false });
+			assert.equal( tpl({ actor: 'act', payload: 'pay' }), 'act created a pay' );
+		}
+	}
 	,'ellipses': {
 		topic: function(){
 			return "@(model.payload.desc.substring(0, 4) + '...')";
@@ -298,15 +307,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
 		}
 	}
-	//,'explicit expression followed by bracket': {
-	//	topic: function(){
-	//		var str = '<a href="somename_@(what.how)[0]"></a>';
-	//		return vash.compile(str);
-	//	}
-	//	,'outputs G': function(topic){
-	//		assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
-	//	}
-	//}
+	,'explicit expression followed by bracket': {
+		topic: function(){
+			var str = '<a href="somename_@(what.how)[0]"></a>';
+			return vash.compile(str);
+		}
+		,'outputs G': function(topic){
+			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
+		}
+	}
 	,'empty anonymous block': {
 		topic: function(){
 			var str = "@{ }";
@@ -861,7 +870,7 @@ vows.describe('vash templating library').addBatch({
 				return str;
 			}
 			,'do not bork': function(topic){
-				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0' );
+				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0 ' );
 			}
 		}
 		,'unclosed tag followed by previous closing tag does not bork': {

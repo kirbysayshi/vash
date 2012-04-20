@@ -365,6 +365,7 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 			
+			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.LOGICAL:
 			case VLexer.tks.ASSIGN_OPERATOR:
 			case VLexer.tks.OPERATOR:
@@ -381,7 +382,6 @@ VParser.prototype = {
 
 				break;
 
-			case VLexer.tks.WHITESPACE:
 			case VLexer.tks.IDENTIFIER:
 			case VLexer.tks.HTML_RAW:
 				this.ast.push(curr);
