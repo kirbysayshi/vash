@@ -23,7 +23,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.3-882";
+	exports["version"] = "0.4.3-883";
 
 	exports["config"] = {
 		 "useWith": false
@@ -318,8 +318,7 @@ vQuery.fn.mode = null;
 vQuery.fn.tagName = null;
 
 vQuery.fn.beget = function(mode, tagName){
-	var child = vQuery();
-	child.mode = mode;
+	var child = vQuery(mode);
 	child.parent = this;
 	this.push( child );
 
@@ -353,11 +352,11 @@ vQuery.fn.pushFlatten = function(node){
 	}
 
 	if(n.mode !== PRG){
-		this.push(n);	
+		this.push(n);
 	} else {
 
 		for(i = 0; i < n.length; i++){
-			this.push( n[i] )
+			this.push( n[i] );
 		}
 	}
 
@@ -370,13 +369,13 @@ vQuery.fn.push = function(nodes){
 
 	if(vQuery.isArray(nodes)){
 		if(nodes.vquery){
-			nodes.forEach(function(node){ node.parent = this; }, this);	
+			nodes.forEach(function(node){ node.parent = this; }, this);
 		}
 		
 		Array.prototype.push.apply(this, nodes);
 	} else {
 		if(nodes.vquery){
-			nodes.parent = this;	
+			nodes.parent = this;
 		}
 		
 		Array.prototype.push.call(this, nodes);
@@ -390,7 +389,7 @@ vQuery.fn.push = function(nodes){
 vQuery.fn.root = function(){
 	var p = this;
 
-	while(p && p.parent && (p = p.parent));
+	while(p && p.parent && (p = p.parent)){}
 
 	return p;
 }
@@ -401,7 +400,7 @@ vQuery.fn.toTreeString = function(){
 
 	function visitNode(node){
 		var  children
-			,child
+			,child;
 
 		buffer.push( Array(indent).join(' |') + ' +' + node.mode + ' ' + ( node.tagName || '' ) );
 
@@ -413,10 +412,10 @@ vQuery.fn.toTreeString = function(){
 				// recurse
 				visitNode(child);
 			} else {
-				buffer.push( Array(indent).join(' |') + ' ' 
+				buffer.push( Array(indent).join(' |') + ' '
 					+ (child
 						?  child.toString()
-						: '[empty]') 
+						: '[empty]')
 				);
 			}
 
@@ -441,13 +440,8 @@ vQuery.fn.maxCheck = function(){
 
 vQuery.maxSize = 1000;
 
-vQuery.makeArray = function( array ) {
-	array = Array.prototype.slice.call( array, 0 );
-	return array;
-};
-
 vQuery.isArray = function(obj){
-	return Object.prototype.toString.call(obj) == '[object Array]'
+	return Object.prototype.toString.call(obj) == '[object Array]';
 }
 
 vQuery.copyObj = function(obj){
@@ -477,8 +471,9 @@ vQuery.takeMethodsFromArray = function(){
 		if( typeof arr[m] === 'function' ){
 			if( !vQuery.fn[m] ){
 				(function(methodName){
+					var slice = Array.prototype.slice;
 					vQuery.fn[methodName] = function(){
-						return arr[methodName].apply(this, vQuery.makeArray(arguments));
+						return arr[methodName].apply(this, slice.call(arguments, 0));
 					}
 				})(m);
 			}
@@ -515,7 +510,7 @@ VParser.prototype = {
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
 				
-				this.ast = this.ast.beget( this.options.initialMode || MKP );	
+				this.ast = this.ast.beget( this.options.initialMode || MKP );
 
 				if(this.options.initialMode === EXP){
 					this.ast = this.ast.beget( EXP ); // EXP needs to know it's within to continue
@@ -533,7 +528,7 @@ VParser.prototype = {
 			}
 			
 			if(this.ast.mode === EXP){
-				this.handleEXP(curr);	
+				this.handleEXP(curr);
 				continue;
 			}
 		}

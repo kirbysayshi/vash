@@ -22,7 +22,7 @@ VParser.prototype = {
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
 				
-				this.ast = this.ast.beget( this.options.initialMode || MKP );	
+				this.ast = this.ast.beget( this.options.initialMode || MKP );
 
 				if(this.options.initialMode === EXP){
 					this.ast = this.ast.beget( EXP ); // EXP needs to know it's within to continue
@@ -40,7 +40,7 @@ VParser.prototype = {
 			}
 			
 			if(this.ast.mode === EXP){
-				this.handleEXP(curr);	
+				this.handleEXP(curr);
 				continue;
 			}
 		}
