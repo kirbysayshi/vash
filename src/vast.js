@@ -6,27 +6,12 @@ var vQuery = function(node){
 
 vQuery.prototype.init = function(astNode){
 
-	// handle falsy
-	if(!astNode) return this;
-
 	// handle mode string
 	if(typeof astNode === 'string'){
 		this.mode = astNode;
-		return this;
 	}
 
-	// handle plain token?
-	if(!vQuery.isArray(astNode) && astNode.vquery !== this.vquery){
-		astNode = [astNode];
-	}
-
-	if( astNode.vquery === this.vquery ){
-		return astNode;
-	}
-
-	var self = vQuery.makeArray(astNode, this);
 	this.maxCheck();
-	return self;
 }
 
 vQuery.fn = vQuery.prototype.init.prototype = vQuery.prototype;
@@ -73,7 +58,7 @@ vQuery.fn.pushFlatten = function(node){
 		n = n[0];
 	}
 
-	if(n.mode !== VParser.modes.PRG){
+	if(n.mode !== PRG){
 		this.push(n);	
 	} else {
 
@@ -162,18 +147,8 @@ vQuery.fn.maxCheck = function(){
 
 vQuery.maxSize = 1000;
 
-// via jQuery
-vQuery.makeArray = function( array, results ) {
+vQuery.makeArray = function( array ) {
 	array = Array.prototype.slice.call( array, 0 );
-
-	if ( results ) {
-		results.push.apply( results, array );
-		results.mode = array.mode;
-		results.parent = array.parent;
-		results.tagName = array.tagName;
-		return results;
-	}
-	
 	return array;
 };
 
@@ -207,7 +182,7 @@ vQuery.takeMethodsFromArray = function(){
 		m = methods[i];
 		if( typeof arr[m] === 'function' ){
 			if( !vQuery.fn[m] ){
-				(function(methodName){ 
+				(function(methodName){
 					vQuery.fn[methodName] = function(){
 						return arr[methodName].apply(this, vQuery.makeArray(arguments));
 					}

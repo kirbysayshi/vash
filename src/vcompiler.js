@@ -47,11 +47,11 @@ VCP.assemble = function(options){
 		var 
 			 start = ''
 			,end = ''
-			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== VParser.modes.EXP;
+			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== EXP;
 
 		if(options.htmlEscape !== false){
 
-			if(tok.type === VLexer.tks.HTML_RAW){
+			if(tok.type === HTML_RAW){
 				escapeStack.push(true);
 			}
 
@@ -76,16 +76,16 @@ VCP.assemble = function(options){
 			}	
 		}
 
-		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === VLexer.tks.HTML_RAW) ) ){
+		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === HTML_RAW) ) ){
 			insertDebugVars(tok)
 			start = "__vo.push(" + start;	
 		}
 
-		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === VLexer.tks.HTML_RAW) ) ){
+		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) ){
 			end += "); \n";
 		}
 
-		if(tok.type !== VLexer.tks.HTML_RAW){
+		if(tok.type !== HTML_RAW){
 			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );	
 		}
 
@@ -98,7 +98,7 @@ VCP.assemble = function(options){
 
 		var n, children = node.slice(0), nonExp, i, child;
 
-		if(node.mode === VParser.modes.EXP && (node.parent && node.parent.mode !== VParser.modes.EXP)){
+		if(node.mode === EXP && (node.parent && node.parent.mode !== EXP)){
 			// see if this node's children are all EXP
 			nonExp = node.filter(findNonExp).length;
 		}
@@ -110,15 +110,15 @@ VCP.assemble = function(options){
 
 				visitNode(child);
 			
-			} else if(node.mode === VParser.modes.MKP){
+			} else if(node.mode === MKP){
 
 				visitMarkupTok(child, node, i);
 
-			} else if(node.mode === VParser.modes.BLK){
+			} else if(node.mode === BLK){
 
 				visitBlockTok(child, node, i);
 
-			} else if(node.mode === VParser.modes.EXP){
+			} else if(node.mode === EXP){
 				
 				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
 
@@ -129,11 +129,11 @@ VCP.assemble = function(options){
 
 	function findNonExp(node){
 
-		if(node.vquery && node.mode === VParser.modes.EXP){
+		if(node.vquery && node.mode === EXP){
 			return node.filter(findNonExp).length > 0;
 		}
 
-		if(node.vquery && node.mode !== VParser.modes.EXP){
+		if(node.vquery && node.mode !== EXP){
 			return true
 		} else {
 			return false;
