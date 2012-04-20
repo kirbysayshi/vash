@@ -18,12 +18,6 @@ vQuery.prototype.init = function(astNode){
 	// handle plain token?
 	if(!vQuery.isArray(astNode) && astNode.vquery !== this.vquery){
 		astNode = [astNode];
-	} else {
-
-		// protect against ridiculous bugs
-		if( astNode.length >= vQuery.maxSize ){
-			throw { name: 'vQuery Error', message: 'Maximum number of elements exceeded' };
-		}
 	}
 
 	if( astNode.vquery === this.vquery ){
@@ -57,28 +51,16 @@ vQuery.fn.beget = function(mode, tagName){
 	return child;
 }
 
-vQuery.fn.each = function(cb){
-	vQuery.each(this, cb, this);
-	return this;
-}
-
 vQuery.fn.closest = function(mode, tagName){
 	var p = this;
 
-	if(!tagName){
-		while( p && (p.mode !== mode || p == this) && p.parent && (p = p.parent) );
-	} else {
+	while(p){
 
-		while(p){
-
-			if( p.tagName !== tagName && p.parent ){
-				p = p.parent;
-			} else {
-				break;
-			}
+		if( p.tagName !== tagName && p.parent ){
+			p = p.parent;
+		} else {
+			break;
 		}
-
-		//while( p && (p.mode !== mode || p == this) && p.tagName !== tagName && p.parent && (p = p.parent) );
 	}
 
 	return p;

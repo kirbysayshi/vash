@@ -30,8 +30,11 @@ VCP.assemble = function(options){
 	function visitMarkupTok(tok, parentNode, index){
 
 		insertDebugVars(tok);
-		buffer.push( "__vo.push('" + tok.val
-			.replace(reQuote, '\"').replace(reLineBreak, '\\n') + "'); \n" );
+		buffer.push( 
+			"__vo.push('" + tok.val
+				.replace(reQuote, '\"')
+				.replace(reLineBreak, '\\n') 
+			+ "'); \n" );
 	}
 
 	function visitBlockTok(tok, parentNode, index){
@@ -97,18 +100,17 @@ VCP.assemble = function(options){
 
 		if(node.mode === VParser.modes.EXP && (node.parent && node.parent.mode !== VParser.modes.EXP)){
 			// see if this node's children are all EXP
-			nonExp = node.filter(findNonExp).length
+			nonExp = node.filter(findNonExp).length;
 		}
 
 		for(i = 0; i < children.length; i++){
 			child = children[i];
 
 			if(child.vquery){
-				visitNode(child);
-				continue;
-			}
 
-			if(node.mode === VParser.modes.MKP){
+				visitNode(child);
+			
+			} else if(node.mode === VParser.modes.MKP){
 
 				visitMarkupTok(child, node, i);
 

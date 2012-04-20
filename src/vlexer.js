@@ -149,7 +149,7 @@ VLexer.prototype = {
 	}
 	,HTML_TAG_OPEN: function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, VLexer.tks.HTML_TAG_OPEN), '@');
-	} 
+	}
 	,HTML_TAG_CLOSE: function(){
 		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, VLexer.tks.HTML_TAG_CLOSE), '@');
 	}
