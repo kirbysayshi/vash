@@ -36,7 +36,7 @@ var  AT = 'AT'
 
 var PAIRS = {};
 
-// defined as such to help minification
+// defined through indexing to help minification
 PAIRS[AT_STAR_OPEN] = AT_STAR_CLOSE;
 PAIRS[BRACE_OPEN] = BRACE_CLOSE;
 PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
@@ -45,71 +45,46 @@ PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 
 
+
 // The order of these is important, as it is the order in which
 // they are run against the input string.
 // They are separated out here to allow for better minification
 // with the least amount of effort from me. :)
 
-// NOTE: this is an array, not an object literal!
+// NOTE: this is an array, not an object literal! The () around
+// the regexps are for the sake of the syntax highlighter in my
+// editor... sublimetext2
 
 var TESTS = [
 
-	EMAIL, function(){
-		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, EMAIL);
-	}
+	EMAIL, (/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/)
 
 
-	,AT_STAR_OPEN, function(){
-		return this.scan(/^(@\*)/, AT_STAR_OPEN);
-	}
-	,AT_STAR_CLOSE, function(){
-		return this.scan(/^(\*@)/, AT_STAR_CLOSE);
-	}
+	,AT_STAR_OPEN, (/^(@\*)/)
+	,AT_STAR_CLOSE, (/^(\*@)/)
 
 
-	,AT_COLON, function(){
-		return this.scan(/^@\:/, AT_COLON);
-	}
-	,AT, function(){
-		return this.scan(/^(@)/, AT);
-	}
+	,AT_COLON, (/^@\:/)
+	,AT, (/^(@)/)
 
 
-	,FAT_ARROW, function(){
-		return this.scan(/^(\(.*?\)?\s*?=>)/, FAT_ARROW);
-	}
+	,FAT_ARROW, (/^(\(.*?\)?\s*?=>)/)
 
 
-	,PAREN_OPEN, function(){
-		return this.scan(/^(\()/, PAREN_OPEN);
-	}
-	,PAREN_CLOSE, function(){
-		return this.scan(/^(\))/, PAREN_CLOSE);
-	}
+	,PAREN_OPEN, (/^(\()/)
+	,PAREN_CLOSE, (/^(\))/)
 
 
-	,HARD_PAREN_OPEN, function(){
-		return this.scan(/^(\[)/, HARD_PAREN_OPEN);
-	}
-	,HARD_PAREN_CLOSE, function(){
-		return this.scan(/^(\])/, HARD_PAREN_CLOSE);
-	}
+	,HARD_PAREN_OPEN, (/^(\[)/)
+	,HARD_PAREN_CLOSE, (/^(\])/)
 
 
-	,BRACE_OPEN, function(){
-		return this.scan(/^(\{)/, BRACE_OPEN);
-	}
-	,BRACE_CLOSE, function(){
-		return this.scan(/^(\})/, BRACE_CLOSE);
-	}
+	,BRACE_OPEN, (/^(\{)/)
+	,BRACE_CLOSE, (/^(\})/)
 
 
-	,TEXT_TAG_OPEN, function(){
-		return this.scan(/^(<text>)/, TEXT_TAG_OPEN);
-	}
-	,TEXT_TAG_CLOSE, function(){
-		return this.scan(/^(<\/text>)/, TEXT_TAG_CLOSE);
-	}
+	,TEXT_TAG_OPEN, (/^(<text>)/)
+	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
 	,HTML_TAG_SELFCLOSE, function(){
@@ -123,9 +98,7 @@ var TESTS = [
 	}
 
 
-	,PERIOD, function(){
-		return this.scan(/^(\.)/, PERIOD);
-	}
+	,PERIOD, (/^(\.)/)
 	,NEWLINE, function(){
 		var token = this.scan(/^(\n)/, NEWLINE);
 		if(token){
@@ -134,54 +107,27 @@ var TESTS = [
 		}
 		return token;
 	}
-	,WHITESPACE, function(){
-		return this.scan(/^(\s)/, WHITESPACE);
-	}
-	,FUNCTION, function(){
-		return this.scan(/^(function)(?![\d\w])/, FUNCTION);
-	}
-	,KEYWORD, function(){
-		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/, KEYWORD);
-	}
-	,HTML_RAW, function(){
-		return this.scan(/^(vash\.raw)(?![\d\w])/, HTML_RAW);
-	}
-	,IDENTIFIER, function(){
-		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, IDENTIFIER);
-	}
+	,WHITESPACE, (/^(\s)/)
+	,FUNCTION, (/^(function)(?![\d\w])/)
+	,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
+	,HTML_RAW, (/^(vash\.raw)(?![\d\w])/)
+	,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
 
-	,OPERATOR, function(){
-		return this.scan(/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/, OPERATOR);
-	}
-	,ASSIGN_OPERATOR, function(){
-		return this.scan(/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/, ASSIGN_OPERATOR);
-	}
-	,LOGICAL, function(){
-		return this.scan(/^(&&|\|\||&|\||\^)/, LOGICAL);
-	}
+	,OPERATOR, (/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/)
+	,ASSIGN_OPERATOR, (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/)
+	,LOGICAL, (/^(&&|\|\||&|\||\^)/)
 
 
-	,BACKSLASH, function(){
-		return this.scan(/^(\\)/, BACKSLASH);
-	}
-	,DOUBLE_QUOTE, function(){
-		return this.scan(/^(")/, DOUBLE_QUOTE);
-	}
-	,SINGLE_QUOTE, function(){
-		return this.scan(/^(')/, SINGLE_QUOTE);
-	}
+	,BACKSLASH, (/^(\\)/)
+	,DOUBLE_QUOTE, (/^(\")/)
+	,SINGLE_QUOTE, (/^(\')/)
 
 
-	,NUMERIC_CONTENT, function(){
-		return this.scan(/^([0-9]+)/, NUMERIC_CONTENT);
-	}
-	,CONTENT, function(){
-		return this.scan(/^([^\s})@.]+?)/, CONTENT);
-	}
+	,NUMERIC_CONTENT, (/^([0-9]+)/)
+	,CONTENT, (/^([^\s})@.]+?)/)
 
 ];
-
 
 // This pattern and basic lexer code were originally from the
 // Jade lexer, but have been modified:
@@ -202,7 +148,9 @@ VLexer.prototype = {
 			,chr: this.charno
 			,val: val
 			,toString: function(){
-				return '[' + this.type + ' (' + this.line + ',' + this.chr + '): ' + this.val + ']';
+				return '[' + this.type
+					+ ' (' + this.line + ',' + this.chr + '): '
+					+ this.val + ']';
 			}
 		};
 	}
@@ -210,43 +158,33 @@ VLexer.prototype = {
 	,scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
-			this.consume(captures[0].length);
+			this.input = this.input.substr((captures[0].length));
 			
 			token = this.tok(type, captures[1]);
 			this.charno += captures[0].length;
 			return token;
 		}
 	}
-	
-	,spew: function(str){
-		this.input = str + this.input;
-		this.charno -= str.length;
-	}
-
-	,consume: function(len){
-		this.input = this.input.substr(len);
-	}
 
 	,spewIf: function(tok, ifStr){
-		var parts;
+		var parts, str;
 
 		if(tok){
 			parts = tok.val.split(ifStr);
 
 			if(parts.length > 1){
 				tok.val = parts.shift();
-				this.spew(ifStr + parts.join(ifStr));
+
+				str = ifStr + parts.join(ifStr);
+				this.input = str + this.input;
+				this.charno -= str.length;
 			}
 		}
 		
 		return tok;
 	}
 
-	,advance: function(){
-		return this.next();
-	}
-
-	,next: function() {
+	,advance: function() {
 
 		var i, name, test, result;
 
@@ -259,7 +197,7 @@ VLexer.prototype = {
 				result = test.call(this);
 			}
 
-			if(typeof test.test === 'function'){
+			if(typeof test.exec === 'function'){
 				// assume regex
 				result = this.scan(test, TESTS[i]);
 			}
