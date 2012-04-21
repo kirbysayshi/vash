@@ -30,10 +30,10 @@ VCP.assemble = function(options){
 	function visitMarkupTok(tok, parentNode, index){
 
 		insertDebugVars(tok);
-		buffer.push( 
+		buffer.push(
 			"__vo.push('" + tok.val
 				.replace(reQuote, '\"')
-				.replace(reLineBreak, '\\n') 
+				.replace(reLineBreak, '\\n')
 			+ "'); \n" );
 	}
 
@@ -44,8 +44,7 @@ VCP.assemble = function(options){
 
 	function visitExpressionTok(tok, parentNode, index, isHomogenous){
 
-		var 
-			 start = ''
+		var  start = ''
 			,end = ''
 			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== EXP;
 
@@ -58,7 +57,7 @@ VCP.assemble = function(options){
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
 
 				if(escapeStack.length === 0){
-					start += '( typeof (__vt = ';	
+					start += '( typeof (__vt = ';
 				}
 			}
 
@@ -68,17 +67,17 @@ VCP.assemble = function(options){
 					escapeStack.pop();
 				} else {
 					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
-						+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
+						+ ".replace(/&(?!\\w+;)/g, '&amp;')\n"
 						+ ".replace(/</g, '&lt;')\n"
 						+ ".replace(/>/g, '&gt;')\n"
 						+ ".replace(/\"/g, '&quot;') \n";
 				}
-			}	
+			}
 		}
 
 		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === HTML_RAW) ) ){
-			insertDebugVars(tok)
-			start = "__vo.push(" + start;	
+			insertDebugVars(tok);
+			start = "__vo.push(" + start;
 		}
 
 		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) ){
@@ -86,11 +85,11 @@ VCP.assemble = function(options){
 		}
 
 		if(tok.type !== HTML_RAW){
-			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );	
+			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );
 		}
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
-			insertDebugVars(tok)
+			insertDebugVars(tok);
 		}
 	}
 
@@ -134,16 +133,18 @@ VCP.assemble = function(options){
 		}
 
 		if(node.vquery && node.mode !== EXP){
-			return true
+			return true;
 		} else {
 			return false;
 		}
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.unshift("var __vo = [], __vt; \n");
+	buffer.push("var __vo = [], __vt; \n");
 
-	options.debug && buffer.push('var __vl = 0, __vc = 0; \n');
+	if(options.debug){
+		buffer.push('var __vl = 0, __vc = 0; \n');
+	}
 
 	visitNode(this.ast);
 
@@ -160,20 +161,22 @@ VCP.assemble = function(options){
 			,'"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reEscapedQuote, '\\$2') + '"'
-			,') } \n' )
+			,') } \n' );
 	}
 
-	buffer.push("return __vo.join('');")
+	buffer.push("return __vo.join('');");
 
 	joined = buffer.join('');
 
-	options.debugCompiler && console.log(joined);
+	if(options.debugCompiler){
+		console.log(joined);
+	}
 
 	try {
 		func = new Function(options.modelName, joined);
 	} catch(e){
 		e.message += ' -> ' + joined;
-		throw e;	
+		throw e;
 	}
 
 	return func;
@@ -193,13 +196,13 @@ VCP.reportError = function(e, lineno, chr, orig){
 		var curr = i + start + 1;
 
 		return (curr === lineno ? '  > ' : '    ')
-			+ curr 
+			+ curr
 			+ ' | '
 			+ line;
 	}).join('\n');
 
-	e.message = 'Problem while rendering template at line ' 
-		+ lineno + ', character ' + chr 
+	e.message = 'Problem while rendering template at line '
+		+ lineno + ', character ' + chr
 		+ '.\nOriginal message: ' + e.message + '.'
 		+ '\nContext: \n\n' + contextStr + '\n\n';
 

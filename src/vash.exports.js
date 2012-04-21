@@ -1,4 +1,4 @@
-/*jshint strict:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 /**
  * Vash - JavaScript Template Parser
@@ -13,11 +13,13 @@
 	// this pattern was inspired by LucidJS,
 	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
 
-	typeof define === 'function' && define['amd']
-		? define(vash) // AMD
-		: typeof module === 'object' && module['exports']
-			? module['exports'] = vash // NODEJS
-			: window['vash'] = vash // BROWSER
+	if(typeof define === 'function' && define['amd']){
+		define(vash); // AMD
+	} else if(typeof module === 'object' && module['exports']){
+			module['exports'] = vash; // NODEJS
+	} else {
+		window['vash'] = vash; // BROWSER
+	}
 
 })(function(exports){
 
@@ -26,7 +28,7 @@
 	exports["version"] = "0.4.3-?BUILDNUM?";
 
 	exports["config"] = {
-		 "useWith": false
+		"useWith": false
 		,"modelName": "model"
 		,"debug": false
 		,"debugParser": false
@@ -37,28 +39,14 @@
 	/*?CODE?*/
 	/************** End injected code from build script */
 
-	/*exports['isArray'] = function(obj){
-		return Object.prototype.toString.call(obj) == '[object Array]'
-	}
-
-	exports['copyObj'] = function(obj){
-		var nObj = {};
-
-		for(var i in obj){
-			if(Object.prototype.hasOwnProperty(i)){
-				nObj[i] = obj[i]
-			}
-		}
-
-		return nObj;
-	}*/
-
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function compile(markup, options){
 
-		if(markup === '' || typeof markup !== 'string') throw new Error('Empty or non-string cannot be compiled');
+		if(markup === '' || typeof markup !== 'string') {
+			throw new Error('Empty or non-string cannot be compiled');
+		}
 
 		var  l
 			,tok
@@ -75,14 +63,13 @@
 		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
 
 		l = new VLexer(markup);
-		while(tok = l.advance()) tokens.push(tok)
+		while(tok = l.advance()) { tokens.push(tok); }
 		tokens.reverse(); // parser needs in reverse order for faster popping vs shift
 
 		p = new VParser(tokens, options);
 		p.parse();
 
 		c = new VCompiler(p.ast, markup);
-		//c.generate(options);
 
 		// Express support
 		cmp = c.assemble(options);

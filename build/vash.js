@@ -1,4 +1,4 @@
-/*jshint strict:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 /**
  * Vash - JavaScript Template Parser
@@ -13,20 +13,22 @@
 	// this pattern was inspired by LucidJS,
 	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
 
-	typeof define === 'function' && define['amd']
-		? define(vash) // AMD
-		: typeof module === 'object' && module['exports']
-			? module['exports'] = vash // NODEJS
-			: window['vash'] = vash // BROWSER
+	if(typeof define === 'function' && define['amd']){
+		define(vash); // AMD
+	} else if(typeof module === 'object' && module['exports']){
+			module['exports'] = vash; // NODEJS
+	} else {
+		window['vash'] = vash; // BROWSER
+	}
 
 })(function(exports){
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.3-883";
+	exports["version"] = "0.4.3-890";
 
 	exports["config"] = {
-		 "useWith": false
+		"useWith": false
 		,"modelName": "model"
 		,"debug": false
 		,"debugParser": false
@@ -36,7 +38,191 @@
 	/************** Begin injected code from build script */
 	/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-// This pattern and basic lexer code are taken from the Jade lexer:
+// The basic tokens, defined as constants
+var  AT = 'AT'
+	,ASSIGN_OPERATOR = 'ASSIGN_OPERATOR'
+	,AT_COLON = 'AT_COLON'
+	,AT_STAR_CLOSE = 'AT_STAR_CLOSE'
+	,AT_STAR_OPEN = 'AT_STAR_OPEN'
+	,BACKSLASH = 'BACKSLASH'
+	,BRACE_CLOSE = 'BRACE_CLOSE'
+	,BRACE_OPEN = 'BRACE_OPEN'
+	,CONTENT = 'CONTENT'
+	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
+	,EMAIL = 'EMAIL'
+	,FAT_ARROW = 'FAT_ARROW'
+	,FUNCTION = 'FUNCTION'
+	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
+	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
+	,HTML_RAW = 'HTML_RAW'
+	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
+	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
+	,HTML_TAG_SELFCLOSE = 'HTML_TAG_SELFCLOSE'
+	,IDENTIFIER = 'IDENTIFIER'
+	,KEYWORD = 'KEYWORD'
+	,LOGICAL = 'LOGICAL'
+	,NEWLINE = 'NEWLINE'
+	,NUMERIC_CONTENT = 'NUMERIC_CONTENT'
+	,OPERATOR = 'OPERATOR'
+	,PAREN_CLOSE = 'PAREN_CLOSE'
+	,PAREN_OPEN = 'PAREN_OPEN'
+	,PERIOD = 'PERIOD'
+	,SINGLE_QUOTE = 'SINGLE_QUOTE'
+	,TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE'
+	,TEXT_TAG_OPEN = 'TEXT_TAG_OPEN'
+	,WHITESPACE = 'WHITESPACE';
+
+var PAIRS = {};
+
+// defined as such to help minification
+PAIRS[AT_STAR_OPEN] = AT_STAR_CLOSE;
+PAIRS[BRACE_OPEN] = BRACE_CLOSE;
+PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
+PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
+PAIRS[PAREN_OPEN] = PAREN_CLOSE;
+PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
+
+
+// The order of these is important, as it is the order in which
+// they are run against the input string.
+// They are separated out here to allow for better minification
+// with the least amount of effort from me. :)
+
+// NOTE: this is an array, not an object literal!
+
+var TESTS = [
+
+	EMAIL, function(){
+		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, EMAIL);
+	}
+
+
+	,AT_STAR_OPEN, function(){
+		return this.scan(/^(@\*)/, AT_STAR_OPEN);
+	}
+	,AT_STAR_CLOSE, function(){
+		return this.scan(/^(\*@)/, AT_STAR_CLOSE);
+	}
+
+
+	,AT_COLON, function(){
+		return this.scan(/^@\:/, AT_COLON);
+	}
+	,AT, function(){
+		return this.scan(/^(@)/, AT);
+	}
+
+
+	,FAT_ARROW, function(){
+		return this.scan(/^(\(.*?\)?\s*?=>)/, FAT_ARROW);
+	}
+
+
+	,PAREN_OPEN, function(){
+		return this.scan(/^(\()/, PAREN_OPEN);
+	}
+	,PAREN_CLOSE, function(){
+		return this.scan(/^(\))/, PAREN_CLOSE);
+	}
+
+
+	,HARD_PAREN_OPEN, function(){
+		return this.scan(/^(\[)/, HARD_PAREN_OPEN);
+	}
+	,HARD_PAREN_CLOSE, function(){
+		return this.scan(/^(\])/, HARD_PAREN_CLOSE);
+	}
+
+
+	,BRACE_OPEN, function(){
+		return this.scan(/^(\{)/, BRACE_OPEN);
+	}
+	,BRACE_CLOSE, function(){
+		return this.scan(/^(\})/, BRACE_CLOSE);
+	}
+
+
+	,TEXT_TAG_OPEN, function(){
+		return this.scan(/^(<text>)/, TEXT_TAG_OPEN);
+	}
+	,TEXT_TAG_CLOSE, function(){
+		return this.scan(/^(<\/text>)/, TEXT_TAG_CLOSE);
+	}
+
+
+	,HTML_TAG_SELFCLOSE, function(){
+		return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
+	}
+	,HTML_TAG_OPEN, function(){
+		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
+	}
+	,HTML_TAG_CLOSE, function(){
+		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
+	}
+
+
+	,PERIOD, function(){
+		return this.scan(/^(\.)/, PERIOD);
+	}
+	,NEWLINE, function(){
+		var token = this.scan(/^(\n)/, NEWLINE);
+		if(token){
+			this.lineno++;
+			this.charno = 0;
+		}
+		return token;
+	}
+	,WHITESPACE, function(){
+		return this.scan(/^(\s)/, WHITESPACE);
+	}
+	,FUNCTION, function(){
+		return this.scan(/^(function)(?![\d\w])/, FUNCTION);
+	}
+	,KEYWORD, function(){
+		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/, KEYWORD);
+	}
+	,HTML_RAW, function(){
+		return this.scan(/^(vash\.raw)(?![\d\w])/, HTML_RAW);
+	}
+	,IDENTIFIER, function(){
+		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, IDENTIFIER);
+	}
+
+
+	,OPERATOR, function(){
+		return this.scan(/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/, OPERATOR);
+	}
+	,ASSIGN_OPERATOR, function(){
+		return this.scan(/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/, ASSIGN_OPERATOR);
+	}
+	,LOGICAL, function(){
+		return this.scan(/^(&&|\|\||&|\||\^)/, LOGICAL);
+	}
+
+
+	,BACKSLASH, function(){
+		return this.scan(/^(\\)/, BACKSLASH);
+	}
+	,DOUBLE_QUOTE, function(){
+		return this.scan(/^(")/, DOUBLE_QUOTE);
+	}
+	,SINGLE_QUOTE, function(){
+		return this.scan(/^(')/, SINGLE_QUOTE);
+	}
+
+
+	,NUMERIC_CONTENT, function(){
+		return this.scan(/^([0-9]+)/, NUMERIC_CONTENT);
+	}
+	,CONTENT, function(){
+		return this.scan(/^([^\s})@.]+?)/, CONTENT);
+	}
+
+];
+
+
+// This pattern and basic lexer code were originally from the
+// Jade lexer, but have been modified:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
@@ -49,7 +235,7 @@ VLexer.prototype = {
 	
 	tok: function(type, val){
 		return {
-			 type: type
+			type: type
 			,line: this.lineno
 			,chr: this.charno
 			,val: val
@@ -99,199 +285,33 @@ VLexer.prototype = {
 	}
 
 	,next: function() {
-		return this.EMAIL()
-			|| this.AT_STAR_OPEN()
-			|| this.AT_STAR_CLOSE()
 
-			|| this.AT_COLON()
-			|| this.AT()
-			
-			|| this.FAT_ARROW()
-			|| this.PAREN_OPEN()
-			|| this.PAREN_CLOSE()
-			
-			|| this.HARD_PAREN_OPEN()
-			|| this.HARD_PAREN_CLOSE()
-			
-			|| this.BRACE_OPEN()
-			|| this.BRACE_CLOSE()
-			
-			|| this.TEXT_TAG_OPEN()
-			|| this.TEXT_TAG_CLOSE()
-			
-			|| this.HTML_TAG_SELFCLOSE()
-			|| this.HTML_TAG_OPEN()
-			|| this.HTML_TAG_CLOSE()
-			
-			|| this.PERIOD()
-			|| this.NEWLINE()
-			|| this.WHITESPACE()
-			|| this.FUNCTION()
-			|| this.KEYWORD()
-			|| this.HTML_RAW()
-			|| this.IDENTIFIER()
+		var i, name, test, result;
 
-			|| this.OPERATOR()
-			|| this.ASSIGN_OPERATOR()
-			|| this.LOGICAL()
+		for(i = 0; i < TESTS.length; i += 2){
+			test = TESTS[i+1];
+			test.displayName = TESTS[i];
 
-			|| this.BACKSLASH()
-			|| this.DOUBLE_QUOTE()
-			|| this.SINGLE_QUOTE()
+			if(typeof test === 'function'){
+				// assume complex callback
+				result = test.call(this);
+			}
 
-			|| this.NUMERIC_CONTENT()
-			|| this.CONTENT();
-	}
+			if(typeof test.test === 'function'){
+				// assume regex
+				result = this.scan(test, TESTS[i]);
+			}
 
-	
-	,AT: function(){
-		return this.scan(/^(@)/, AT);
-	}
-	,AT_COLON: function(){
-		return this.scan(/^@\:/, AT_COLON);
-	}
-	,AT_STAR_OPEN: function(){
-		return this.scan(/^(@\*)/, AT_STAR_OPEN);
-	}
-	,AT_STAR_CLOSE: function(){
-		return this.scan(/^(\*@)/, AT_STAR_CLOSE);
-	}
-	,PAREN_OPEN: function(){
-		return this.scan(/^(\()/, PAREN_OPEN);
-	}
-	,PAREN_CLOSE: function(){
-		return this.scan(/^(\))/, PAREN_CLOSE);
-	}
-	,BRACE_OPEN: function(){
-		return this.scan(/^(\{)/, BRACE_OPEN);
-	}
-	,BRACE_CLOSE: function(){
-		return this.scan(/^(\})/, BRACE_CLOSE);
-	}
-	,HARD_PAREN_OPEN: function(){
-		return this.scan(/^(\[)/, HARD_PAREN_OPEN);
-	}
-	,HARD_PAREN_CLOSE: function(){
-		return this.scan(/^(\])/, HARD_PAREN_CLOSE);
-	}
-	,TEXT_TAG_OPEN: function(){
-		return this.scan(/^(<text>)/, TEXT_TAG_OPEN);
-	}
-	,TEXT_TAG_CLOSE: function(){
-		return this.scan(/^(<\/text>)/, TEXT_TAG_CLOSE);
-	}
-	,HTML_TAG_SELFCLOSE: function(){
-		return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
-	}
-	,HTML_TAG_OPEN: function(){
-		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
-	}
-	,HTML_TAG_CLOSE: function(){
-		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
-	}
-	,FAT_ARROW: function(){
-		return this.scan(/^(\(.*?\)?\s*?=>)/, FAT_ARROW);
-	}
-	,FUNCTION: function(){
-		return this.scan(/^(function)(?![\d\w])/, FUNCTION);
-	}
-	,KEYWORD: function(){
-		return this.scan(/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/, KEYWORD);
-	}
-	,IDENTIFIER: function(){
-		return this.scan(/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/, IDENTIFIER);
-	}
-	,HTML_RAW: function(){
-		return this.scan(/^(vash\.raw)(?![\d\w])/, HTML_RAW);
-	}
-	,PERIOD: function(){
-		return this.scan(/^(\.)/, PERIOD);
-	}
-	,EMAIL: function(){
-		return this.scan(/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/, EMAIL);
-	}
-	,ASSIGN_OPERATOR: function(){
-		return this.scan(/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/, ASSIGN_OPERATOR);
-	}
-	,OPERATOR: function(){
-		return this.scan(/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/, OPERATOR);
-	}
-	,LOGICAL: function(){
-		return this.scan(/^(&&|\|\||&|\||\^)/, LOGICAL);
-	}
-	,SINGLE_QUOTE: function(){
-		return this.scan(/^(')/, SINGLE_QUOTE)
-	}
-	,DOUBLE_QUOTE: function(){
-		return this.scan(/^(")/, DOUBLE_QUOTE)
-	}
-	,BACKSLASH: function(){
-		return this.scan(/^(\\)/, BACKSLASH)
-	}
-	,NUMERIC_CONTENT: function(){
-		return this.scan(/^([0-9]+)/, NUMERIC_CONTENT);
-	}
-	,CONTENT: function(){
-		return this.scan(/^([^\s})@.]+?)/, CONTENT);
-	}
-	,WHITESPACE: function(){
-		return this.scan(/^(\s)/, WHITESPACE);
-	}
-	,NEWLINE: function(){
-		var token = this.scan(/^(\n)/, NEWLINE);
-		if(token){
-			this.lineno++;
-			this.charno = 0;
+			if( result ){
+				return result;
+			}
 		}
-		return token;
-	}
-	,EOF: function(){
-		return this.scan(/^$/, EOF);
 	}
 }
 
-var  AT = 'AT'
-	,AT_STAR_OPEN = 'AT_STAR_OPEN'
-	,AT_STAR_CLOSE = 'AT_STAR_CLOSE'
-	,AT_COLON = 'AT_COLON'
-	,EMAIL = 'EMAIL'
-	,PAREN_OPEN = 'PAREN_OPEN'
-	,PAREN_CLOSE = 'PAREN_CLOSE'
-	,BRACE_OPEN = 'BRACE_OPEN'
-	,BRACE_CLOSE = 'BRACE_CLOSE'
-	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
-	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
-	,TEXT_TAG_OPEN = 'TEXT_TAG_OPEN'
-	,TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE'
-	,HTML_TAG_SELFCLOSE = 'HTML_TAG_SELFCLOSE'
-	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
-	,KEYWORD = 'KEYWORD'
-	,FUNCTION = 'FUNCTION'
-	,FAT_ARROW = 'FAT_ARROW'
-	,IDENTIFIER = 'IDENTIFIER'
-	,PERIOD = 'PERIOD'
-	,ASSIGN_OPERATOR = 'ASSIGN_OPERATOR'
-	,SINGLE_QUOTE = 'SINGLE_QUOTE'
-	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
-	,BACKSLASH = 'BACKSLASH'
-	,NUMERIC_CONTENT = 'NUMERIC_CONTENT'
-	,OPERATOR = 'OPERATOR'
-	,LOGICAL = 'LOGICAL'
-	,CONTENT = 'CONTENT'
-	,WHITESPACE = 'WHITESPACE'
-	,NEWLINE = 'NEWLINE'
-	,EOF = 'EOF'
-	,HTML_RAW = 'HTML_RAW';
 
-VLexer.pairs = {
-	 AT_STAR_OPEN: AT_STAR_CLOSE
-	,PAREN_OPEN: PAREN_CLOSE
-	,BRACE_OPEN: BRACE_CLOSE
-	,HARD_PAREN_OPEN: HARD_PAREN_CLOSE
-	,DOUBLE_QUOTE: DOUBLE_QUOTE
-	,SINGLE_QUOTE: SINGLE_QUOTE
-};
+
+
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 var vQuery = function(node){
@@ -789,7 +809,7 @@ VParser.prototype = {
 				subTokens = this.advanceUntilMatched(
 					curr
 					,curr.type
-					,VLexer.pairs[ curr.type ]
+					,PAIRS[ curr.type ]
 					,null
 					,AT );
 				subTokens.pop(); // remove (
@@ -881,7 +901,7 @@ VParser.prototype = {
 					subTokens = this.advanceUntilMatched(
 						curr
 						,curr.type
-						,VLexer.pairs[ curr.type ]
+						,PAIRS[ curr.type ]
 						,BACKSLASH
 						,BACKSLASH );
 					this.ast.pushFlatten(subTokens.reverse());
@@ -902,7 +922,7 @@ VParser.prototype = {
 				subTokens = this.advanceUntilMatched(
 					curr
 					,curr.type
-					,VLexer.pairs[ curr.type ]
+					,PAIRS[ curr.type ]
 					,null
 					,AT );
 				subTokens.pop();
@@ -1000,10 +1020,10 @@ VCP.assemble = function(options){
 	function visitMarkupTok(tok, parentNode, index){
 
 		insertDebugVars(tok);
-		buffer.push( 
+		buffer.push(
 			"__vo.push('" + tok.val
 				.replace(reQuote, '\"')
-				.replace(reLineBreak, '\\n') 
+				.replace(reLineBreak, '\\n')
 			+ "'); \n" );
 	}
 
@@ -1014,8 +1034,7 @@ VCP.assemble = function(options){
 
 	function visitExpressionTok(tok, parentNode, index, isHomogenous){
 
-		var 
-			 start = ''
+		var  start = ''
 			,end = ''
 			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== EXP;
 
@@ -1028,7 +1047,7 @@ VCP.assemble = function(options){
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
 
 				if(escapeStack.length === 0){
-					start += '( typeof (__vt = ';	
+					start += '( typeof (__vt = ';
 				}
 			}
 
@@ -1038,17 +1057,17 @@ VCP.assemble = function(options){
 					escapeStack.pop();
 				} else {
 					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
-						+ ".replace(/&(?!\w+;)/g, '&amp;')\n"
+						+ ".replace(/&(?!\\w+;)/g, '&amp;')\n"
 						+ ".replace(/</g, '&lt;')\n"
 						+ ".replace(/>/g, '&gt;')\n"
 						+ ".replace(/\"/g, '&quot;') \n";
 				}
-			}	
+			}
 		}
 
 		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === HTML_RAW) ) ){
-			insertDebugVars(tok)
-			start = "__vo.push(" + start;	
+			insertDebugVars(tok);
+			start = "__vo.push(" + start;
 		}
 
 		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) ){
@@ -1056,11 +1075,11 @@ VCP.assemble = function(options){
 		}
 
 		if(tok.type !== HTML_RAW){
-			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );	
+			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );
 		}
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
-			insertDebugVars(tok)
+			insertDebugVars(tok);
 		}
 	}
 
@@ -1104,16 +1123,18 @@ VCP.assemble = function(options){
 		}
 
 		if(node.vquery && node.mode !== EXP){
-			return true
+			return true;
 		} else {
 			return false;
 		}
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.unshift("var __vo = [], __vt; \n");
+	buffer.push("var __vo = [], __vt; \n");
 
-	options.debug && buffer.push('var __vl = 0, __vc = 0; \n');
+	if(options.debug){
+		buffer.push('var __vl = 0, __vc = 0; \n');
+	}
 
 	visitNode(this.ast);
 
@@ -1130,20 +1151,22 @@ VCP.assemble = function(options){
 			,'"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reEscapedQuote, '\\$2') + '"'
-			,') } \n' )
+			,') } \n' );
 	}
 
-	buffer.push("return __vo.join('');")
+	buffer.push("return __vo.join('');");
 
 	joined = buffer.join('');
 
-	options.debugCompiler && console.log(joined);
+	if(options.debugCompiler){
+		console.log(joined);
+	}
 
 	try {
 		func = new Function(options.modelName, joined);
 	} catch(e){
 		e.message += ' -> ' + joined;
-		throw e;	
+		throw e;
 	}
 
 	return func;
@@ -1163,13 +1186,13 @@ VCP.reportError = function(e, lineno, chr, orig){
 		var curr = i + start + 1;
 
 		return (curr === lineno ? '  > ' : '    ')
-			+ curr 
+			+ curr
 			+ ' | '
 			+ line;
 	}).join('\n');
 
-	e.message = 'Problem while rendering template at line ' 
-		+ lineno + ', character ' + chr 
+	e.message = 'Problem while rendering template at line '
+		+ lineno + ', character ' + chr
 		+ '.\nOriginal message: ' + e.message + '.'
 		+ '\nContext: \n\n' + contextStr + '\n\n';
 
@@ -1177,28 +1200,14 @@ VCP.reportError = function(e, lineno, chr, orig){
 }
 	/************** End injected code from build script */
 
-	/*exports['isArray'] = function(obj){
-		return Object.prototype.toString.call(obj) == '[object Array]'
-	}
-
-	exports['copyObj'] = function(obj){
-		var nObj = {};
-
-		for(var i in obj){
-			if(Object.prototype.hasOwnProperty(i)){
-				nObj[i] = obj[i]
-			}
-		}
-
-		return nObj;
-	}*/
-
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["compile"] = function compile(markup, options){
 
-		if(markup === '' || typeof markup !== 'string') throw new Error('Empty or non-string cannot be compiled');
+		if(markup === '' || typeof markup !== 'string') {
+			throw new Error('Empty or non-string cannot be compiled');
+		}
 
 		var  l
 			,tok
@@ -1215,14 +1224,13 @@ VCP.reportError = function(e, lineno, chr, orig){
 		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
 
 		l = new VLexer(markup);
-		while(tok = l.advance()) tokens.push(tok)
+		while(tok = l.advance()) { tokens.push(tok); }
 		tokens.reverse(); // parser needs in reverse order for faster popping vs shift
 
 		p = new VParser(tokens, options);
 		p.parse();
 
 		c = new VCompiler(p.ast, markup);
-		//c.generate(options);
 
 		// Express support
 		cmp = c.assemble(options);

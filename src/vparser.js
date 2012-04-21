@@ -301,7 +301,7 @@ VParser.prototype = {
 				subTokens = this.advanceUntilMatched(
 					curr
 					,curr.type
-					,VLexer.pairs[ curr.type ]
+					,PAIRS[ curr.type ]
 					,null
 					,AT );
 				subTokens.pop(); // remove (
@@ -393,7 +393,7 @@ VParser.prototype = {
 					subTokens = this.advanceUntilMatched(
 						curr
 						,curr.type
-						,VLexer.pairs[ curr.type ]
+						,PAIRS[ curr.type ]
 						,BACKSLASH
 						,BACKSLASH );
 					this.ast.pushFlatten(subTokens.reverse());
@@ -414,7 +414,7 @@ VParser.prototype = {
 				subTokens = this.advanceUntilMatched(
 					curr
 					,curr.type
-					,VLexer.pairs[ curr.type ]
+					,PAIRS[ curr.type ]
 					,null
 					,AT );
 				subTokens.pop();
