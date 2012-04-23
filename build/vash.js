@@ -16,7 +16,7 @@
 	if(typeof define === 'function' && define['amd']){
 		define(vash); // AMD
 	} else if(typeof module === 'object' && module['exports']){
-			module['exports'] = vash; // NODEJS
+		module['exports'] = vash; // NODEJS
 	} else {
 		window['vash'] = vash; // BROWSER
 	}
@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.3-896";
+	exports["version"] = "0.4.3-913";
 
 	exports["config"] = {
 		"useWith": false
@@ -126,13 +126,16 @@ var TESTS = [
 
 
 	,HTML_TAG_SELFCLOSE, function(){
-		return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
+		//return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
+		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE)
 	}
 	,HTML_TAG_OPEN, function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
+		//return this.scan(/^(<[^@\/> ]*?>?)/, HTML_TAG_OPEN);
 	}
 	,HTML_TAG_CLOSE, function(){
-		return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
+		//return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
+		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE)
 	}
 
 
@@ -578,6 +581,34 @@ VParser.prototype = {
 		return tks.reverse();
 	}
 
+	,openSubParser: function(curr, modeToOpen){
+		var  subTokens
+			,closer
+			,miniParse
+			,parseOpts = vQuery.copyObj(this.options);
+		
+		parseOpts.initialMode = modeToOpen;
+		
+		subTokens = this.advanceUntilMatched(
+			curr
+			,curr.type
+			,PAIRS[ curr.type ]
+			,null
+			,AT );
+		
+		subTokens.pop();
+		
+		closer = subTokens.shift();
+
+		this.ast.push(curr);
+
+		miniParse = new VParser( subTokens, parseOpts );
+		miniParse.parse();
+
+		this.ast.pushFlatten(miniParse.ast);
+		this.ast.push(closer);
+	}
+
 	,handleMKP: function(curr){
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,ahead = this.tokens[ this.tokens.length - 2 ]
@@ -742,24 +773,7 @@ VParser.prototype = {
 			case BRACE_OPEN:
 			case PAREN_OPEN:
 				
-				parseOpts = vQuery.copyObj(this.options);
-				parseOpts.initialMode = BLK;
-				subTokens = this.advanceUntilMatched(
-					curr
-					,curr.type
-					,PAIRS[ curr.type ]
-					,null
-					,AT );
-				subTokens.pop(); // remove (
-				closer = subTokens.shift();
-
-				this.ast.push(curr);
-				
-				miniParse = new VParser( subTokens, parseOpts );
-				miniParse.parse();
-
-				this.ast.pushFlatten(miniParse.ast);
-				this.ast.push( closer );
+				this.openSubParser(curr, BLK);
 				
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
@@ -855,26 +869,7 @@ VParser.prototype = {
 			case HARD_PAREN_OPEN:
 			case PAREN_OPEN:
 				
-				parseOpts = vQuery.copyObj(this.options);
-				parseOpts.initialMode = EXP;
-				subTokens = this.advanceUntilMatched(
-					curr
-					,curr.type
-					,PAIRS[ curr.type ]
-					,null
-					,AT );
-				subTokens.pop();
-				closer = subTokens.shift();
-
-				this.ast.push(curr);
-
-				miniParse = new VParser( subTokens, parseOpts );
-				miniParse.parse();
-
-				// EXP miniparsers automatically are double-nested for the parsing process
-				// but it's not needed once merging back in
-				this.ast.pushFlatten(miniParse.ast);
-				this.ast.push(closer);
+				this.openSubParser(curr, EXP);
 
 				ahead = this.tokens[ this.tokens.length - 1 ];
 
@@ -926,6 +921,7 @@ VParser.prototype = {
 		}
 	}
 }
+
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 function VCompiler(ast, originalMarkup){
@@ -1008,7 +1004,12 @@ VCP.assemble = function(options){
 			start = "__vo.push(" + start;
 		}
 
-		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) ){
+		if(
+			parentParentIsNotEXP 
+			&& (index === parentNode.length - 1 
+				|| (index === parentNode.length - 2 
+					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) 
+		){
 			end += "); \n";
 		}
 
@@ -1170,7 +1171,6 @@ VCP.reportError = function(e, lineno, chr, orig){
 
 		c = new VCompiler(p.ast, markup);
 
-		// Express support
 		cmp = c.assemble(options);
 		cmp.displayName = 'render';
 		return cmp;

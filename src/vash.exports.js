@@ -16,7 +16,7 @@
 	if(typeof define === 'function' && define['amd']){
 		define(vash); // AMD
 	} else if(typeof module === 'object' && module['exports']){
-			module['exports'] = vash; // NODEJS
+		module['exports'] = vash; // NODEJS
 	} else {
 		window['vash'] = vash; // BROWSER
 	}
@@ -71,7 +71,6 @@
 
 		c = new VCompiler(p.ast, markup);
 
-		// Express support
 		cmp = c.assemble(options);
 		cmp.displayName = 'render';
 		return cmp;

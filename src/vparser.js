@@ -132,6 +132,34 @@ VParser.prototype = {
 		return tks.reverse();
 	}
 
+	,openSubParser: function(curr, modeToOpen){
+		var  subTokens
+			,closer
+			,miniParse
+			,parseOpts = vQuery.copyObj(this.options);
+		
+		parseOpts.initialMode = modeToOpen;
+		
+		subTokens = this.advanceUntilMatched(
+			curr
+			,curr.type
+			,PAIRS[ curr.type ]
+			,null
+			,AT );
+		
+		subTokens.pop();
+		
+		closer = subTokens.shift();
+
+		this.ast.push(curr);
+
+		miniParse = new VParser( subTokens, parseOpts );
+		miniParse.parse();
+
+		this.ast.pushFlatten(miniParse.ast);
+		this.ast.push(closer);
+	}
+
 	,handleMKP: function(curr){
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,ahead = this.tokens[ this.tokens.length - 2 ]
@@ -296,24 +324,7 @@ VParser.prototype = {
 			case BRACE_OPEN:
 			case PAREN_OPEN:
 				
-				parseOpts = vQuery.copyObj(this.options);
-				parseOpts.initialMode = BLK;
-				subTokens = this.advanceUntilMatched(
-					curr
-					,curr.type
-					,PAIRS[ curr.type ]
-					,null
-					,AT );
-				subTokens.pop(); // remove (
-				closer = subTokens.shift();
-
-				this.ast.push(curr);
-				
-				miniParse = new VParser( subTokens, parseOpts );
-				miniParse.parse();
-
-				this.ast.pushFlatten(miniParse.ast);
-				this.ast.push( closer );
+				this.openSubParser(curr, BLK);
 				
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
@@ -409,26 +420,7 @@ VParser.prototype = {
 			case HARD_PAREN_OPEN:
 			case PAREN_OPEN:
 				
-				parseOpts = vQuery.copyObj(this.options);
-				parseOpts.initialMode = EXP;
-				subTokens = this.advanceUntilMatched(
-					curr
-					,curr.type
-					,PAIRS[ curr.type ]
-					,null
-					,AT );
-				subTokens.pop();
-				closer = subTokens.shift();
-
-				this.ast.push(curr);
-
-				miniParse = new VParser( subTokens, parseOpts );
-				miniParse.parse();
-
-				// EXP miniparsers automatically are double-nested for the parsing process
-				// but it's not needed once merging back in
-				this.ast.pushFlatten(miniParse.ast);
-				this.ast.push(closer);
+				this.openSubParser(curr, EXP);
 
 				ahead = this.tokens[ this.tokens.length - 1 ];
 

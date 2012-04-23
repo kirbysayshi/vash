@@ -80,7 +80,12 @@ VCP.assemble = function(options){
 			start = "__vo.push(" + start;
 		}
 
-		if(parentParentIsNotEXP && (index === parentNode.length - 1 || (index === parentNode.length - 2 && parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) ){
+		if(
+			parentParentIsNotEXP 
+			&& (index === parentNode.length - 1 
+				|| (index === parentNode.length - 2 
+					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) 
+		){
 			end += "); \n";
 		}
 
