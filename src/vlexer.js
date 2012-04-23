@@ -88,16 +88,13 @@ var TESTS = [
 
 
 	,HTML_TAG_SELFCLOSE, function(){
-		//return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
-		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE)
+		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE);
 	}
 	,HTML_TAG_OPEN, function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
-		//return this.scan(/^(<[^@\/> ]*?>?)/, HTML_TAG_OPEN);
 	}
 	,HTML_TAG_CLOSE, function(){
-		//return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
-		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE)
+		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE);
 	}
 
 

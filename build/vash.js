@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.3-913";
+	exports["version"] = "0.4.3-915";
 
 	exports["config"] = {
 		"useWith": false
@@ -126,16 +126,13 @@ var TESTS = [
 
 
 	,HTML_TAG_SELFCLOSE, function(){
-		//return this.spewIf(this.scan(/^(<[^>]+?\/>)/, HTML_TAG_SELFCLOSE), '@');
-		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE)
+		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE);
 	}
 	,HTML_TAG_OPEN, function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
-		//return this.scan(/^(<[^@\/> ]*?>?)/, HTML_TAG_OPEN);
 	}
 	,HTML_TAG_CLOSE, function(){
-		//return this.spewIf(this.scan(/^(<\/[^>\b]+?>)/, HTML_TAG_CLOSE), '@');
-		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE)
+		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE);
 	}
 
 
@@ -249,10 +246,6 @@ VLexer.prototype = {
 		}
 	}
 }
-
-
-
-
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 var vQuery = function(node){
