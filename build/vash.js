@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.3-925";
+	exports["version"] = "0.4.4-926";
 
 	exports["config"] = {
 		"useWith": false
