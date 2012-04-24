@@ -303,7 +303,7 @@ vows.describe('vash templating library').addBatch({
 			var str = '<a href="somename_@(what.how)@[0]"></a>';
 			return vash.compile(str);
 		}
-		,'outputs G': function(topic){
+		,'uses brackets as markup': function(topic){
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
 		}
 	}
@@ -312,7 +312,7 @@ vows.describe('vash templating library').addBatch({
 			var str = '<a href="somename_@(what.how)[0]"></a>';
 			return vash.compile(str);
 		}
-		,'outputs G': function(topic){
+		,'uses brackets as markup': function(topic){
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
 		}
 	}

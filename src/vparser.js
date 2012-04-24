@@ -5,6 +5,7 @@ function VParser(tokens, options){
 	this.options = options || {};
 	this.tokens = tokens;
 	this.ast = vQuery(PRG);
+	this.prevTokens = [];
 }
 
 var PRG = "PROGRAM", MKP = "MARKUP", BLK = "BLOCK", EXP = "EXPRESSION" ;
@@ -14,7 +15,7 @@ VParser.prototype = {
 	parse: function(){
 		var curr, i, len, block;
 
-		while( (curr = this.tokens.pop()) ){
+		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
 
 			if(this.options.debugParser){
 				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
@@ -65,7 +66,7 @@ VParser.prototype = {
 
 			e.name = "UnmatchedCharacterError";
 
-			this.ast.root();
+			this.ast = this.ast.root();
 
 			if(tok){
 				e.message = 'Unmatched ' + tok.type
@@ -132,7 +133,7 @@ VParser.prototype = {
 		return tks.reverse();
 	}
 
-	,openSubParser: function(curr, modeToOpen){
+	,subParse: function(curr, modeToOpen){
 		var  subTokens
 			,closer
 			,miniParse
@@ -324,7 +325,7 @@ VParser.prototype = {
 			case BRACE_OPEN:
 			case PAREN_OPEN:
 				
-				this.openSubParser(curr, BLK);
+				this.subParse(curr, BLK);
 				
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
@@ -365,6 +366,7 @@ VParser.prototype = {
 			,parseOpts
 			,miniParse
 			,subTokens
+			,prev
 			,i;
 		
 		switch(curr.type){
@@ -419,15 +421,13 @@ VParser.prototype = {
 
 			case HARD_PAREN_OPEN:
 			case PAREN_OPEN:
-				
-				this.openSubParser(curr, EXP);
 
+				prev = this.prevTokens[ this.prevTokens.length - 1 ];
+				this.subParse(curr, EXP);
 				ahead = this.tokens[ this.tokens.length - 1 ];
 
-				if(
-					this.ast.parent && this.ast.parent.mode !== EXP
-					&& (ahead && ahead.type !== HARD_PAREN_OPEN && ahead.type !== PERIOD )
-				){
+				if( (prev && prev.type === AT) || (ahead && ahead.type === IDENTIFIER) ){
+					// explicit expression is automatically ended
 					this.ast = this.ast.parent;
 				}
 
@@ -446,10 +446,11 @@ VParser.prototype = {
 			case PERIOD:
 				ahead = this.tokens[ this.tokens.length - 1 ];
 				if(
-					ahead && (ahead.type === IDENTIFIER
-						|| ahead.type === KEYWORD
-						|| ahead.type === FUNCTION
-						|| ahead.type === PERIOD)
+					ahead &&
+					(  ahead.type === IDENTIFIER
+					|| ahead.type === KEYWORD
+					|| ahead.type === FUNCTION
+					|| ahead.type === PERIOD )
 				) {
 					this.ast.push(curr);
 				} else {
