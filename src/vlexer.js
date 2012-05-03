@@ -57,7 +57,7 @@ PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 
 var TESTS = [
 
-	EMAIL, (/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/)
+	EMAIL, (/^([a-zA-Z0-9._%\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
 
 
 	,AT_STAR_OPEN, (/^(@\*)/)
@@ -87,15 +87,11 @@ var TESTS = [
 	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
-	,HTML_TAG_SELFCLOSE, function(){
-		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE);
-	}
+	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
 	}
-	,HTML_TAG_CLOSE, function(){
-		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE);
-	}
+	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
 
 
 	,PERIOD, (/^(\.)/)
@@ -141,26 +137,23 @@ function VLexer(str){
 
 VLexer.prototype = {
 	
-	tok: function(type, val){
-		return {
-			type: type
-			,line: this.lineno
-			,chr: this.charno
-			,val: val
-			,toString: function(){
-				return '[' + this.type
-					+ ' (' + this.line + ',' + this.chr + '): '
-					+ this.val + ']';
-			}
-		};
-	}
-	
-	,scan: function(regexp, type){
+	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
 			this.input = this.input.substr((captures[0].length));
 			
-			token = this.tok(type, captures[1]);
+			token = {
+				type: type
+				,line: this.lineno
+				,chr: this.charno
+				,val: captures[1]
+				,toString: function(){
+					return '[' + this.type
+						+ ' (' + this.line + ',' + this.chr + '): '
+						+ this.val + ']';
+				}
+			};
+
 			this.charno += captures[0].length;
 			return token;
 		}

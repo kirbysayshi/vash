@@ -137,7 +137,7 @@ VParser.prototype = {
 		var  subTokens
 			,closer
 			,miniParse
-			,parseOpts = vQuery.copyObj(this.options);
+			,parseOpts = vQuery.extend({}, this.options);
 		
 		parseOpts.initialMode = modeToOpen;
 		

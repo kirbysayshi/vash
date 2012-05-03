@@ -166,8 +166,8 @@ suite = new Benchmark.Suite("vash vs ... render large")
 .add("jshtml#template large", function(){
 	largeJSHTMLTpl( largeData )
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs ... render medium")
 .add("dot#template medium", function(){
@@ -188,8 +188,8 @@ suite = new Benchmark.Suite("vash vs ... render medium")
 .add("jshtml#template medium no with", function(){
 	mediumJSHTMLTplNoWith( mediumData, { 'with': false } )
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 suite = new Benchmark.Suite("vash vs ... render small")
 .add("dot#template small", function(){
@@ -201,8 +201,8 @@ suite = new Benchmark.Suite("vash vs ... render small")
 .add("jshtml#tpl small", function(){
 	smallJSHTMLTpl( smallData, {} )
 })
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 var longString = Array(1000).join(Math.random())
 
@@ -279,29 +279,45 @@ suite = new Benchmark.Suite('string concat: index vs push vs += vs +')
 //logSuiteName(suite);
 //suite.run();
 
-var tpush = function anonymous(model) {
-    var __vout = [], __vtemp;
-    __vout.push("<div class=\"how\">");
-    __vout.push(" ");
+var tpushsimple = function anonymous(model) {
+    var __vo = [], __vt;
+    var __lt = "&lt;", __gt = "&gt;", __amp = "&amp;", __quot = "&quot;", __ltre = /</g, __gtre = />/g, __ampre = /&(?!\w+;)/g, __quotre = /"/g;
+    __vo.push("<div class=\"how\">");
+    __vo.push(" ");
     for (var i = 0; i < 1; i++) {
-        __vout.push("<div class=\"item-");
-        __vout.push((typeof (__vtemp = i) !== "undefined" ? __vtemp : "").toString().replace(/&(?!w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
-        __vout.push("\"");
-        __vout.push(">");
-        __vout.push("I");
-        __vout.push(" ");
-        __vout.push("be");
-        __vout.push(" ");
-        __vout.push("an");
-        __vout.push(" ");
-        __vout.push("item");
-        __vout.push("!");
-        __vout.push("</div>");
+        __vo.push("<div class=\"item-");
+        __vo.push((typeof (__vt = i) !== "undefined" ? __vt : "").toString().replace(__ampre, __amp).replace(__ltre, __lt).replace(__gtre, __gt).replace(__quotre, __quot));
+        __vo.push("\"");
+        __vo.push(">");
+        __vo.push("I");
+        __vo.push(" ");
+        __vo.push("be");
+        __vo.push(" ");
+        __vo.push("an");
+        __vo.push(" ");
+        __vo.push("item");
+        __vo.push("!");
+        __vo.push("</div>");
     }
-    __vout.push(" ");
-    __vout.push("</div>");
-    return __vout.join("");
+    __vo.push(" ");
+    __vo.push("</div>");
+    return __vo.join("");
 }
+
+var tpushsimplecoalesced = function anonymous(model) {
+    var __vo = [], __vt;
+    var __lt = "&lt;", __gt = "&gt;", __amp = "&amp;", __quot = "&quot;", __ltre = /</g, __gtre = />/g, __ampre = /&(?!\w+;)/g, __quotre = /"/g;
+    __vo.push("<div class=\"how\"> ");
+    for (var i = 0; i < 1; i++) {
+        __vo.push("<div class=\"item-");
+        __vo.push((typeof (__vt = i) !== "undefined" ? __vt : "").toString().replace(__ampre, __amp).replace(__ltre, __lt).replace(__gtre, __gt).replace(__quotre, __quot));
+        __vo.push("\">I be an item!</div>");
+    }
+    __vo.push(" </div>");
+    return __vo.join("");
+}
+
+var tvashactual = vash.compile('<div class="how"> @for(var i = 0; i < 1; i++){ <div class="item-@i">I be an item!</div> } </div>', { debug: false, useWith: false });
 
 var tconcatsimple = function anonymous(model) {
     var __vout = '', __vtemp;
@@ -323,6 +339,22 @@ var tconcatsimple = function anonymous(model) {
     }
     __vout += " " + "</div>";
     return __vout;
+}
+
+var tpush = function anonymous(model) {
+    var __vo = [], __vt;
+
+    function f(i) {
+        __vo.push("<b>");
+        __vo.push((typeof (__vt = i) !== "undefined" ? __vt : "").toString().replace(/&(?!\w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
+        __vo.push("</b>");
+    }
+
+    __vo.push("<span>");
+    __vo.push((typeof (__vt = f(model.it)) !== "undefined" ? __vt : "").toString().replace(/&(?!\w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
+    __vo.push("</span>");
+    __vo.push((typeof (__vt = f(model.it)) !== "undefined" ? __vt : "").toString().replace(/&(?!\w+;)/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"));
+    return __vo.join("");
 }
 
 var tconcat = function anonymous(model) {
@@ -351,22 +383,31 @@ var tconcat = function anonymous(model) {
     __vtemp += f(model.it);
     __vout = __vback + __vout + (__vtemp ? __vtemp : '')
 
-
     return __vout;
 }
 
 suite = new Benchmark.Suite('tpl concat vs push')
+.add('push simple', function(){
+	tpushsimple( { it: 'what' } );
+})
+.add('push simple coalesced', function(){
+	tpushsimplecoalesced( { it: 'what' } );
+})
+.add('vash actual', function(){
+	tvashactual( { it: 'what' } );
+})
+.add('concat simple', function(){
+	tconcatsimple( { it: 'what' } );
+})
 .add('push', function(){
 	tpush( { it: 'what' } );
 })
 .add('concat', function(){
 	tconcat( { it: 'what' } );
 })
-.add('concat simple', function(){
-	tconcatsimple( { it: 'what' } );
-});
-//logSuiteName(suite);
-//suite.run();
+
+logSuiteName(suite);
+suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));

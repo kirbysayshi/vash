@@ -25,11 +25,12 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-926";
+	exports["version"] = "0.4.4-945";
 
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
+		,'htmlEscape': true
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
@@ -95,7 +96,7 @@ PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 
 var TESTS = [
 
-	EMAIL, (/^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4})\b/)
+	EMAIL, (/^([a-zA-Z0-9._%\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
 
 
 	,AT_STAR_OPEN, (/^(@\*)/)
@@ -125,15 +126,11 @@ var TESTS = [
 	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
-	,HTML_TAG_SELFCLOSE, function(){
-		return this.scan(/^(<[^@>]+?\/>)/, HTML_TAG_SELFCLOSE);
-	}
+	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
 		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
 	}
-	,HTML_TAG_CLOSE, function(){
-		return this.scan(/^(<\/[^>@\b]+?>)/, HTML_TAG_CLOSE);
-	}
+	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
 
 
 	,PERIOD, (/^(\.)/)
@@ -179,26 +176,23 @@ function VLexer(str){
 
 VLexer.prototype = {
 	
-	tok: function(type, val){
-		return {
-			type: type
-			,line: this.lineno
-			,chr: this.charno
-			,val: val
-			,toString: function(){
-				return '[' + this.type
-					+ ' (' + this.line + ',' + this.chr + '): '
-					+ this.val + ']';
-			}
-		};
-	}
-	
-	,scan: function(regexp, type){
+	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
 			this.input = this.input.substr((captures[0].length));
 			
-			token = this.tok(type, captures[1]);
+			token = {
+				type: type
+				,line: this.lineno
+				,chr: this.charno
+				,val: captures[1]
+				,toString: function(){
+					return '[' + this.type
+						+ ' (' + this.line + ',' + this.chr + '): '
+						+ this.val + ']';
+				}
+			};
+
 			this.charno += captures[0].length;
 			return token;
 		}
@@ -398,16 +392,18 @@ vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]';
 }
 
-vQuery.copyObj = function(obj){
-	var nObj = {};
+vQuery.extend = function(obj){
+	var next, i, p;
 
-	for(var i in obj){
-		if(Object.prototype.hasOwnProperty.call(obj, i)){
-			nObj[i] = obj[i];
+	for(i = 1; i < arguments.length; i++){
+		next = arguments[i];
+
+		for(p in next){
+			obj[p] = next[p];
 		}
 	}
 
-	return nObj;
+	return obj;
 }
 
 vQuery.takeMethodsFromArray = function(){
@@ -425,9 +421,8 @@ vQuery.takeMethodsFromArray = function(){
 		if( typeof arr[m] === 'function' ){
 			if( !vQuery.fn[m] ){
 				(function(methodName){
-					var slice = Array.prototype.slice;
 					vQuery.fn[methodName] = function(){
-						return arr[methodName].apply(this, slice.call(arguments, 0));
+						return arr[methodName].apply(this, Array.prototype.slice.call(arguments, 0));
 					}
 				})(m);
 			}
@@ -579,7 +574,7 @@ VParser.prototype = {
 		var  subTokens
 			,closer
 			,miniParse
-			,parseOpts = vQuery.copyObj(this.options);
+			,parseOpts = vQuery.extend({}, this.options);
 		
 		parseOpts.initialMode = modeToOpen;
 		
@@ -936,7 +931,9 @@ VCP.assemble = function(options){
 		,reEscapedQuote = /(\\?)(["'])/gi
 		,reLineBreak = /[\n\r]/gi
 		,joined
-		,func;
+		,func
+
+		,markupBuffer = [];
 
 	function insertDebugVars(tok){
 		if(options.debug){
@@ -949,10 +946,10 @@ VCP.assemble = function(options){
 
 		insertDebugVars(tok);
 		buffer.push(
-			"__vo.push('" + tok.val
+			"MKP('" + tok.val
 				.replace(reQuote, '\"')
 				.replace(reLineBreak, '\\n')
-			+ "'); \n" );
+			+ "')MKP" );
 	}
 
 	function visitBlockTok(tok, parentNode, index){
@@ -985,10 +982,10 @@ VCP.assemble = function(options){
 					escapeStack.pop();
 				} else {
 					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
-						+ ".replace(/&(?!\\w+;)/g, '&amp;')\n"
-						+ ".replace(/</g, '&lt;')\n"
-						+ ".replace(/>/g, '&gt;')\n"
-						+ ".replace(/\"/g, '&quot;') \n";
+						+ ".replace(__ampre, __amp)\n"
+						+ ".replace(__ltre, __lt)\n"
+						+ ".replace(__gtre, __gt)\n"
+						+ ".replace(__quotre, __quot) \n";
 				}
 			}
 		}
@@ -999,10 +996,10 @@ VCP.assemble = function(options){
 		}
 
 		if(
-			parentParentIsNotEXP 
-			&& (index === parentNode.length - 1 
-				|| (index === parentNode.length - 2 
-					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) 
+			parentParentIsNotEXP
+			&& (index === parentNode.length - 1
+				|| (index === parentNode.length - 2
+					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) )
 		){
 			end += "); \n";
 		}
@@ -1065,6 +1062,11 @@ VCP.assemble = function(options){
 	// suprisingly: http://jsperf.com/array-index-vs-push
 	buffer.push("var __vo = [], __vt; \n");
 
+	if(options.htmlEscape !== false){
+		buffer.push( 'var __lt = "&lt;", __gt = "&gt;", __amp = "&amp;", __quot = "&quot;", \n'
+			+ ' __ltre = /</g, __gtre = />/g, __ampre = /&(?!\\w+;)/g, __quotre = /\"/g;' );
+	}
+
 	if(options.debug){
 		buffer.push('var __vl = 0, __vc = 0; \n');
 	}
@@ -1090,6 +1092,12 @@ VCP.assemble = function(options){
 	buffer.push("return __vo.join('');");
 
 	joined = buffer.join('');
+
+	// coalesce markup
+	joined = joined
+		.split("')MKPMKP('").join('')
+		.split("MKP(").join("__vo.push(")
+		.split(")MKP").join("); \n");
 
 	if(options.debugCompiler){
 		console.log(joined);
@@ -1147,14 +1155,10 @@ VCP.reportError = function(e, lineno, chr, orig){
 			,tokens = []
 			,p
 			,c
-			,cmp;
+			,cmp
+			,i;
 
-		options = options || {};
-		options.useWith = options.useWith || exports.config.useWith;
-		options.modelName = options.modelName || exports.config.modelName;
-		options.debug = options.debug || exports.config.debug;
-		options.debugParser = options.debugParser || exports.config.debugParser;
-		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
+		options = vQuery.extend( {}, exports.config, options || {} );
 
 		l = new VLexer(markup);
 		while(tok = l.advance()) { tokens.push(tok); }

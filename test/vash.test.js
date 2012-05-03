@@ -1033,6 +1033,17 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
+		,'multiple function calls are not double escaped': {
+			topic: function(){
+				return vash.compile( '@function f(i){ <b>@i</b> }<span>@f(model.it)</span>@f(model.it)', { useWith: false } );
+			}
+			,'are escaped': function(topic){
+				//console.log( topic.toString() );
+				assert.equal( topic({ it: '<b>texted</b>' }), 
+					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
+			}
+		}
+
 		,'multiple nested function calls': {
 			topic: function(){
 				return vash.compile( '@function f(i){ <b>@i</b> function d(i){ <b>@i</b> } @d(model.it) }<span>@f(model.it)</span>@f(model.it)' );
