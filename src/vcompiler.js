@@ -18,7 +18,9 @@ VCP.assemble = function(options){
 		,reEscapedQuote = /(\\?)(["'])/gi
 		,reLineBreak = /[\n\r]/gi
 		,joined
-		,func;
+		,func
+
+		,markupBuffer = [];
 
 	function insertDebugVars(tok){
 		if(options.debug){
@@ -31,10 +33,10 @@ VCP.assemble = function(options){
 
 		insertDebugVars(tok);
 		buffer.push(
-			"__vo.push('" + tok.val
+			"MKP('" + tok.val
 				.replace(reQuote, '\"')
 				.replace(reLineBreak, '\\n')
-			+ "'); \n" );
+			+ "')MKP" );
 	}
 
 	function visitBlockTok(tok, parentNode, index){
@@ -67,10 +69,10 @@ VCP.assemble = function(options){
 					escapeStack.pop();
 				} else {
 					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
-						+ ".replace(/&(?!\\w+;)/g, '&amp;')\n"
-						+ ".replace(/</g, '&lt;')\n"
-						+ ".replace(/>/g, '&gt;')\n"
-						+ ".replace(/\"/g, '&quot;') \n";
+						+ ".replace(__ampre, __amp)\n"
+						+ ".replace(__ltre, __lt)\n"
+						+ ".replace(__gtre, __gt)\n"
+						+ ".replace(__quotre, __quot) \n";
 				}
 			}
 		}
@@ -81,10 +83,10 @@ VCP.assemble = function(options){
 		}
 
 		if(
-			parentParentIsNotEXP 
-			&& (index === parentNode.length - 1 
-				|| (index === parentNode.length - 2 
-					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) ) 
+			parentParentIsNotEXP
+			&& (index === parentNode.length - 1
+				|| (index === parentNode.length - 2
+					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) )
 		){
 			end += "); \n";
 		}
@@ -147,6 +149,11 @@ VCP.assemble = function(options){
 	// suprisingly: http://jsperf.com/array-index-vs-push
 	buffer.push("var __vo = [], __vt; \n");
 
+	if(options.htmlEscape !== false){
+		buffer.push( 'var __lt = "&lt;", __gt = "&gt;", __amp = "&amp;", __quot = "&quot;", \n'
+			+ ' __ltre = /</g, __gtre = />/g, __ampre = /&(?!\\w+;)/g, __quotre = /\"/g;' );
+	}
+
 	if(options.debug){
 		buffer.push('var __vl = 0, __vc = 0; \n');
 	}
@@ -172,6 +179,12 @@ VCP.assemble = function(options){
 	buffer.push("return __vo.join('');");
 
 	joined = buffer.join('');
+
+	// coalesce markup
+	joined = joined
+		.split("')MKPMKP('").join('')
+		.split("MKP(").join("__vo.push(")
+		.split(")MKP").join("); \n");
 
 	if(options.debugCompiler){
 		console.log(joined);
