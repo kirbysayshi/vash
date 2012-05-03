@@ -150,16 +150,18 @@ vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]';
 }
 
-vQuery.copyObj = function(obj){
-	var nObj = {};
+vQuery.extend = function(obj){
+	var next, i, p;
 
-	for(var i in obj){
-		if(Object.prototype.hasOwnProperty.call(obj, i)){
-			nObj[i] = obj[i];
+	for(i = 1; i < arguments.length; i++){
+		next = arguments[i];
+
+		for(p in next){
+			obj[p] = next[p];
 		}
 	}
 
-	return nObj;
+	return obj;
 }
 
 vQuery.takeMethodsFromArray = function(){
@@ -177,9 +179,8 @@ vQuery.takeMethodsFromArray = function(){
 		if( typeof arr[m] === 'function' ){
 			if( !vQuery.fn[m] ){
 				(function(methodName){
-					var slice = Array.prototype.slice;
 					vQuery.fn[methodName] = function(){
-						return arr[methodName].apply(this, slice.call(arguments, 0));
+						return arr[methodName].apply(this, Array.prototype.slice.call(arguments, 0));
 					}
 				})(m);
 			}

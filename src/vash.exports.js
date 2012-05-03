@@ -30,6 +30,7 @@
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
+		,'htmlEscape': true
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
@@ -53,14 +54,10 @@
 			,tokens = []
 			,p
 			,c
-			,cmp;
+			,cmp
+			,i;
 
-		options = options || {};
-		options.useWith = options.useWith || exports.config.useWith;
-		options.modelName = options.modelName || exports.config.modelName;
-		options.debug = options.debug || exports.config.debug;
-		options.debugParser = options.debugParser || exports.config.debugParser;
-		options.debugCompiler = options.debugCompiler || exports.config.debugCompiler;
+		options = vQuery.extend( {}, exports.config, options || {} );
 
 		l = new VLexer(markup);
 		while(tok = l.advance()) { tokens.push(tok); }
