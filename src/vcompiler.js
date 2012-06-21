@@ -59,7 +59,7 @@ VCP.assemble = function(options){
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
 
 				if(escapeStack.length === 0){
-					start += '( typeof (__vt = ';
+					start += '( (__vt = ';
 				}
 			}
 
@@ -68,7 +68,7 @@ VCP.assemble = function(options){
 				if(escapeStack.length > 0){
 					escapeStack.pop();
 				} else {
-					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
+					end += ") != null ? __vt : '' ).toString()\n"
 						+ ".replace(__ampre, __amp)\n"
 						+ ".replace(__ltre, __lt)\n"
 						+ ".replace(__gtre, __gt)\n"
