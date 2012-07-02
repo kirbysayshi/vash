@@ -26,11 +26,12 @@
 	var vash = exports; // neccessary for nodejs references
 
 	exports["version"] = "0.4.4-?BUILDNUM?";
-
+  exports["helpers"] = {};
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
-		,'htmlEscape': true
+		,"helpersName": "html"
+		,"htmlEscape": true
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
@@ -38,8 +39,44 @@
 
 	/************** Begin injected code from build script */
 	/*?CODE?*/
-	/************** End injected code from build script */
+	/************** End injected code from build script */	
+	
+	exports["helpers"].raw = function( val ) {
+		var func = function() { return val != null ? val : "" };
+		return {
+			toHtmlString: func,
+			toString: func,
+			valueOf: func 
+		};
+	}
+	
+	exports["helpers"].escape = function( val ) {
+		var
+			lt = "&lt;",
+			gt = "&gt;",
+			amp = "&amp;",
+			quot = "&quot;",
+			ltre = /</g,
+			gtre = />/g,
+			ampre = /&(?!\\w+;)/g,
+			quotre = /\"/g;
 
+		val = ( val != null ? val : "" );
+		
+		if ( typeof val.toHtmlString === "function" ) {
+			val = val.toHtmlString();
+		} else {
+		
+			val = val.toString()
+				.replace(ampre, amp)
+				.replace(ltre, lt)
+				.replace(gtre, gt)
+				.replace(quotre, quot);
+		}
+		
+		return exports["helpers"].raw( val );
+	}
+	
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
@@ -68,7 +105,7 @@
 
 		c = new VCompiler(p.ast, markup);
 
-		cmp = c.assemble(options);
+		cmp = c.assemble(options, exports.helpers);
 		cmp.displayName = 'render';
 		return cmp;
 	};

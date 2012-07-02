@@ -178,8 +178,7 @@ VParser.prototype = {
 					
 					case PAREN_OPEN:
 					case IDENTIFIER:
-					case HTML_RAW:
-
+					
 						if(this.ast.length === 0) {
 							this.ast = this.ast.parent;
 							this.ast.pop(); // remove empty MKP block
@@ -395,7 +394,6 @@ VParser.prototype = {
 				break;
 
 			case IDENTIFIER:
-			case HTML_RAW:
 				this.ast.push(curr);
 				break;
 			
