@@ -54,10 +54,16 @@
 	
 	// Cached to compile once and reuse.
 	var
-		__ampre = /&(?!\\w+;)/g,
-		__ltre = /</g,
-		__gtre = />/g,
-		__quotre = /\"/g;
+		HTML_REGEX = /[&<>"'`]/g,
+		HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
+		HTML_CHARS = {
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#x27;",
+			"`": "&#x60;"
+		};
 		
 	exports["helpers"].escape = function( val ) {
 		var	func = function() { return val; }
@@ -71,11 +77,7 @@
 				amp = "&amp;",
 				quot = "&quot;",
 			
-			val = val.toString()
-				.replace(__ampre, amp)
-				.replace(__ltre, lt)
-				.replace(__gtre, gt)
-				.replace(__quotre, quot);
+			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
 				toHtmlString: func,
