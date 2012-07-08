@@ -60,7 +60,7 @@ VCP.assemble = function(options, helpers){
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
-				end += ") \n";				
+				end += ").toHtmlString() \n";				
 			}
 		}
 

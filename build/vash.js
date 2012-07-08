@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-24";
+	exports["version"] = "0.4.4-958";
   exports["helpers"] = {};
 	exports["config"] = {
 		"useWith": false
@@ -970,7 +970,7 @@ VCP.assemble = function(options, helpers){
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
-				end += ") \n";				
+				end += ").toHtmlString() \n";				
 			}
 		}
 
@@ -1119,39 +1119,48 @@ VCP.reportError = function(e, lineno, chr, orig){
 	/************** End injected code from build script */	
 	
 	exports["helpers"].raw = function( val ) {
-		var func = function() { return val != null ? val : "" };
+		var func = function() { return val; }
+		
+		val = val != null ? val : "";		
+		
 		return {
 			toHtmlString: func,
-			toString: func,
-			valueOf: func 
+			toString: func
 		};
 	}
 	
+	// Cached to compile once and reuse.
+	var
+		__ampre = /&(?!\\w+;)/g,
+		__ltre = /</g,
+		__gtre = />/g,
+		__quotre = /\"/g;
+		
 	exports["helpers"].escape = function( val ) {
-		var
-			lt = "&lt;",
-			gt = "&gt;",
-			amp = "&amp;",
-			quot = "&quot;",
-			ltre = /</g,
-			gtre = />/g,
-			ampre = /&(?!\\w+;)/g,
-			quotre = /\"/g;
+		var	func = function() { return val; }
 
-		val = ( val != null ? val : "" );
+		val = val != null ? val : "";
 		
-		if ( typeof val.toHtmlString === "function" ) {
-			val = val.toHtmlString();
-		} else {
-		
+		if ( typeof val.toHtmlString !== "function" ) {
+			var
+				lt = "&lt;",
+				gt = "&gt;",
+				amp = "&amp;",
+				quot = "&quot;",
+			
 			val = val.toString()
-				.replace(ampre, amp)
-				.replace(ltre, lt)
-				.replace(gtre, gt)
-				.replace(quotre, quot);
+				.replace(__ampre, amp)
+				.replace(__ltre, lt)
+				.replace(__gtre, gt)
+				.replace(__quotre, quot);
+
+			return {
+				toHtmlString: func,
+				toString: func
+			};
 		}
 		
-		return exports["helpers"].raw( val );
+		return val;
 	}
 	
 	exports["VLexer"] = VLexer;
