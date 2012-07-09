@@ -188,8 +188,8 @@ suite = new Benchmark.Suite("vash vs ... render medium")
 .add("jshtml#template medium no with", function(){
 	mediumJSHTMLTplNoWith( mediumData, { 'with': false } )
 })
-//logSuiteName(suite);
-//suite.run();
+logSuiteName(suite);
+suite.run();
 
 suite = new Benchmark.Suite("vash vs ... render small")
 .add("dot#template small", function(){
@@ -405,9 +405,8 @@ suite = new Benchmark.Suite('tpl concat vs push')
 .add('concat', function(){
 	tconcat( { it: 'what' } );
 })
-
-logSuiteName(suite);
-suite.run();
+//logSuiteName(suite);
+//suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));

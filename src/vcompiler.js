@@ -7,9 +7,11 @@ function VCompiler(ast, originalMarkup){
 
 var VCP = VCompiler.prototype;
 
-VCP.assemble = function(options){
+VCP.assemble = function(options, helpers){
 
 	options = options || {};
+	helpers = helpers || {};
+	
 
 	var buffer = []
 		,escapeStack = []
@@ -19,7 +21,8 @@ VCP.assemble = function(options){
 		,reLineBreak = /[\n\r]/gi
 		,joined
 		,func
-
+		,shell
+		
 		,markupBuffer = [];
 
 	function insertDebugVars(tok){
@@ -52,48 +55,25 @@ VCP.assemble = function(options){
 
 		if(options.htmlEscape !== false){
 
-			if(tok.type === HTML_RAW){
-				escapeStack.push(true);
-			}
-
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
-
-				if(escapeStack.length === 0){
-					start += '( (__vt = ';
-				}
+				start += options.helpersName + '.escape(';				
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
-
-				if(escapeStack.length > 0){
-					escapeStack.pop();
-				} else {
-					end += ") != null ? __vt : '' ).toString()\n"
-						+ ".replace(__ampre, __amp)\n"
-						+ ".replace(__ltre, __lt)\n"
-						+ ".replace(__gtre, __gt)\n"
-						+ ".replace(__quotre, __quot) \n";
-				}
+				end += ").toHtmlString() \n";				
 			}
 		}
 
-		if(parentParentIsNotEXP && (index === 0 || (index === 1 && parentNode[0].type === HTML_RAW) ) ){
+		if(parentParentIsNotEXP && (index === 0 ) ){
 			insertDebugVars(tok);
 			start = "__vo.push(" + start;
 		}
 
-		if(
-			parentParentIsNotEXP
-			&& (index === parentNode.length - 1
-				|| (index === parentNode.length - 2
-					&& parentNode[ parentNode.length - 1 ].type === HTML_RAW) )
-		){
+		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
 			end += "); \n";
 		}
 
-		if(tok.type !== HTML_RAW){
-			buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );
-		}
+		buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );		
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
 			insertDebugVars(tok);
@@ -149,15 +129,10 @@ VCP.assemble = function(options){
 	// suprisingly: http://jsperf.com/array-index-vs-push
 	buffer.push("var __vo = [], __vt; \n");
 
-	if(options.htmlEscape !== false){
-		buffer.push( 'var __lt = "&lt;", __gt = "&gt;", __amp = "&amp;", __quot = "&quot;", \n'
-			+ ' __ltre = /</g, __gtre = />/g, __ampre = /&(?!\\w+;)/g, __quotre = /\"/g;' );
-	}
-
 	if(options.debug){
 		buffer.push('var __vl = 0, __vc = 0; \n');
 	}
-
+	
 	visitNode(this.ast);
 
 	if(options.useWith === true){
@@ -191,13 +166,18 @@ VCP.assemble = function(options){
 	}
 
 	try {
-		func = new Function(options.modelName, joined);
+		func = new Function(options.modelName, options.helpersName, joined);		
+		shell = function( model ) {			
+			return func( model, helpers );
+		}
+		shell.toString = function() { return func.toString(); }
+		
 	} catch(e){
 		e.message += ' -> ' + joined;
 		throw e;
-	}
-
-	return func;
+	}	
+	
+	return shell;
 }
 
 // runtime-esque
