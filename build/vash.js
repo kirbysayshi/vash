@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-963";
+	exports["version"] = "0.4.4-964";
   exports["helpers"] = {};
 	exports["config"] = {
 		"useWith": false
@@ -1132,7 +1132,6 @@ VCP.reportError = function(e, lineno, chr, orig){
 	// Cached to compile once and reuse.
 	var
 		HTML_REGEX = /[&<>"'`]/g,
-		HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
 		HTML_CHARS = {
 			"&": "&amp;",
 			"<": "&lt;",
@@ -1140,7 +1139,8 @@ VCP.reportError = function(e, lineno, chr, orig){
 			'"': "&quot;",
 			"'": "&#x27;",
 			"`": "&#x60;"
-		};
+		},
+		HTML_REPLACER = function(match) { return HTML_CHARS[match]; };
 		
 	exports["helpers"].escape = function( val ) {
 		var	func = function() { return val; }
