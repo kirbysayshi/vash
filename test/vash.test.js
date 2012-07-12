@@ -197,6 +197,18 @@ vows.describe('vash templating library').addBatch({
 				assert.equal(topic(model), '<ul><li>a</li><li>b</li></ul>');
 			}
 		}
+		,'no whitespace': {
+			topic: function(){
+				var str = '<ul class="friends">@friends.forEach(function(friend){<li></li>})</ul>';
+				return str;
+			}
+			,'output markup': function(topic){
+				var topic = vash.compile(topic, {useWith: true})
+					,model = { friends: [ 'a' ] };
+
+				assert.equal( topic(model), '<ul class="friends"><li></li></ul>' );
+			}
+		}
 	}
 	,'empty try/catch block': {
 		topic: function(){

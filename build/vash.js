@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-945";
+	exports["version"] = "0.4.4-960";
 
 	exports["config"] = {
 		"useWith": false
@@ -698,7 +698,7 @@ VParser.prototype = {
 
 				if(
 					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next.type === WHITESPACE || next.type === NEWLINE)
+					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
 				){
 					this.ast = this.ast.parent;
 				}
@@ -710,7 +710,7 @@ VParser.prototype = {
 
 				if(
 					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next.type === WHITESPACE || next.type === NEWLINE)
+					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
 				){
 					this.ast = this.ast.parent;
 				}
@@ -972,7 +972,7 @@ VCP.assemble = function(options){
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
 
 				if(escapeStack.length === 0){
-					start += '( typeof (__vt = ';
+					start += '( (__vt = ';
 				}
 			}
 
@@ -981,7 +981,7 @@ VCP.assemble = function(options){
 				if(escapeStack.length > 0){
 					escapeStack.pop();
 				} else {
-					end += ") !== 'undefined' ? __vt : '' ).toString()\n"
+					end += ") != null ? __vt : '' ).toString()\n"
 						+ ".replace(__ampre, __amp)\n"
 						+ ".replace(__ltre, __lt)\n"
 						+ ".replace(__gtre, __gt)\n"

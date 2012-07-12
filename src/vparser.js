@@ -261,7 +261,7 @@ VParser.prototype = {
 
 				if(
 					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next.type === WHITESPACE || next.type === NEWLINE)
+					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
 				){
 					this.ast = this.ast.parent;
 				}
@@ -273,7 +273,7 @@ VParser.prototype = {
 
 				if(
 					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next.type === WHITESPACE || next.type === NEWLINE)
+					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
 				){
 					this.ast = this.ast.parent;
 				}
