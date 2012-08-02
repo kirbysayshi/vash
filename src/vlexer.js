@@ -16,7 +16,6 @@ var  AT = 'AT'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
-	,HTML_RAW = 'HTML_RAW'
 	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
 	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
 	,HTML_TAG_SELFCLOSE = 'HTML_TAG_SELFCLOSE'
@@ -106,7 +105,6 @@ var TESTS = [
 	,WHITESPACE, (/^(\s)/)
 	,FUNCTION, (/^(function)(?![\d\w])/)
 	,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
-	,HTML_RAW, (/^(vash\.raw)(?![\d\w])/)
 	,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
 

@@ -1017,18 +1017,9 @@ vows.describe('vash templating library').addBatch({
 			}	
 		}
 
-		,'force no escaping per call (vash.raw)': {
+		,'force no escaping per call (html.raw)': {
 			topic: function(){
-				return vash.compile( '<span>@vash.raw(it)</span>' );
-			}
-			,'is escaped': function(topic){
-				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
-			}	
-		}
-
-		,'vash.raw call is ignored when forced no escaping': {
-			topic: function(){
-				return vash.compile( '<span>@vash.raw(it)</span>', { htmlEscape: false } );
+				return vash.compile( '<span>@html.raw(it)</span>' );
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
