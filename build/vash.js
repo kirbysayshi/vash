@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-960";
+	exports["version"] = "0.4.4-971";
 
 	exports["config"] = {
 		"useWith": false
@@ -450,9 +450,11 @@ var PRG = "PROGRAM", MKP = "MARKUP", BLK = "BLOCK", EXP = "EXPRESSION" ;
 VParser.prototype = {
 
 	parse: function(){
-		var curr, i, len, block;
+		var curr, i, len, block, handler;
 
 		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
+
+			handler = undefined;
 
 			if(this.options.debugParser){
 				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
@@ -473,13 +475,15 @@ VParser.prototype = {
 			}
 			
 			if(this.ast.mode === BLK){
-				this.handleBLK(curr);
-				continue;
+				handler = this.BLKS[curr.type] || this.BLKS.DEFAULT;
 			}
 			
 			if(this.ast.mode === EXP){
-				this.handleEXP(curr);
-				continue;
+				handler = this.EXPS[curr.type] || this.EXPS.DEFAULT;
+			}
+
+			if(handler){
+				handler.call(this, curr);
 			}
 		}
 
@@ -723,191 +727,166 @@ VParser.prototype = {
 		
 	}
 
-	,handleBLK: function(curr){
-		
-		var  next = this.tokens[ this.tokens.length - 1 ]
-			,opener
-			,closer
-			,subTokens
-			,parseOpts
-			,miniParse
-			,i;
-		
-		switch(curr.type){
-			
-			case AT:
-				if(next.type !== AT){
-					this.tokens.push(curr); // defer
-					this.ast = this.ast.beget(MKP);
-				}
-				break;
-			
-			case AT_COLON:
-				this.ast = this.ast.beget(MKP);
-				break;
-			
-			case TEXT_TAG_OPEN:
-			case TEXT_TAG_CLOSE:
-			case HTML_TAG_SELFCLOSE:
-			case HTML_TAG_OPEN:
-			case HTML_TAG_CLOSE:
-				this.ast = this.ast.beget(MKP);
-				this.tokens.push(curr); // defer
-				break;
-			
-			case FAT_ARROW:
-				this.ast = this.ast.beget(BLK);
-				break;
+	,MKPS: {}
+	,BLKS: {}
+	,EXPS: {}
+}
 
-			case BRACE_OPEN:
-			case PAREN_OPEN:
+
+var  BLKS = VParser.prototype.BLKS
+	,EXPS = VParser.prototype.EXPS;
+
+BLKS.AT = function(curr){
+	var next = this.tokens[ this.tokens.length - 1 ]
+
+	if(next.type !== AT){
+		this.tokens.push(curr); // defer
+		this.ast = this.ast.beget(MKP);
+	}
+}
+
+BLKS.AT_COLON = function(curr){
+	this.ast = this.ast.beget(MKP);
+}
 				
-				this.subParse(curr, BLK);
-				
-				subTokens = this.advanceUntilNot(WHITESPACE);
-				next = this.tokens[ this.tokens.length - 1 ];
+BLKS.TEXT_TAG_OPEN = 
+BLKS.TEXT_TAG_CLOSE = 
+BLKS.HTML_TAG_SELFCLOSE = 
+BLKS.HTML_TAG_OPEN = 
+BLKS.HTML_TAG_CLOSE = function(curr){
+	this.ast = this.ast.beget(MKP);
+	this.tokens.push(curr); // defer
+}
 
-				if(
-					next
-					&& next.type !== KEYWORD
-					&& next.type !== FUNCTION
-					&& next.type !== BRACE_OPEN
-					&& curr.type !== PAREN_OPEN
-				){
-					// defer whitespace
-					this.tokens.push.apply(this.tokens, subTokens.reverse());
-					this.ast = this.ast.parent;
-				} else {
-					this.ast.push(subTokens);
-				}
+BLKS.FAT_ARROW = function(curr){
+	this.ast = this.ast.beget(BLK);
+}
 
-				break;
+BLKS.BRACE_OPEN = 
+BLKS.PAREN_OPEN = function(curr){
+	var  next
+		,subTokens;
 
-			case WHITESPACE:
-				this.ast.push(curr);
-				this.advanceUntilNot(WHITESPACE);
-				break;
+	this.subParse(curr, BLK);
+	
+	subTokens = this.advanceUntilNot(WHITESPACE);
+	next = this.tokens[ this.tokens.length - 1 ];
 
-			default:
-				this.ast.push(curr);
-				break;
-		}
-		
+	if(
+		next
+		&& next.type !== KEYWORD
+		&& next.type !== FUNCTION
+		&& next.type !== BRACE_OPEN
+		&& curr.type !== PAREN_OPEN
+	){
+		// defer whitespace
+		this.tokens.push.apply(this.tokens, subTokens.reverse());
+		this.ast = this.ast.parent;
+	} else {
+		this.ast.push(subTokens);
 	}
 
-	,handleEXP: function(curr){
-		
-		var ahead = null
-			,opener
-			,closer
-			,parseOpts
-			,miniParse
-			,subTokens
-			,prev
-			,i;
-		
-		switch(curr.type){
-			
-			case KEYWORD:
-			case FUNCTION:
-				this.ast = this.ast.beget(BLK);
-				this.tokens.push(curr); // defer
-				break;
-			
-			case WHITESPACE:
-			case LOGICAL:
-			case ASSIGN_OPERATOR:
-			case OPERATOR:
-			case NUMERIC_CONTENT:
-				if(this.ast.parent && this.ast.parent.mode === EXP){
+}
 
-					this.ast.push(curr);
-				} else {
+BLKS.WHITESPACE = function(curr){
+	this.ast.push(curr);
+	this.advanceUntilNot(WHITESPACE);
+}
 
-					// if not contained within a parent EXP, must be end of EXP
-					this.ast = this.ast.parent;
-					this.tokens.push(curr); // defer
-				}
+BLKS.DEFAULT = function(curr){
+	this.ast.push(curr);
+}
 
-				break;
+EXPS.FUNCTION = EXPS.KEYWORD = function(curr){
+	this.ast = this.ast.beget(BLK);
+	this.tokens.push(curr); // defer
+}
 
-			case IDENTIFIER:
-			case HTML_RAW:
-				this.ast.push(curr);
-				break;
-			
-			case SINGLE_QUOTE:
-			case DOUBLE_QUOTE:
+EXPS.WHITESPACE = 
+EXPS.LOGICAL = 
+EXPS.ASSIGN_OPERATOR = 
+EXPS.OPERATOR = 
+EXPS.NUMERIC_CONTENT = function(curr){
+	if(this.ast.parent && this.ast.parent.mode === EXP){
 
-				if(this.ast.parent && this.ast.parent.mode === EXP){
-					subTokens = this.advanceUntilMatched(
-						curr
-						,curr.type
-						,PAIRS[ curr.type ]
-						,BACKSLASH
-						,BACKSLASH );
-					this.ast.pushFlatten(subTokens.reverse());
+		this.ast.push(curr);
+	} else {
 
-				} else {
-					// probably end of expression
-					this.ast = this.ast.parent;
-					this.tokens.push(curr); // defer
-				}
+		// if not contained within a parent EXP, must be end of EXP
+		this.ast = this.ast.parent;
+		this.tokens.push(curr); // defer
+	}
+}
 
-				break;
+EXPS.IDENTIFIER = 
+EXPS.HTML_RAW = function(curr){
+	this.ast.push(curr);
+}
 
-			case HARD_PAREN_OPEN:
-			case PAREN_OPEN:
+EXPS.SINGLE_QUOTE =
+EXPS.DOUBLE_QUOTE = function(curr){
 
-				prev = this.prevTokens[ this.prevTokens.length - 1 ];
-				this.subParse(curr, EXP);
-				ahead = this.tokens[ this.tokens.length - 1 ];
+	var subTokens;
 
-				if( (prev && prev.type === AT) || (ahead && ahead.type === IDENTIFIER) ){
-					// explicit expression is automatically ended
-					this.ast = this.ast.parent;
-				}
+	if(this.ast.parent && this.ast.parent.mode === EXP){
+		subTokens = this.advanceUntilMatched(
+			curr
+			,curr.type
+			,PAIRS[ curr.type ]
+			,BACKSLASH
+			,BACKSLASH );
+		this.ast.pushFlatten(subTokens.reverse());
 
-				break;
-			
-			case BRACE_OPEN:
-				this.tokens.push(curr); // defer
-				this.ast = this.ast.beget(BLK);
-				break;
+	} else {
+		// probably end of expression
+		this.ast = this.ast.parent;
+		this.tokens.push(curr); // defer
+	}
+}
 
-			case FAT_ARROW:
-				this.tokens.push(curr); // defer
-				this.ast = this.ast.beget(BLK);
-				break;
+EXPS.HARD_PAREN_OPEN = 
+EXPS.PAREN_OPEN = function(curr){
+	var prev, ahead;
 
-			case PERIOD:
-				ahead = this.tokens[ this.tokens.length - 1 ];
-				if(
-					ahead &&
-					(  ahead.type === IDENTIFIER
-					|| ahead.type === KEYWORD
-					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD )
-				) {
-					this.ast.push(curr);
-				} else {
-					this.ast = this.ast.parent;
-					this.tokens.push(curr); // defer
-				}
-				break;
-			
-			default:
+	prev = this.prevTokens[ this.prevTokens.length - 1 ];
+	this.subParse(curr, EXP);
+	ahead = this.tokens[ this.tokens.length - 1 ];
 
-				if( this.ast.parent && this.ast.parent.mode !== EXP ){
-					// assume end of expression
-					this.ast = this.ast.parent;
-					this.tokens.push(curr); // defer
-				} else {
-					this.ast.push(curr);
-				}
+	if( (prev && prev.type === AT) || (ahead && ahead.type === IDENTIFIER) ){
+		// explicit expression is automatically ended
+		this.ast = this.ast.parent;
+	}
+}
 
-				break;
-		}
+EXPS.BRACE_OPEN = function(curr){
+	this.tokens.push(curr); // defer
+	this.ast = this.ast.beget(BLK);
+}
+
+EXPS.PERIOD = function(curr){
+	var ahead = this.tokens[ this.tokens.length - 1 ];
+	if(
+		ahead &&
+		(  ahead.type === IDENTIFIER
+		|| ahead.type === KEYWORD
+		|| ahead.type === FUNCTION
+		|| ahead.type === PERIOD )
+	) {
+		this.ast.push(curr);
+	} else {
+		this.ast = this.ast.parent;
+		this.tokens.push(curr); // defer
+	}
+}
+
+EXPS.DEFAULT = function(curr){
+
+	if( this.ast.parent && this.ast.parent.mode !== EXP ){
+		// assume end of expression
+		this.ast = this.ast.parent;
+		this.tokens.push(curr); // defer
+	} else {
+		this.ast.push(curr);
 	}
 }
 

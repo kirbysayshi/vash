@@ -130,8 +130,8 @@ suite = new Benchmark.Suite("vash vs doT compilation large")
 .add("vash#tpl large", function(){
 	vash.compile(largeVTemplate)
 })
-//logSuiteName(suite);
-//suite.run();
+logSuiteName(suite);
+suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation medium")
 .add("dot#template medium", function(){
@@ -143,8 +143,8 @@ suite = new Benchmark.Suite("vash vs doT compilation medium")
 .add("vash#tpl medium no with", function(){
 	vash.compile(mediumVTemplateNoWith, false)
 })
-//logSuiteName(suite);
-//suite.run();
+logSuiteName(suite);
+suite.run();
 
 suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("dot#template small", function(){
@@ -153,8 +153,8 @@ suite = new Benchmark.Suite("vash vs doT compilation small")
 .add("vash#tpl small", function(){
 	vash.compile(smallVTemplate)
 })
-//logSuiteName(suite);
-//suite.run();
+logSuiteName(suite);
+suite.run();
 
 suite = new Benchmark.Suite("vash vs ... render large")
 .add("dot#template large", function(){
@@ -406,8 +406,8 @@ suite = new Benchmark.Suite('tpl concat vs push')
 	tconcat( { it: 'what' } );
 })
 
-logSuiteName(suite);
-suite.run();
+//SuiteName(suite);
+//suite.run();
 
 //.on('cycle', function(event, bench){
 //	console.log(String(bench));
