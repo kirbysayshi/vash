@@ -20,8 +20,8 @@ VCP.assemble = function(options, helpers){
 		,reEscapedQuote = /(\\?)(["'])/gi
 		,reLineBreak = /[\n\r]/gi
 		,joined
-		,func
-		,shell
+		,compiledFunc
+		,linkedFunc
 		
 		,markupBuffer = [];
 
@@ -166,18 +166,18 @@ VCP.assemble = function(options, helpers){
 	}
 
 	try {
-		func = new Function(options.modelName, options.helpersName, joined);		
-		shell = function( model ) {			
-			return func( model, helpers );
-		}
-		shell.toString = function() { return func.toString(); }
-		
+		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
 	} catch(e){
 		e.message += ' -> ' + joined;
 		throw e;
 	}	
+
+	// Link compiled function to helpers collection, but report original function
+	// body for code generation purposes.
+	linkedFunc = function(model) { return compiledFunc(model, helpers); };
+	linkedFunc.toString = function() { return compiledFunc.toString(); };
 	
-	return shell;
+	return linkedFunc;
 }
 
 // runtime-esque

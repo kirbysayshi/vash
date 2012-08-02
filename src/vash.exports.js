@@ -47,22 +47,21 @@
 		val = val != null ? val : "";		
 		
 		return {
-			toHtmlString: func,
-			toString: func
+			toHtmlString: func
+			,toString: func
 		};
 	}
 	
 	// Cached to compile once and reuse.
-	var
-		HTML_REGEX = /[&<>"'`]/g,
-		HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
-		HTML_CHARS = {
-			"&": "&amp;",
-			"<": "&lt;",
-			">": "&gt;",
-			'"': "&quot;",
-			"'": "&#x27;",
-			"`": "&#x60;"
+	var HTML_REGEX = /[&<>"'`]/g
+		,HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
+		,HTML_CHARS = {
+			"&": "&amp;"
+			,"<": "&lt;"
+			,">": "&gt;"
+			,'"': "&quot;"
+			,"'": "&#x27;"
+			,"`": "&#x60;"
 		};
 		
 	exports["helpers"].escape = function( val ) {
@@ -71,17 +70,12 @@
 		val = val != null ? val : "";
 		
 		if ( typeof val.toHtmlString !== "function" ) {
-			var
-				lt = "&lt;",
-				gt = "&gt;",
-				amp = "&amp;",
-				quot = "&quot;",
 			
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
-				toHtmlString: func,
-				toString: func
+				toHtmlString: func
+				,toString: func
 			};
 		}
 		

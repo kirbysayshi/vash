@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-963";
+	exports["version"] = "0.4.4-976";
   exports["helpers"] = {};
 	exports["config"] = {
 		"useWith": false
@@ -930,8 +930,8 @@ VCP.assemble = function(options, helpers){
 		,reEscapedQuote = /(\\?)(["'])/gi
 		,reLineBreak = /[\n\r]/gi
 		,joined
-		,func
-		,shell
+		,compiledFunc
+		,linkedFunc
 		
 		,markupBuffer = [];
 
@@ -1076,18 +1076,18 @@ VCP.assemble = function(options, helpers){
 	}
 
 	try {
-		func = new Function(options.modelName, options.helpersName, joined);		
-		shell = function( model ) {			
-			return func( model, helpers );
-		}
-		shell.toString = function() { return func.toString(); }
-		
+		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
 	} catch(e){
 		e.message += ' -> ' + joined;
 		throw e;
 	}	
+
+	// Link compiled function to helpers collection, but report original function
+	// body for code generation purposes.
+	linkedFunc = function(model) { return compiledFunc(model, helpers); };
+	linkedFunc.toString = function() { return compiledFunc.toString(); };
 	
-	return shell;
+	return linkedFunc;
 }
 
 // runtime-esque
@@ -1124,22 +1124,21 @@ VCP.reportError = function(e, lineno, chr, orig){
 		val = val != null ? val : "";		
 		
 		return {
-			toHtmlString: func,
-			toString: func
+			toHtmlString: func
+			,toString: func
 		};
 	}
 	
 	// Cached to compile once and reuse.
-	var
-		HTML_REGEX = /[&<>"'`]/g,
-		HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
-		HTML_CHARS = {
-			"&": "&amp;",
-			"<": "&lt;",
-			">": "&gt;",
-			'"': "&quot;",
-			"'": "&#x27;",
-			"`": "&#x60;"
+	var HTML_REGEX = /[&<>"'`]/g
+		,HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
+		,HTML_CHARS = {
+			"&": "&amp;"
+			,"<": "&lt;"
+			,">": "&gt;"
+			,'"': "&quot;"
+			,"'": "&#x27;"
+			,"`": "&#x60;"
 		};
 		
 	exports["helpers"].escape = function( val ) {
@@ -1148,17 +1147,12 @@ VCP.reportError = function(e, lineno, chr, orig){
 		val = val != null ? val : "";
 		
 		if ( typeof val.toHtmlString !== "function" ) {
-			var
-				lt = "&lt;",
-				gt = "&gt;",
-				amp = "&amp;",
-				quot = "&quot;",
 			
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
-				toHtmlString: func,
-				toString: func
+				toHtmlString: func
+				,toString: func
 			};
 		}
 		
