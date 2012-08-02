@@ -55,6 +55,7 @@
 	// Cached to compile once and reuse.
 	var
 		HTML_REGEX = /[&<>"'`]/g,
+		HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
 		HTML_CHARS = {
 			"&": "&amp;",
 			"<": "&lt;",
@@ -62,8 +63,7 @@
 			'"': "&quot;",
 			"'": "&#x27;",
 			"`": "&#x60;"
-		},
-		HTML_REPLACER = function(match) { return HTML_CHARS[match]; };
+		};
 		
 	exports["helpers"].escape = function( val ) {
 		var	func = function() { return val; }
