@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-?BUILDNUM?";
+	exports["version"] = "0.4.5-?BUILDNUM?";
 	exports["helpers"] = {};
 	exports["config"] = {
 		"useWith": false
