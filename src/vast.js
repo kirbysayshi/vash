@@ -120,7 +120,7 @@ vQuery.fn.toTreeString = function(){
 			} else {
 				buffer.push( Array(indent).join(' |') + ' '
 					+ (child
-						?  child.toString()
+						?  child.toString().replace(/(\r|\n)/g, '')
 						: '[empty]')
 				);
 			}
@@ -128,6 +128,7 @@ vQuery.fn.toTreeString = function(){
 		}
 
 		indent -= 1;
+		buffer.push( Array(indent).join(' |') + ' -' + node.mode + ' ' + ( node.tagName || '' ) );
 	}
 
 	visitNode(this);
