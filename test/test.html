@@ -14,45 +14,14 @@
 		<script src="../src/vash.exports.js" type="text/javascript" charset="utf-8"></script>
 		<!--<script src="../build/vash.closure.min.js" type="text/javascript" charset="utf-8"></script>-->
 		
-		<script id="test" type="text/razor-js" charset="utf-8"><span>@vash.raw(it)</span></script>
+		<script id="test" type="text/razor-js" charset="utf-8">
+		@function dbgOut(){ <text>debug output</text> }
+
+		Put your test template here, watch console for @dbgOut()! 
+
+		</script>
 
 		<script type="text/javascript" charset="utf-8">
-			
-			
-			//console.log(tmpl);
-			
-			//var tmpl = parse( document.querySelectorAll('#test-for')[0].innerHTML );
-			//console.log(tmpl);
-			
-			//var tokens = vash._parse( document.querySelectorAll('#test-block')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-exp-simple')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-exp')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-for')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-for-for')[0].innerHTML );
-			//var tokens = vash._parse( document.querySelectorAll('#test-textescape')[0].innerHTML );
-			
-			//console.log(tokens);
-			//var tmpl = vash._generate(tokens, true)
-			//console.log(tmpl);
-			
-			//console.log( tmpl({
-			//	 i: 2
-			//	,what: { how: function() { return 'G'; } }
-			//	,title: "Mr"
-			//	,name: "Doob"
-			//	,model: {
-			//		name: "what"
-			//	}
-			//	,className: 'blue'
-			//	,itemName: 'the item is blue'
-			//	,somearr: ['a', 'b', 'c', 'd']
-			//	,anotherarr: ['z', 'y', 'x', 'w']
-			//}) )
-			
-			//console.log( tmpl({
-			//	somearr: ['a', 'b', 'c', 'd']
-			//	,i: 2
-			//}) )
 			
 			var opts = { debugParser: true, debugCompiler: true, debug: true, modelName: 'model' }
 
@@ -69,6 +38,7 @@
 
 			var c = new VCompiler(ast, lexerContent);
 			c.debug = true;
+			
 
 		</script>
 	</body>
