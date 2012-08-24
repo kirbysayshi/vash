@@ -25,8 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.4-977";
-  exports["helpers"] = {};
+	exports["version"] = "0.5-992";
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
@@ -35,10 +34,143 @@
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
+
+		,"saveTextTag": false
+		,"saveAT": false
 	};
 
 	/************** Begin injected code from build script */
-	/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+	;(function(helpers){
+
+	// this pattern was inspired by LucidJS,
+	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
+
+	if(typeof define === 'function' && define['amd']){
+		define(helpers); // AMD
+	} else if(typeof module === 'object' && module['exports']){
+		// NODEJS
+
+		if( exports.version ){
+			// assume runtime is within vash.js
+			exports['helpers'] = helpers;
+		} else {
+			// assume being included separately
+			module['exports'] = helpers; 
+		}
+		
+	} else {
+		window['vash'] = window['vash'] || {}; // BROWSER
+		window['vash']['helpers'] = helpers
+	}
+
+})(function(exports){
+
+	///////////////////////////////////////////////////////////////////////////
+	// CONFIG
+	// Ideally this is where any helper-specific configuration would go, things
+	// such as syntax highlighting callbacks, whether to temporarily disable
+	// html escaping, and others.
+	// 
+	// Each helper should define it's configuration options just above its own
+	// definition, for ease of modularity and discoverability.
+
+	exports.config = {};
+
+	// CONFIG
+	///////////////////////////////////////////////////////////////////////////
+
+
+	///////////////////////////////////////////////////////////////////////////
+	// HTML ESCAPING
+
+	var HTML_REGEX = /[&<>"'`]/g
+		,HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
+		,HTML_CHARS = {
+			"&": "&amp;"
+			,"<": "&lt;"
+			,">": "&gt;"
+			,'"': "&quot;"
+			,"'": "&#x27;"
+			,"`": "&#x60;"
+		};
+
+
+	// raw: explicitly prevent an expression or value from being HTML escaped.
+
+	exports.raw = function( val ) {
+		var func = function() { return val; }
+		
+		val = val != null ? val : "";		
+		
+		return {
+			 toHtmlString: func
+			,toString: func
+		};
+	}
+		
+	exports.escape = function( val ) {
+		var	func = function() { return val; }
+
+		val = val != null ? val : "";
+		
+		if ( typeof val.toHtmlString !== "function" ) {
+			
+			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
+
+			return {
+				 toHtmlString: func
+				,toString: func
+			};
+		}
+		
+		return val;
+	}
+
+	// HTML ESCAPING
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// BUFFER MANIPULATION
+	//
+	// These are to be used from within helpers, to allow for manipulation of
+	// output in a sane manner. 
+
+	exports.buffer = (function(){ 
+		var helpers = exports;
+		
+		return {
+
+			mark: function(){
+				return helpers.__vo.length;
+			}
+
+			,empty: function(){
+				return helpers.__vo.splice(0, helpers.__vo.length);
+			}
+
+			,fromMark: function(mark){
+				return helpers.__vo.splice(mark, helpers.__vo.length);
+			}
+
+			,push: function(buffer){
+				if( buffer instanceof Array )
+					helpers.__vo.push.apply( helpers.__vo, buffer );
+				else if (arguments.length > 1){
+					helpers.__vo.push.apply( helpers.__vo, Array.prototype.slice.call(arguments) );
+				} else
+					helpers.__vo.push(buffer);
+			}
+
+		} 
+	}());
+
+	// BUFFER MANIPULATION
+	///////////////////////////////////////////////////////////////////////////
+
+	return exports;
+
+}({}));
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // The basic tokens, defined as constants
 var  AT = 'AT'
@@ -361,7 +493,7 @@ vQuery.fn.toTreeString = function(){
 			} else {
 				buffer.push( Array(indent).join(' |') + ' '
 					+ (child
-						?  child.toString()
+						?  child.toString().replace(/(\r|\n)/g, '')
 						: '[empty]')
 				);
 			}
@@ -369,6 +501,7 @@ vQuery.fn.toTreeString = function(){
 		}
 
 		indent -= 1;
+		buffer.push( Array(indent).join(' |') + ' -' + node.mode + ' ' + ( node.tagName || '' ) );
 	}
 
 	visitNode(this);
@@ -386,6 +519,48 @@ vQuery.fn.maxCheck = function(){
 }
 
 vQuery.maxSize = 1000;
+
+// takes a full nested set of vqueries (e.g. an AST), and flattens them 
+// into a plain array. Useful for performing queries, or manipulation,
+// without having to handle a lot of parsing state.
+vQuery.fn.flatten = function(){
+	var reduced;
+	return this.reduce(function flatten(all, tok, i, orig){
+
+		if( tok.vquery ){ 
+			all.push( { type: 'META', val: 'START' + tok.mode, tagName: tok.tagName } );
+			reduced = tok.reduce(flatten, all);
+			reduced.push( { type: 'META', val: 'END' + tok.mode, tagName: tok.tagName } );
+			return reduced;
+		}
+		
+		// grab the mode from the original vquery container 
+		tok.mode = orig.mode;
+		all.push( tok );
+
+		return all;
+	}, []);
+}
+
+// take a flat array created via vQuery.fn.flatten, and recreate the 
+// original AST. 
+vQuery.reconstitute = function(arr){
+	return arr.reduce(function recon(ast, tok, i, orig){
+
+		if( tok.type === 'META' ) {
+			ast = ast.parent;
+		} else {
+
+			if( tok.mode !== ast.mode ) {
+				ast = ast.beget(tok.mode, tok.tagName);
+			}
+
+			ast.push( tok );
+		}
+
+		return ast;
+	}, vQuery(PRG))
+}
 
 vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]';
@@ -621,6 +796,7 @@ VParser.prototype = {
 						}
 
 						this.ast = this.ast.beget( EXP );
+						if(this.options.saveAT) this.ast.push( curr );
 						break;
 					
 					case KEYWORD:
@@ -633,9 +809,11 @@ VParser.prototype = {
 						}
 
 						this.ast = this.ast.beget( BLK );
+						if(this.options.saveAT) this.ast.push( curr );
 						break;
 					
 					default:
+						if(this.options.saveAT) this.ast.push( curr );
 						this.ast.push( this.tokens.pop() );
 						break;
 				} }
@@ -666,7 +844,7 @@ VParser.prototype = {
 					this.ast.tagName = tagName[1];
 				}
 
-				if(HTML_TAG_OPEN === curr.type) {
+				if(HTML_TAG_OPEN === curr.type || this.options.saveTextTag) {
 					this.ast.push(curr);
 				}
 
@@ -690,7 +868,7 @@ VParser.prototype = {
 					this.ast = opener;
 				}
 				
-				if(HTML_TAG_CLOSE === curr.type) {
+				if(HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
 					this.ast.push( curr );
 				}
 
@@ -753,9 +931,10 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 			
-			case FAT_ARROW:
-				this.ast = this.ast.beget(BLK);
-				break;
+			//case FAT_ARROW:
+			//	this.ast.push(curr)
+			//	this.ast = this.ast.beget(BLK);
+			//	break;
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:
@@ -937,8 +1116,10 @@ VCP.assemble = function(options, helpers){
 
 	function insertDebugVars(tok){
 		if(options.debug){
-			buffer.push( '__vl = ' + tok.line + ', ');
-			buffer.push( '__vc = ' + tok.chr + '; \n' );
+			buffer.push(
+				 options.helpersName + '.__vl = __vl = ' + tok.line + ', '
+				,options.helpersName + '.__vc = __vc = ' + tok.chr + '; \n'
+			);
 		}
 	}
 
@@ -1037,10 +1218,14 @@ VCP.assemble = function(options, helpers){
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.push("var __vo = [], __vt; \n");
+	buffer.push("var __vo = []; \n");
+	buffer.push( options.helpersName + '.__vo = __vo; \n');
 
 	if(options.debug){
-		buffer.push('var __vl = 0, __vc = 0; \n');
+		buffer.push(
+			 'var __vl = ' + options.helpersName + '.__vl = 0,'
+			,'__vc = ' + options.helpersName + '.__vc = 0; \n'
+		);
 	}
 	
 	visitNode(this.ast);
@@ -1061,7 +1246,14 @@ VCP.assemble = function(options, helpers){
 			,') } \n' );
 	}
 
-	buffer.push("return __vo.join('');");
+	buffer.push( 'delete ' + options.helpersName + '.__vo; \n');
+
+	if(options.debug){
+		buffer.push( 'delete ' + options.helpersName + '.__vl \n' );
+		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
+	}
+
+	buffer.push("return __vo.join(''); \n");
 
 	joined = buffer.join('');
 
@@ -1117,47 +1309,6 @@ VCP.reportError = function(e, lineno, chr, orig){
 	throw e;
 }
 	/************** End injected code from build script */	
-	
-	exports["helpers"].raw = function( val ) {
-		var func = function() { return val; }
-		
-		val = val != null ? val : "";		
-		
-		return {
-			toHtmlString: func
-			,toString: func
-		};
-	}
-	
-	// Cached to compile once and reuse.
-	var HTML_REGEX = /[&<>"'`]/g
-		,HTML_REPLACER = function(match) { return HTML_CHARS[match]; }
-		,HTML_CHARS = {
-			"&": "&amp;"
-			,"<": "&lt;"
-			,">": "&gt;"
-			,'"': "&quot;"
-			,"'": "&#x27;"
-			,"`": "&#x60;"
-		};
-		
-	exports["helpers"].escape = function( val ) {
-		var	func = function() { return val; }
-
-		val = val != null ? val : "";
-		
-		if ( typeof val.toHtmlString !== "function" ) {
-			
-			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
-
-			return {
-				toHtmlString: func
-				,toString: func
-			};
-		}
-		
-		return val;
-	}
 	
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;

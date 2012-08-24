@@ -5,7 +5,8 @@ var fs = require('fs')
 	,buildNum = parseInt(fs.readFileSync(__dirname + '/buildnum', 'utf8'), 10)
 	,exp = fs.readFileSync(__dirname + '/../src/vash.exports.js', 'utf8')
 	,commonFiles = [
-		 '../src/vlexer.js'
+		 '../src/vruntime-req.js'
+		,'../src/vlexer.js'
 		,'../src/vast.js'
 		,'../src/vparser.js'
 		,'../src/vcompiler.js'
