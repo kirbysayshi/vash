@@ -147,6 +147,48 @@ vQuery.fn.maxCheck = function(){
 
 vQuery.maxSize = 1000;
 
+// takes a full nested set of vqueries (e.g. an AST), and flattens them 
+// into a plain array. Useful for performing queries, or manipulation,
+// without having to handle a lot of parsing state.
+vQuery.fn.flatten = function(){
+	var reduced;
+	return this.reduce(function flatten(all, tok, i, orig){
+
+		if( tok.vquery ){ 
+			all.push( { type: 'META', val: 'START' + tok.mode, tagName: tok.tagName } );
+			reduced = tok.reduce(flatten, all);
+			reduced.push( { type: 'META', val: 'END' + tok.mode, tagName: tok.tagName } );
+			return reduced;
+		}
+		
+		// grab the mode from the original vquery container 
+		tok.mode = orig.mode;
+		all.push( tok );
+
+		return all;
+	}, []);
+}
+
+// take a flat array created via vQuery.fn.flatten, and recreate the 
+// original AST. 
+vQuery.reconstitute = function(arr){
+	return arr.reduce(function recon(ast, tok, i, orig){
+
+		if( tok.type === 'META' ) {
+			ast = ast.parent;
+		} else {
+
+			if( tok.mode !== ast.mode ) {
+				ast = ast.beget(tok.mode, tok.tagName);
+			}
+
+			ast.push( tok );
+		}
+
+		return ast;
+	}, vQuery(PRG))
+}
+
 vQuery.isArray = function(obj){
 	return Object.prototype.toString.call(obj) == '[object Array]';
 }
