@@ -185,6 +185,7 @@ VParser.prototype = {
 						}
 
 						this.ast = this.ast.beget( EXP );
+						if(this.options.saveAT) this.ast.push( curr );
 						break;
 					
 					case KEYWORD:
@@ -197,9 +198,11 @@ VParser.prototype = {
 						}
 
 						this.ast = this.ast.beget( BLK );
+						if(this.options.saveAT) this.ast.push( curr );
 						break;
 					
 					default:
+						if(this.options.saveAT) this.ast.push( curr );
 						this.ast.push( this.tokens.pop() );
 						break;
 				} }
@@ -230,7 +233,7 @@ VParser.prototype = {
 					this.ast.tagName = tagName[1];
 				}
 
-				if(HTML_TAG_OPEN === curr.type) {
+				if(HTML_TAG_OPEN === curr.type || this.options.saveTextTag) {
 					this.ast.push(curr);
 				}
 
@@ -254,7 +257,7 @@ VParser.prototype = {
 					this.ast = opener;
 				}
 				
-				if(HTML_TAG_CLOSE === curr.type) {
+				if(HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
 					this.ast.push( curr );
 				}
 
@@ -317,9 +320,10 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 			
-			case FAT_ARROW:
-				this.ast = this.ast.beget(BLK);
-				break;
+			//case FAT_ARROW:
+			//	this.ast.push(curr)
+			//	this.ast = this.ast.beget(BLK);
+			//	break;
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:

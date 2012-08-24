@@ -35,6 +35,9 @@
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
+
+		,"saveTextTag": false
+		,"saveAT": false
 	};
 
 	/************** Begin injected code from build script */
