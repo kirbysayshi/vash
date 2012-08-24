@@ -27,8 +27,10 @@ VCP.assemble = function(options, helpers){
 
 	function insertDebugVars(tok){
 		if(options.debug){
-			buffer.push( '__vl = ' + tok.line + ', ');
-			buffer.push( '__vc = ' + tok.chr + '; \n' );
+			buffer.push(
+				 options.helpersName + '.__vl = __vl = ' + tok.line + ', '
+				,options.helpersName + '.__vc = __vc = ' + tok.chr + '; \n'
+			);
 		}
 	}
 
@@ -127,10 +129,14 @@ VCP.assemble = function(options, helpers){
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.push("var __vo = [], __vt; \n");
+	buffer.push("var __vo = []; \n");
+	buffer.push( options.helpersName + '.__vo = __vo; \n');
 
 	if(options.debug){
-		buffer.push('var __vl = 0, __vc = 0; \n');
+		buffer.push(
+			 'var __vl = ' + options.helpersName + '.__vl = 0,'
+			,'__vc = ' + options.helpersName + '.__vc = 0; \n'
+		);
 	}
 	
 	visitNode(this.ast);
@@ -151,7 +157,14 @@ VCP.assemble = function(options, helpers){
 			,') } \n' );
 	}
 
-	buffer.push("return __vo.join('');");
+	buffer.push( 'delete ' + options.helpersName + '.__vo; \n');
+
+	if(options.debug){
+		buffer.push( 'delete ' + options.helpersName + '.__vl \n' );
+		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
+	}
+
+	buffer.push("return __vo.join(''); \n");
 
 	joined = buffer.join('');
 
