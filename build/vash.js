@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.4.5-996
+ * Vash - JavaScript Template Parser, v0.5.0-998
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.4.5-996";
+	exports["version"] = "0.5.0-998";
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
