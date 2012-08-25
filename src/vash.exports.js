@@ -1,13 +1,5 @@
 /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-/**
- * Vash - JavaScript Template Parser
- *
- * https://github.com/kirbysayshi/vash
- *
- * Copyright (c) 2012 Andrew Petersen
- * MIT License (LICENSE)
- */
 ;(function(vash){
 
 	// this pattern was inspired by LucidJS,
@@ -25,7 +17,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5-?BUILDNUM?";
+	exports["version"] = "?BUILDNUM?";
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
@@ -34,6 +26,8 @@
 		,"debug": false
 		,"debugParser": false
 		,"debugCompiler": false
+
+		,"favorText": false
 
 		,"saveTextTag": false
 		,"saveAT": false

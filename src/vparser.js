@@ -208,15 +208,27 @@ VParser.prototype = {
 				} }
 				break;
 			
-			case BRACE_OPEN:
-				this.ast = this.ast.beget( BLK );
-				this.tokens.push(curr); // defer
-				break;
+			case BRACE_OPEN: {
 
-			case BRACE_CLOSE:
-				this.ast = this.ast.parent;
-				this.tokens.push(curr); // defer
+				if( this.options.favorText ){
+					this.ast.push(curr);
+				} else {
+					this.ast = this.ast.beget( BLK );
+					this.tokens.push(curr); // defer	
+				}
 				break;
+			}
+
+			case BRACE_CLOSE: {
+
+				if( this.options.favorText ){
+					this.ast.push(curr);
+				} else {
+					this.ast = this.ast.parent;
+					this.tokens.push(curr); // defer	
+				}
+				break;
+			}
 			
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
