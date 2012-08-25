@@ -38,4 +38,15 @@
 		// value will be directly added to the output.
 	}
 
-}( typeof window !== 'undefined' ? window.vash.helpers : exports ))
+}(function(){
+
+	if(typeof define === 'function' && define['amd']){
+		return {}; // AMD
+	} else if(typeof module === 'object' && module['exports']){
+		// NODEJS, one file
+		return exports['helpers'];
+	} else {
+		return window['vash']['helpers'];
+	}
+
+}()));
