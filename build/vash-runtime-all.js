@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.0-1034
+ * Vash - JavaScript Template Parser, v0.5.0-1037
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -21,7 +21,7 @@
 	// grab/create the global. sigh.
 	vash = vash || {}
 
-	var helpers = (vash.helpers = vash.helpers || {});
+	var helpers = (vash['helpers'] = vash['helpers'] || {});
 	
 	vash.helpers.config = {};
 

@@ -437,6 +437,15 @@ VParser.prototype = {
 			case PAREN_OPEN:
 
 				prev = this.prevTokens[ this.prevTokens.length - 1 ];
+				ahead = this.tokens[ this.tokens.length - 1 ];
+
+				if( curr.type === HARD_PAREN_OPEN && ahead.type === HARD_PAREN_CLOSE ){
+					// likely just [], which is not likely valid outside of EXP
+					this.tokens.push(curr); // defer
+					this.ast = this.ast.parent; //this.ast.beget(MKP);
+					break;
+				}
+
 				this.subParse(curr, EXP);
 				ahead = this.tokens[ this.tokens.length - 1 ];
 

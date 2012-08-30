@@ -328,6 +328,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
 		}
 	}
+	,'expression followed by empty bracket': {
+		topic: function(){
+			var str = '<a href="somename_@what.how[]"></a>';
+			return vash.compile(str);
+		}
+		,'uses brackets as markup': function(topic){
+			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[]"></a>');
+		}
+	}
 	,'empty anonymous block': {
 		topic: function(){
 			var str = "@{ }";
