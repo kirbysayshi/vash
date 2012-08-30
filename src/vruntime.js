@@ -13,7 +13,7 @@
 	// grab/create the global. sigh.
 	vash = vash || {}
 
-	var helpers = (vash.helpers = vash.helpers || {});
+	var helpers = (vash['helpers'] = vash['helpers'] || {});
 	
 	vash.helpers.config = {};
 
