@@ -1,4 +1,4 @@
-/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // The basic tokens, defined as constants
 var  AT = 'AT'
