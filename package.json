@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax template parser/generator, for JS",
-	"version": "0.5.0-998",
+	"version": "0.5.0-1034",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"keywords": [
 		"razor",
@@ -23,6 +23,8 @@
 		"dot": ">=0.1.7",
 		"express": ">=2.4.3<=3",
 		"vows": ">=0.6.2",
-		"jshtml": ">=0.2.2"
+		"jshtml": ">=0.2.2",
+		"semver": ">=1.0.0",
+		"underscore": ">=v1.3.3"
 	}
 }

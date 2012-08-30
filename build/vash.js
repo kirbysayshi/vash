@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.0-998
+ * Vash - JavaScript Template Parser, v0.5.0-1034
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.0-998";
+	exports["version"] = "0.5.0-1034";
 	exports["config"] = {
 		"useWith": false
 		,"modelName": "model"
@@ -42,22 +42,8 @@
 	};
 
 	/************** Begin injected code from build script */
-	;(function(helpers){
-
-	// this pattern was inspired by LucidJS,
-	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
-
-	if(typeof define === 'function' && define['amd']){
-		define(helpers); // AMD
-	} else if(typeof module === 'object' && module['exports']){
-		// NODEJS
-		exports['helpers'] = helpers;
-	} else {
-		window['vash'] = window['vash'] || {}; // BROWSER
-		window['vash']['helpers'] = helpers
-	}
-
-})(function(exports){
+	/*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+;(function(){
 
 	///////////////////////////////////////////////////////////////////////////
 	// CONFIG
@@ -68,7 +54,12 @@
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
-	exports.config = {};
+	// grab/create the global. sigh.
+	vash = vash || {}
+
+	var helpers = (vash.helpers = vash.helpers || {});
+	
+	vash.helpers.config = {};
 
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
@@ -91,7 +82,7 @@
 
 	// raw: explicitly prevent an expression or value from being HTML escaped.
 
-	exports.raw = function( val ) {
+	helpers.raw = function( val ) {
 		var func = function() { return val; }
 		
 		val = val != null ? val : "";		
@@ -102,7 +93,7 @@
 		};
 	}
 		
-	exports.escape = function( val ) {
+	helpers.escape = function( val ) {
 		var	func = function() { return val; }
 
 		val = val != null ? val : "";
@@ -129,8 +120,8 @@
 	// These are to be used from within helpers, to allow for manipulation of
 	// output in a sane manner. 
 
-	exports.buffer = (function(){ 
-		var helpers = exports;
+	helpers.buffer = (function(){ 
+		var helpers = helpers;
 		
 		return {
 
@@ -147,12 +138,13 @@
 			}
 
 			,push: function(buffer){
-				if( buffer instanceof Array )
+				if( buffer instanceof Array ) {
 					helpers.__vo.push.apply( helpers.__vo, buffer );
-				else if (arguments.length > 1){
+				} else if (arguments.length > 1){
 					helpers.__vo.push.apply( helpers.__vo, Array.prototype.slice.call(arguments) );
-				} else
+				} else {
 					helpers.__vo.push(buffer);
+				}
 			}
 
 		} 
@@ -161,17 +153,18 @@
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
-	return exports;
+}());
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+;(function(){
 
-}({}));
-;(function(exports){
+	var helpers = vash.helpers;
 
 	///////////////////////////////////////////////////////////////////////////
 	// EXAMPLE HELPER: syntax highlighting
 
-	exports.config.highlighter = null
+	helpers.config.highlighter = null;
 
-	exports.highlight = function(lang, cb){
+	helpers.highlight = function(lang, cb){
 
 		// context (this) is vash.helpers
 
@@ -194,8 +187,8 @@
 		this.buffer.push( '<pre><code>' );
 
 		// 
-		if( exports.config.highlighter ){
-			this.buffer.push( exports.config.highlighter(lang, cbOutLines.join('')).value );
+		if( helpers.config.highlighter ){
+			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -204,19 +197,8 @@
 		// value will be directly added to the output.
 	}
 
-}(function(){
-
-	if(typeof define === 'function' && define['amd']){
-		return {}; // AMD
-	} else if(typeof module === 'object' && module['exports']){
-		// NODEJS, one file
-		return exports['helpers'];
-	} else {
-		return window['vash']['helpers'];
-	}
-
-}()));
-/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+}());
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // The basic tokens, defined as constants
 var  AT = 'AT'
@@ -417,7 +399,7 @@ VLexer.prototype = {
 		}
 	}
 }
-/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 var vQuery = function(node){
 	return new vQuery.fn.init(node);
@@ -655,7 +637,7 @@ vQuery.takeMethodsFromArray = function(){
 
 vQuery.takeMethodsFromArray(); // run on page load
 
-/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 function VParser(tokens, options){
 
@@ -1145,7 +1127,7 @@ VParser.prototype = {
 	}
 }
 
-/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 function VCompiler(ast, originalMarkup){
 	this.ast = ast;

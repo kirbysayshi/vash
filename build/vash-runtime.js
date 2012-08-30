@@ -1,27 +1,13 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.0-998
+ * Vash - JavaScript Template Parser, v0.5.0-1034
  *
  * https://github.com/kirbysayshi/vash
  *
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
- ;(function(helpers){
-
-	// this pattern was inspired by LucidJS,
-	// https://github.com/RobertWHurst/LucidJS/blob/master/lucid.js
-
-	if(typeof define === 'function' && define['amd']){
-		define(helpers); // AMD
-	} else if(typeof module === 'object' && module['exports']){
-		// NODEJS
-		exports['helpers'] = helpers;
-	} else {
-		window['vash'] = window['vash'] || {}; // BROWSER
-		window['vash']['helpers'] = helpers
-	}
-
-})(function(exports){
+ /*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+;(function(){
 
 	///////////////////////////////////////////////////////////////////////////
 	// CONFIG
@@ -32,7 +18,12 @@
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
-	exports.config = {};
+	// grab/create the global. sigh.
+	vash = vash || {}
+
+	var helpers = (vash.helpers = vash.helpers || {});
+	
+	vash.helpers.config = {};
 
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
@@ -55,7 +46,7 @@
 
 	// raw: explicitly prevent an expression or value from being HTML escaped.
 
-	exports.raw = function( val ) {
+	helpers.raw = function( val ) {
 		var func = function() { return val; }
 		
 		val = val != null ? val : "";		
@@ -66,7 +57,7 @@
 		};
 	}
 		
-	exports.escape = function( val ) {
+	helpers.escape = function( val ) {
 		var	func = function() { return val; }
 
 		val = val != null ? val : "";
@@ -93,8 +84,8 @@
 	// These are to be used from within helpers, to allow for manipulation of
 	// output in a sane manner. 
 
-	exports.buffer = (function(){ 
-		var helpers = exports;
+	helpers.buffer = (function(){ 
+		var helpers = helpers;
 		
 		return {
 
@@ -111,12 +102,13 @@
 			}
 
 			,push: function(buffer){
-				if( buffer instanceof Array )
+				if( buffer instanceof Array ) {
 					helpers.__vo.push.apply( helpers.__vo, buffer );
-				else if (arguments.length > 1){
+				} else if (arguments.length > 1){
 					helpers.__vo.push.apply( helpers.__vo, Array.prototype.slice.call(arguments) );
-				} else
+				} else {
 					helpers.__vo.push(buffer);
+				}
 			}
 
 		} 
@@ -125,6 +117,4 @@
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
-	return exports;
-
-}({}));
+}());
