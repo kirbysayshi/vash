@@ -1,11 +1,14 @@
-;(function(exports){
+/*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+;(function(){
+
+	var helpers = vash.helpers;
 
 	///////////////////////////////////////////////////////////////////////////
 	// EXAMPLE HELPER: syntax highlighting
 
-	exports.config.highlighter = null
+	helpers.config.highlighter = null;
 
-	exports.highlight = function(lang, cb){
+	helpers.highlight = function(lang, cb){
 
 		// context (this) is vash.helpers
 
@@ -28,8 +31,8 @@
 		this.buffer.push( '<pre><code>' );
 
 		// 
-		if( exports.config.highlighter ){
-			this.buffer.push( exports.config.highlighter(lang, cbOutLines.join('')).value );
+		if( helpers.config.highlighter ){
+			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -38,15 +41,4 @@
 		// value will be directly added to the output.
 	}
 
-}(function(){
-
-	if(typeof define === 'function' && define['amd']){
-		return {}; // AMD
-	} else if(typeof module === 'object' && module['exports']){
-		// NODEJS, one file
-		return exports['helpers'];
-	} else {
-		return window['vash']['helpers'];
-	}
-
-}()));
+}());
