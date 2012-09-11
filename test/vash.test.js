@@ -6,6 +6,7 @@ var vows = require('vows')
 
 vash.config.useWith = true;
 vash.config.debug = true;
+vash.config.client = false;
 
 var tryCompile = function(str){
 	assert.doesNotThrow( function(){ vash.compile(str) }, Error );

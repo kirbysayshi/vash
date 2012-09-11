@@ -19,7 +19,7 @@
 
 	exports["version"] = "?BUILDNUM?";
 	exports["config"] = {
-		"useWith": false
+		 "useWith": false
 		,"modelName": "model"
 		,"helpersName": "html"
 		,"htmlEscape": true
@@ -28,6 +28,7 @@
 		,"debugCompiler": false
 
 		,"favorText": false
+		,"client": true
 
 		,"saveTextTag": false
 		,"saveAT": false
