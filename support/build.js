@@ -15,6 +15,7 @@ var  fs = require('fs')
 	,vashOpts = {
 		 favorText: true
 		,modelName: 'it'
+		,client: false
 	}
 
 	,pkg = JSON.parse( fs.readFileSync(__dirname + '/../package.json', ENC) )
