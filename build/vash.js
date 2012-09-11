@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.0-1037
+ * Vash - JavaScript Template Parser, v0.5.0-1102
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -25,9 +25,9 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.0-1037";
+	exports["version"] = "0.5.0-1102";
 	exports["config"] = {
-		"useWith": false
+		 "useWith": false
 		,"modelName": "model"
 		,"helpersName": "html"
 		,"htmlEscape": true
@@ -36,6 +36,7 @@
 		,"debugCompiler": false
 
 		,"favorText": false
+		,"client": true
 
 		,"saveTextTag": false
 		,"saveAT": false
@@ -1200,7 +1201,7 @@ VCP.assemble = function(options, helpers){
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
-				end += ").toHtmlString() \n";				
+				end += ").toHtmlString()";
 			}
 		}
 
@@ -1267,6 +1268,7 @@ VCP.assemble = function(options, helpers){
 	}
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
+	buffer.push( options.helpersName + ' = ' + options.helpersName + ' || vash.helpers; \n');
 	buffer.push("var __vo = []; \n");
 	buffer.push( options.helpersName + '.__vo = __vo; \n');
 
@@ -1323,12 +1325,19 @@ VCP.assemble = function(options, helpers){
 		throw e;
 	}	
 
-	// Link compiled function to helpers collection, but report original function
-	// body for code generation purposes.
-	linkedFunc = function(model) { return compiledFunc(model, helpers); };
-	linkedFunc.toString = function() { return compiledFunc.toString(); };
+	if( options.client === true ){
+
+		return compiledFunc;
+	} else {
 	
-	return linkedFunc;
+		// Link compiled function to helpers collection, but report original function
+		// body for code generation purposes.
+		linkedFunc = function(model) { return compiledFunc(model, helpers); };
+		linkedFunc.toString = function() { return compiledFunc.toString(); };
+		
+		return linkedFunc;
+	}
+
 }
 
 // runtime-esque
@@ -1357,6 +1366,7 @@ VCP.reportError = function(e, lineno, chr, orig){
 
 	throw e;
 }
+
 	/************** End injected code from build script */	
 	
 	exports["VLexer"] = VLexer;
