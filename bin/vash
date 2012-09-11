@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+
+var  fs = require('fs')
+	,path = require('path')
+	,uglify = require('uglify-js')
+	,cli = require('commander')
+	,vash = require('../build/vash')
+
+function prefix(tplStr, options){
+
+	if( options.targetNamespace ){
+	
+		tplStr = options.targetNamespace
+			+ '["' 
+				+ ( options.propertyName || options.file.replace(/\/|\\/g, options.separator) ) 
+			+ '"]=' + tplStr;
+	}
+
+	return tplStr;
+}
+
+function ugly(tplStr, options){
+
+	var  ast
+	 	,jsp = uglify.parser
+		,pro = uglify.uglify;
+
+	if( options.uglify ){
+		ast = jsp.parse(tplStr); 
+		ast = pro.ast_mangle(ast);
+		ast = pro.ast_squeeze(ast);
+		tplStr = pro.gen_code(ast);
+	}
+
+	return tplStr;
+}
+
+function stdin(options){
+	var buffer = ''
+	process.stdin.resume();
+	process.stdin.setEncoding('utf8');
+
+	process.stdin.on('data', function(chunk){
+		buffer += chunk;
+	})
+
+	process.stdin.on('end', function(){
+		var tpl = vash.compile(buffer, options.vopts);
+		tpl = prefix(tpl.toString(), options);
+		tpl = ugly(tpl, options);
+		process.stdout.write(tpl);
+	})
+}
+
+function file(filepath, options){
+	var contents = fs.readFileSync( filepath, 'utf8' )
+		,tpl = vash.compile(contents, options.vopts)
+		,outpath = path.join( 
+			options.out
+			,path.join(
+				path.dirname(filepath)
+				,path.basename(filepath) + '.js'
+			).replace(/\/|\\/g, options.separator)
+		)	
+
+	tpl = prefix(tpl.toString(), options);
+	tpl = ugly(tpl, options);
+
+	if( options.out ) { 
+		fs.writeFile( outpath, tpl, 'utf8', function(err){ 
+			if(err){ process.stderr.write( err ) }
+		} )
+	} else {
+		process.stdout.write(tpl.toString());
+	}
+}
+
+
+cli
+	.option('-t, --target-namespace [namespace]', 'Assign template to a [namespace]')
+	.option('-p, --property-name [name]', 'Assign template to property named [name]. Defaults to filename.')
+	.option('-f, --file [file]', 'Compile the template in [file]')
+	.option('-j, --json [json]', 'Pass options to the Vash compiler. See docs for valid options.')
+	.option('-o, --out [path]', 'Write template into [path] directory')
+	.option('-u, --uglify', 'Uglify the template, safely')
+	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '$')
+	.parse(process.argv)
+
+//console.log(cli)
+
+if( cli.json ){ 
+	cli.vopts = JSON.parse(cli.json); 
+}
+
+if(cli.file){
+	cli.file = path.normalize( cli.file )
+	// assume file input
+	file( cli.file, cli )
+} else {
+	// assume stdin 
+	stdin( cli );
+}
