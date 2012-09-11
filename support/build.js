@@ -43,6 +43,7 @@ var  fs = require('fs')
 		,all: [
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
+			,'../src/vexpress.js'
 			,'../src/vlexer.js'
 			,'../src/vast.js'
 			,'../src/vparser.js'
@@ -57,6 +58,16 @@ var  fs = require('fs')
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
 		]
+		
+		,browser: [
+			 '../src/vruntime.js'
+			,'../src/vhelpers.js'
+			,'../src/vlexer.js'
+			,'../src/vast.js'
+			,'../src/vparser.js'
+			,'../src/vcompiler.js'
+		]
+
 	}
 
 	// these are applied as defaults if not specified per file
@@ -183,7 +194,8 @@ function build(){
 		,lmodel = { version: buildNum }
 		,concatAll = combine(fileGroups.all)
 		,concatRuntimeReq = combine(fileGroups.runtimereq)
-		,concatRuntimeAll = combine(fileGroups.runtimeall);
+		,concatRuntimeAll = combine(fileGroups.runtimeall)
+		,concatBrowser = combine(fileGroups.browser)
 
 	exp = exp
 		.replace('/*?CODE?*/', concatAll)

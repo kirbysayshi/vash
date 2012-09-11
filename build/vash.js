@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.0-1102
+ * Vash - JavaScript Template Parser, v0.5.1-1109
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -25,7 +25,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.0-1102";
+	exports["version"] = "0.5.1-1109";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -36,7 +36,7 @@
 		,"debugCompiler": false
 
 		,"favorText": false
-		,"client": true
+		,"client": false
 
 		,"saveTextTag": false
 		,"saveAT": false
@@ -199,6 +199,24 @@
 	}
 
 }());
+exports.__express = function(){
+
+	if( typeof window === 'undefined' ){
+		var fs = require('fs')
+	
+		return function(filepath, options, cb){
+			fs.readFile(filepath, 'utf8', function(err, contents){
+				if( err ){ return cb(err); }	
+				var tpl = exports.compile(contents);
+				console.log(tpl.toString());
+				cb(null, tpl(options));	
+			})
+		}
+	}
+	
+}();
+
+
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // The basic tokens, defined as constants
