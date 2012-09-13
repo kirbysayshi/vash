@@ -49,14 +49,7 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 # BUILD
 
-	cd GIT/vash
-
-	# one time
-	touch support/buildnum
-	0 > support/buildnum
-
-	node support/build.js && node test/vash.test.js && node test/vash.test.js min
-	// creates build/vash.js and build/vash.min.js 
+	support/build.js build && node test/vash.test.js && node test/vash.test.js min
 
 # USAGE
 
@@ -167,6 +160,49 @@ The default is `false`, because while the performance implications are negligibl
 ### vash.config.debug[Compiler/Parser] = true/false(default)
 
 Setting either of these to true causes Vash to output extensive debugging information (parse tree, tokens, decompiled template function) to the console, useful mostly for Vash development.
+
+### vash.config.client = true(default)/false
+
+When false, Vash will wrap the compiled function in a closure to maintain an internal reference to its helper functions. When running Vash clientside, this is not necessary, and can offer a minor speed boost. If this is set to true, and there is no `vash.helpers` accessible within the scope of the compiled template executing, then a reference to `vash.helpers` must be passed in as the second argument to the compiled function.
+
+### vash.config.favorText = true/false(default)
+
+When Vash encounters text that directly follows and opening brace of a block, it assumes that unless it encounters an HTML tag, the text is JS code. For example:
+
+	@it.forEach(function(a){
+		var b = a; // vash assumes this line is code
+	})
+
+When `vash.config.favorText` is set to `true`, Vash will instead assume that most things are non-code (markup/text) unless it's very explicit.
+
+	@it.forEach(function(a){
+		var b = a; // vash.config.favorText assumes this line is content 
+	})
+
+This option is __EXPERIMENTAL__, and should be treated as such. It allows Vash to be used in a context like [Markdown](http://daringfireball.net/projects/markdown/syntax), where HTML tags, which typically help Vash tell the difference between code and content, are rare.
+
+# CLI
+
+As of v0.5.1, Vash now has a command-line utility. Install Vash globally:
+
+	npm install -g vash
+
+To access it. Once installed, you can do things like:
+
+	// stdin, stdout
+	echo '<div>@model.name</div>' | vash
+
+	// file in, write to file in directory
+	vash -f mytemplatefile.html -o tpls/
+
+	// pass options to the vash compiler
+	echo '<div>@model.name</div>' | vash -j '{ "modelName": "it", "debug": true }'
+
+	// assign the compiled function to a namespace
+	echo '<div>@model.name</div>' | vash -t JST -p mytpl
+	// outputs: JST['mytpl']=anonymous(model){ ... }
+
+And more!
 
 # Express Support
 
