@@ -319,6 +319,10 @@ VParser.prototype = {
 				}
 				break;
 			
+			case AT_STAR_OPEN:
+				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
+				break;
+
 			case AT_COLON:
 				this.ast = this.ast.beget(MKP);
 				break;
