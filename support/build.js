@@ -43,6 +43,7 @@ var  fs = require('fs')
 		,all: [
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
+			,'../src/vhelpers.layout.js'
 			,'../src/vexpress.js'
 			,'../src/vlexer.js'
 			,'../src/vast.js'

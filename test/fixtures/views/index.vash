@@ -1,0 +1,41 @@
+@html.extends('layout', function(model){
+
+	@html.block('content', function(model){
+
+		<h1 class="name">@model.location.name</h1>
+		@html.include( 'hours', model.location.hours )
+		<p class="menu"><a href="@model.location.menuLink">Menu</a></p>
+		<p class="address">
+			<a class='gmap' href="@model.location.gmapLink">
+				<span class="street">@model.location.street</span><br />
+				<span class="city">@model.location.city</span>,
+				<span class="state">@model.location.state</span>
+				<span class="zip">@model.location.zip</span>
+			</a>
+		</p>
+	})
+
+	@html.prepend('list', function(model){
+		<li>This is first</li>
+	})
+
+	@* 
+		This block will replace the parent. If there were another block in between 
+		here and the root, and it had a callback, this would reign supreme 
+	*@
+	@html.block('list', function(model){
+		<li>This is third</li>	
+	})
+
+	@html.prepend('list', function(model){
+		<li>This is second</li>
+	})
+
+	@html.append('list', function(model){
+		<li>This is second to last</li>
+	})
+
+	@html.append('list', function(model){
+		<li>This is last</li>
+	})
+})

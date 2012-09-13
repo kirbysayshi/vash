@@ -1,0 +1,21 @@
+<ol class="hours">
+	@model.forEach(function(ts){
+		<li>
+			<span class="day">@ts.day</span>
+			<span class="timeStart">@ts.start</span>
+			<span class="timeEnd">@ts.end</span>
+		</li>
+	})
+</ol>
+
+@html.prepend('footer', function(model){
+	<p>This is a footer from deep within</p>
+})
+
+@html.block('footer', function(){
+	<p>This is the footer, replaced from deep within.</p>
+})
+
+@html.append('footer', function(model){
+	<p>This is a footer from deep within last</p>
+})
