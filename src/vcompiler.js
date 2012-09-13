@@ -130,8 +130,9 @@ VCP.assemble = function(options, helpers){
 
 	// suprisingly: http://jsperf.com/array-index-vs-push
 	buffer.push( options.helpersName + ' = ' + options.helpersName + ' || vash.helpers; \n');
-	buffer.push("var __vo = []; \n");
-	buffer.push( options.helpersName + '.__vo = __vo; \n');
+	buffer.push( options.helpersName + '.__vo = ' + options.helpersName + '.__vo || []; \n');
+	buffer.push('var __vo = ' + options.helpersName + '.__vo; \n');
+	buffer.push( options.helpersName + '.model = ' + options.modelName + '; \n');
 
 	if(options.debug){
 		buffer.push(
