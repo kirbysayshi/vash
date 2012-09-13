@@ -28,7 +28,7 @@
 		,"debugCompiler": false
 
 		,"favorText": false
-		,"client": true
+		,"client": false
 
 		,"saveTextTag": false
 		,"saveAT": false
