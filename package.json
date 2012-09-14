@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax template parser/generator, for JS",
-	"version": "0.5.2-1182",
+	"version": "0.5.2-1183",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"bin": {
 		"vash": "./bin/vash"
@@ -16,7 +16,8 @@
 	"main": "build/vash",
 	"files": [
 		"build",
-		"test/vash.test.js"
+		"test/vash.test.js",
+		"bin"
 	],
 	"engines": {
 		"node": ">= 0.6"
