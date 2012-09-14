@@ -51,6 +51,18 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 	support/build.js build && node test/vash.test.js && node test/vash.test.js min
 
+Vash has a few builds for various purposes, found in the [build](vash/tree/master/build) folder. There are three primary use cases for Vash:
+
+1. Templates are compiled at runtime in the browser.
+2. Templates are compiled at build time server-side, and then compressed template functions are served to the browser.
+3. Templates are compiled and rendered in node, server-side, using something like [Express](http://expressjs.com/).
+
+Given these use cases, there are a few different builds optimized:
+
+* vash.js / vash.min.js: The full version of Vash, including all runtime helpers. Use this for scenario 1 and 3.
+* vash-runtime-all.js / vash-runtime-all.min: Vash's runtime, which currently includes HTML escaping and layout/view helpers. Use this for scenario 2.
+* vash-runtime.js / vash-runtime.min.js: the minimum amount of code required for a precompiled template to be able to execute client-side (currently HTML escaping). Use this for scenario 2, if you're trying to save code size and only need pure template-rendering functionality.
+
 # USAGE
 
 ### vash.compile(templateString, [options])
@@ -326,7 +338,6 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 # TODO
 
 * refactor tests to take advantage of Vows' awesomeness
-* add possiblity for useWith configuration from within template? special keyword?
 
 # License
 
