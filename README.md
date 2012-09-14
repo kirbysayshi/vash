@@ -136,7 +136,7 @@ Again, rendering is the same regardless:
 	
 ### vash.config.helpersName = "html"
 
-Determines the name of the internal variable through which registered HTML helper methods can be reached. Example:
+Determines the name of the internal variable through which registered helper methods can be reached. Example:
 
 	<li>@html.raw(model.description)</li>
 	
@@ -206,21 +206,63 @@ And more!
 
 # Express Support
 
-	var 
-		 vash = require('vash')
-		,express = require('express')
-		,app = express.createServer();
+A basic example can be found in [test/vash.express.js](vash/tree/master/test/vash.express.js).
 
-	app.configure(function(){	
-		app.use(app.router);
-		app.use(express.static(__dirname + '/fixtures/public'));
-		app.use(express.bodyParser());
-		app.set('views', __dirname + '/views');
-		app.set('view engine', 'vash')
-		app.register('vash', vash);
+# Vash as a View Engine
+
+As of v0.5.1, Vash now offers runtime view engine support in the style of Jade's `block/append/prepend` and `extends/include`. This means that you can do:
+
+	// in index.vash
+	@html.extends('layout', function(model){
+
+		@html.block('content', function(model){
+
+			<h1 class="name">@model.location.name</h1>
+			@html.include( 'hours', model.location.hours )
+			<p class="menu"><a href="@model.location.menuLink">Menu</a></p>
+			<p class="address">
+				<a class='gmap' href="@model.location.gmapLink">
+					<span class="street">@model.location.street</span><br />
+					<span class="city">@model.location.city</span>,
+					<span class="state">@model.location.state</span>
+					<span class="zip">@model.location.zip</span>
+				</a>
+			</p>
+		})
+
+		@html.append('footer', function(){
+			<p>Your Copyright Goes Here</p>
+		})
 	})
 
-Full example coming soon.
+	// layout.vash
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8">
+			<title>@model.title</title>
+			<link rel="stylesheet" href="site.css" type="text/css" media="screen" charset="utf-8">
+		</head>
+		<body>		
+			<section>
+				@html.block('content')
+			</section>	
+
+			<footer>
+				@html.block('footer')	
+			</footer>
+		</body>
+	</html>
+
+This has been relatively untested in the browser. While it _should_ in theory work (assuming all templates are available synchronously), it has not been thoroughly tested.
+
+There are a few limitations currently. This all occurs at runtime, which is why callbacks are used instead of straight blocks. In the future this will hopefully happen at compile time, but that adds a lot of extraneous functionality deep into the core of Vash (things like loading files from the network/file system). Because of the scoping involved, all callbacks must have `model` defined as the first parameter. In the above examples, `model` is used because that is Vash's default. If `vash.config.modelName` were set to `it`, a block would be defined using `it`:
+
+	@html.block('content', function(it){
+		<h1 class="name">@it.location.name</h1>
+	})
+
+The "root-most" `block` definition must not have any content attached to it (e.g. a callback), as shown in the `layout.vash` file above. This is to allow Vash to know when a block should be overriden vs output. Again, this is happening at runtime; there is no way for Vash to currently know what the "root" template is or when all templates have been included. Therefore, if Vash encounters a previously defined block that has no content, it knows to finally output.
 
 # Errata
 
@@ -256,13 +298,11 @@ Vash cannot do this:
 
 	@someHelperMethod('a parameter', @<a href="@url">@text</a>)
 
-
 # Current Test Results
 
-	node support/build.js && node test/vash.test.js
-	···························································································
-	✓ OK » 91 honored (0.087s) 
-
+	support/build.js build && node test/vash.test.js
+	······································································································ 
+	✓ OK » 102 honored (0.182s) 
 
 # Why Vash?
 
