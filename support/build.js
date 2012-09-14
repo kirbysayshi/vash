@@ -58,16 +58,18 @@ var  fs = require('fs')
 		,runtimeall: [
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
+			,'../src/vhelpers.layout.js'
 		]
 		
-		,browser: [
+		/*,browser: [
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
+			,'../src/vhelpers.layout.js'
 			,'../src/vlexer.js'
 			,'../src/vast.js'
 			,'../src/vparser.js'
 			,'../src/vcompiler.js'
-		]
+		]*/
 
 	}
 
@@ -196,7 +198,7 @@ function build(){
 		,concatAll = combine(fileGroups.all)
 		,concatRuntimeReq = combine(fileGroups.runtimereq)
 		,concatRuntimeAll = combine(fileGroups.runtimeall)
-		,concatBrowser = combine(fileGroups.browser)
+		//,concatBrowser = combine(fileGroups.browser)
 
 	exp = exp
 		.replace('/*?CODE?*/', concatAll)
