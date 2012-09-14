@@ -714,26 +714,55 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'"server-side" comments': {
-		topic: function(){
-			var str = '@* \n'
-				+ 'This is a server side \n'
-				+ 'multiline comment \n'
-				+ '*@ and this content should be';
-			return vash.compile(str);
+
+		'multiline': {
+			topic: function(){
+				var str = '@* \n'
+					+ 'This is a server side \n'
+					+ 'multiline comment \n'
+					+ '*@ and this content should be';
+				return vash.compile(str);
+			}
+			,'output nothing': function(topic){
+				assert.equal( topic(), ' and this content should be' )
+			}
 		}
-		,'output nothing': function(topic){
-			assert.equal( topic(), ' and this content should be' )
+		,'singleline': {
+			topic: function(){
+				var str = '@*'
+					+ 'This is a server side '
+					+ 'comment'
+					+ '*@ and this content should be';
+				return vash.compile(str);
+			}
+			,'output nothing': function(topic){
+				assert.equal( topic(), ' and this content should be' )
+			}
 		}
-	}
-	,'unclosed "server-side" comment': {
-		topic: function(){
-			var str = '@* \n'
-				+ 'This is a server side \n'
-				+ 'multiline comment \n';
-			return str;
+		,'within a block': {
+			topic: function(){
+				var str = '@if(true){ @*'
+					+ 'This is a server side '
+					+ 'comment'
+					+ '*@ } and this content should be';
+				return str;
+			}
+			,'output nothing': function(topic){
+				topic = tryCompile(topic)
+				assert.equal( topic(), ' and this content should be' )
+			}
+		
 		}
-		,'throws exception': function(topic){
-			assert.throws( function(){ vash.compile(topic) }, Error );
+		,'unclosed': {
+			topic: function(){
+				var str = '@* \n'
+					+ 'This is a server side \n'
+					+ 'multiline comment \n';
+				return str;
+			}
+			,'throws exception': function(topic){
+				assert.throws( function(){ vash.compile(topic) }, Error );
+			}
 		}
 	}
 	,'mixing expressions and text': {
