@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1232
+ * Vash - JavaScript Template Parser, v0.5.2-1235
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -196,8 +196,6 @@
 
 	///////////////////////////////////////////////////////////////////////////
 	// LAYOUT HELPERS 
-	//
-	// These assume a nodejs environment, for now
 	
 	// semi hacky guard to prevent non-nodejs erroring
 	if( typeof window === 'undefined' ){
@@ -214,7 +212,7 @@
 	helpers.appends = [];
 	helpers.prepends = [];
 
-	exports.loadFile = function(filepath, options, cb){
+	vash.loadFile = function(filepath, options, cb){
 
 		// options are passed in via Express
 		// { 
@@ -230,11 +228,14 @@
 		//   cache: false
 		// }
 	
-		var browser = options.client || helpers.config.browser
+		// extend works from right to left, using first arg as target
+		options = vQuery.extend( {}, vash.config, options || {} );
+
+		var browser = helpers.config.browser
 			,tpl
 
 		// this is pretty hacky, probably won't work in browser
-		if( options.settings.views && options.settings['view engine'] ){
+		if( !browser && options.settings && options.settings.views && options.settings['view engine'] ){
 			filepath = filepath.indexOf(options.settings.views) > -1
 				? filepath
 				: options.settings.views 
@@ -242,18 +243,17 @@
 					+ '.' + options.settings['view engine'];
 		} 		
 		
-		// if browser === true, assume tpl is in tplcache
-		// this will fail if tpl does not exist
+		// if browser, tpl must exist in tpl cache
 		tpl = options.cache || browser
 			? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )
 			: vash.compile( fs.readFileSync(filepath, 'utf8') )
 
-		cb(null, tpl);
+		cb && cb(null, tpl);
 	}
 	
-	exports.renderFile = function(filepath, options, cb){
+	vash.renderFile = function(filepath, options, cb){
 
-		exports.loadFile(filepath, options, function(err, tpl){
+		vash.loadFile(filepath, options, function(err, tpl){
 			cb(err, tpl(options));
 		})
 	}
@@ -263,7 +263,7 @@
 			,origModel = this.model;
 
 		// this is a synchronous callback
-		exports.loadFile(path, this.model, function(err, tpl){
+		vash.loadFile(path, this.model, function(err, tpl){
 			ctn(self.model); // the child content
 			tpl(self.model); // the tpl being extended
 		})
@@ -276,7 +276,7 @@
 		var self = this, origModel = this.model;
 
 		// this is a synchronous callback
-		exports.loadFile(name, this.model, function(err, tpl){
+		vash.loadFile(name, this.model, function(err, tpl){
 			tpl(model || self.model);
 		})
 
