@@ -1,12 +1,13 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1183
+ * Vash - JavaScript Template Parser, v0.5.2-1232
  *
  * https://github.com/kirbysayshi/vash
  *
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
- /*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+ 
+/*jshint strict:false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 ;(function(vash){
 
@@ -25,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.2-1183";
+	exports["version"] = "0.5.2-1232";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -154,7 +155,35 @@
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////////////////////////
+	// ERROR REPORTING 
+
+	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
+	helpers.reportError = function(e, lineno, chr, orig){
+
+		var lines = orig.split('!LB!')
+			,contextSize = 3
+			,start = Math.max(0, lineno - contextSize)
+			,end = Math.min(lines.length, lineno + contextSize);
+
+		var contextStr = lines.slice(start, end).map(function(line, i, all){
+			var curr = i + start + 1;
+
+			return (curr === lineno ? '  > ' : '    ')
+				+ curr
+				+ ' | '
+				+ line;
+		}).join('\n');
+
+		e.message = 'Problem while rendering template at line '
+			+ lineno + ', character ' + chr
+			+ '.\nOriginal message: ' + e.message + '.'
+			+ '\nContext: \n\n' + contextStr + '\n\n';
+
+		throw e;
+	}
 }());
+
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
@@ -909,9 +938,9 @@ VParser.prototype = {
 
 			if( next.type === start ){
 
-				if( (prev && prev.type !== escape && start !== end) || !prev ){
+				if( (prev && prev.type !== startEscape && start !== end) || !prev ){
 					nstart++;
-				} else if( start === end ) {
+				} else if( start === end && prev.type !== startEscape ) {
 					nend++;
 				}
 				
@@ -1317,8 +1346,8 @@ VCP.assemble = function(options, helpers){
 	var buffer = []
 		,escapeStack = []
 
-		,reQuote = /["']/gi
-		,reEscapedQuote = /(\\?)(["'])/gi
+		,reQuote = /(["'])/gi
+		,reEscapedQuote = /\\+(["'])/gi
 		,reLineBreak = /[\n\r]/gi
 		,joined
 		,compiledFunc
@@ -1340,14 +1369,14 @@ VCP.assemble = function(options, helpers){
 		insertDebugVars(tok);
 		buffer.push(
 			"MKP('" + tok.val
-				.replace(reQuote, '\"')
+				.replace(reQuote, '\\$1')
 				.replace(reLineBreak, '\\n')
 			+ "')MKP" );
 	}
 
 	function visitBlockTok(tok, parentNode, index){
 		
-		buffer.push( tok.val.replace(reQuote, '\"') );
+		buffer.push( tok.val /*.replace(reQuote, '\"')*/ );
 	}
 
 	function visitExpressionTok(tok, parentNode, index, isHomogenous){
@@ -1376,7 +1405,7 @@ VCP.assemble = function(options, helpers){
 			end += "); \n";
 		}
 
-		buffer.push( start + tok.val.replace(reQuote, '"').replace(reEscapedQuote, '"') + end );		
+		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );		
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
 			insertDebugVars(tok);
@@ -1451,12 +1480,14 @@ VCP.assemble = function(options, helpers){
 
 	if(options.debug){
 		buffer.unshift( 'try { \n' );
-		buffer.push( '} catch(e){ ('
-			,VCP.reportError.toString()
-			,')(e, __vl, __vc, '
+		buffer.push( '} catch(e){ '
+			,options.helpersName + '.reportError'
+			,'(e, __vl, __vc, '
 			,'"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
-				.replace(reEscapedQuote, '\\$2') + '"'
+				.replace(reQuote, '\\$1')
+				.replace(reEscapedQuote, '\\$1')
+			+ '"'
 			,') } \n' );
 	}
 
@@ -1500,34 +1531,6 @@ VCP.assemble = function(options, helpers){
 		
 		return linkedFunc;
 	}
-
-}
-
-// runtime-esque
-
-// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-VCP.reportError = function(e, lineno, chr, orig){
-
-	var lines = orig.split('!LB!')
-		,contextSize = 3
-		,start = Math.max(0, lineno - contextSize)
-		,end = Math.min(lines.length, lineno + contextSize);
-
-	var contextStr = lines.slice(start, end).map(function(line, i, all){
-		var curr = i + start + 1;
-
-		return (curr === lineno ? '  > ' : '    ')
-			+ curr
-			+ ' | '
-			+ line;
-	}).join('\n');
-
-	e.message = 'Problem while rendering template at line '
-		+ lineno + ', character ' + chr
-		+ '.\nOriginal message: ' + e.message + '.'
-		+ '\nContext: \n\n' + contextStr + '\n\n';
-
-	throw e;
 }
 
 	/************** End injected code from build script */	

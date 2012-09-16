@@ -1,12 +1,13 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1183
+ * Vash - JavaScript Template Parser, v0.5.2-1232
  *
  * https://github.com/kirbysayshi/vash
  *
  * Copyright (c) 2012 Andrew Petersen
  * MIT License (LICENSE)
  */
- /*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
+ 
+/*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
 	///////////////////////////////////////////////////////////////////////////
@@ -117,7 +118,35 @@
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////////////////////////
+	// ERROR REPORTING 
+
+	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
+	helpers.reportError = function(e, lineno, chr, orig){
+
+		var lines = orig.split('!LB!')
+			,contextSize = 3
+			,start = Math.max(0, lineno - contextSize)
+			,end = Math.min(lines.length, lineno + contextSize);
+
+		var contextStr = lines.slice(start, end).map(function(line, i, all){
+			var curr = i + start + 1;
+
+			return (curr === lineno ? '  > ' : '    ')
+				+ curr
+				+ ' | '
+				+ line;
+		}).join('\n');
+
+		e.message = 'Problem while rendering template at line '
+			+ lineno + ', character ' + chr
+			+ '.\nOriginal message: ' + e.message + '.'
+			+ '\nContext: \n\n' + contextStr + '\n\n';
+
+		throw e;
+	}
 }());
+
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
