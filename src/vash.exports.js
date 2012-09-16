@@ -28,7 +28,6 @@
 		,"debugCompiler": false
 
 		,"favorText": false
-		,"client": false
 
 		,"saveTextTag": false
 		,"saveAT": false

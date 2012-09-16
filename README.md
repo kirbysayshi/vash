@@ -173,10 +173,6 @@ The default is `false`, because while the performance implications are negligibl
 
 Setting either of these to true causes Vash to output extensive debugging information (parse tree, tokens, decompiled template function) to the console, useful mostly for Vash development.
 
-### vash.config.client = true(default)/false
-
-When false, Vash will wrap the compiled function in a closure to maintain an internal reference to its helper functions. When running Vash clientside, this is not necessary, and can offer a minor speed boost. If this is set to true, and there is no `vash.helpers` accessible within the scope of the compiled template executing, then a reference to `vash.helpers` must be passed in as the second argument to the compiled function.
-
 ### vash.config.favorText = true/false(default)
 
 When Vash encounters text that directly follows and opening brace of a block, it assumes that unless it encounters an HTML tag, the text is JS code. For example:

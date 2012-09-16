@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1235
+ * Vash - JavaScript Template Parser, v0.5.2-1236
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.2-1235";
+	exports["version"] = "0.5.2-1236";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -37,7 +37,6 @@
 		,"debugCompiler": false
 
 		,"favorText": false
-		,"client": false
 
 		,"saveTextTag": false
 		,"saveAT": false
@@ -1519,18 +1518,12 @@ VCP.assemble = function(options, helpers){
 		throw e;
 	}	
 
-	if( options.client === true ){
-
-		return compiledFunc;
-	} else {
+	// Link compiled function to helpers collection, but report original function
+	// body for code generation purposes.
+	linkedFunc = function(model) { return compiledFunc(model, helpers); };
+	linkedFunc.toString = function() { return compiledFunc.toString(); };
 	
-		// Link compiled function to helpers collection, but report original function
-		// body for code generation purposes.
-		linkedFunc = function(model) { return compiledFunc(model, helpers); };
-		linkedFunc.toString = function() { return compiledFunc.toString(); };
-		
-		return linkedFunc;
-	}
+	return linkedFunc;
 }
 
 	/************** End injected code from build script */	
