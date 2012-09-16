@@ -339,67 +339,88 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[]"></a>');
 		}
 	}
-	,'empty anonymous block': {
-		topic: function(){
-			var str = "@{ }";
-			return vash.compile(str);
+	,'anonymous blocks': {
+	
+		'empty,': {
+			topic: function(){
+				var str = "@{ }";
+				return vash.compile(str);
+			}
+			,'outputs nothing': function(topic){
+				assert.equal(topic(), '');
+			}
 		}
-		,'outputs nothing': function(topic){
-			assert.equal(topic(), '');
+		,'empty, with same-line markup': {
+			topic: function(){
+				var str = "@{ <li>list item</li> }";
+				return vash.compile(str);
+			}
+			,'outputs markup': function(topic){
+				assert.equal(topic(), '<li>list item</li>');
+			}
 		}
-	}
-	,'empty anonymous block with same-line markup': {
-		topic: function(){
-			var str = "@{ <li>list item</li> }";
-			return vash.compile(str);
+		,'and markup with quotes': {
+			topic: function(){
+				var str = "@{ <li class=\"1\">list item</li> \n }";
+				return vash.compile(str);
+			}
+			,'outputs markup': function(topic){
+				assert.equal(topic(), '<li class="1">list item</li>');
+			}
 		}
-		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li>list item</li>');
+		,'and nested markup': {
+			topic: function(){
+				var str = "@{ <li class=\"1\">list item</li> @{ <li class=\"2\">list item</li> } }";
+				return vash.compile(str);
+			}
+			,'outputs markup': function(topic){
+				assert.equal(topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>');
+			}
 		}
-	}
-	,'anonymous block': {
-		topic: function(){
-			var str = "@{ <li class=\"1\">list item</li> \n }";
-			return vash.compile(str);
+		,'and nested for loop': {
+			topic: function(){
+				var str = "@{ <li class=\"1\">list item</li> @for(var i = 0; i < 1; i++){ <li class=\"2\">list item</li> } }";
+				return vash.compile(str);
+			}
+			,'outputs markup': function(topic){
+				assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
+			}
 		}
-		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li class="1">list item</li>');
+		,'and named function defined': {
+			topic: function(){
+				var str = "@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li> } }";
+				return vash.compile(str);
+			}
+			,'outputs non-function defined markup': function(topic){
+				assert.equal( topic(), '<li class=\"1\">list item</li>' );
+			}
 		}
-	}
-	,'nested markup and anonymous block': {
-		topic: function(){
-			var str = "@{ <li class=\"1\">list item</li> @{ <li class=\"2\">list item</li> \n } \n }";
-			return vash.compile(str);
+		,'and named function defined and called': {
+			topic: function(){
+				var str = "@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li> \n } testFunc(); \n }";
+				return vash.compile(str);
+			}
+			,'outputs non-function defined markup': function(topic){
+				assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
+			}
 		}
-		,'outputs markup': function(topic){
-			assert.equal(topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>');
+		,'and while loop with manual increment': {
+			topic: function(){
+				var str = "@{ var countNum = 0; while(countNum < 1){ \n countNum += 1; \n <p>Line #@countNum</p> \n } }";
+				return vash.compile(str);
+			}
+			,'outputs 1 line': function(topic){
+				assert.equal( topic(), '<p>Line #1</p>');
+			}
 		}
-	}
-	,'anonymous block and nested for loop': {
-		topic: function(){
-			var str = "@{ <li class=\"1\">list item</li> @for(var i = 0; i < 1; i++){ <li class=\"2\">list item</li> \n } \n }";
-			return vash.compile(str);
-		}
-		,'outputs markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
-		}
-	}
-	,'anonymous block and named function defined': {
-		topic: function(){
-			var str = "@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li> \n } \n }";
-			return vash.compile(str);
-		}
-		,'outputs non-function defined markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li>' );
-		}
-	}
-	,'anonymous block and named function defined and called': {
-		topic: function(){
-			var str = "@{ <li class=\"1\">list item</li> @function testFunc(param1, param2){ <li class=\"2\">list item</li> \n } testFunc(); \n }";
-			return vash.compile(str);
-		}
-		,'outputs non-function defined markup': function(topic){
-			assert.equal( topic(), '<li class=\"1\">list item</li><li class=\"2\">list item</li>' );
+		,'and while loop with manual increment post': {
+			topic: function(){
+				var str = "@{ var countNum = 0; while(countNum < 2){ \n countNum += 1; \n <p>Line #@countNum</p> \n countNum += 1; \n } }";
+				return vash.compile(str);
+			}
+			,'outputs 1 line': function(topic){
+				assert.equal( topic(), '<p>Line #1</p>');
+			}
 		}
 	}
 	,'immediate function invocation within expression': {
@@ -426,24 +447,6 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'returns properly': function(topic){
 			assert.equal( topic(["a", "b", "c"]), '<a><b>__a__</b><b>__b__</b><b>__c__</b></a>' )
-		}
-	}
-	,'anonymous block and while loop with manual increment': {
-		topic: function(){
-			var str = "@{ var countNum = 0; while(countNum < 1){ \n countNum += 1; \n <p>Line #@countNum</p> \n } }";
-			return vash.compile(str);
-		}
-		,'outputs 1 line': function(topic){
-			assert.equal( topic(), '<p>Line #1</p>');
-		}
-	}
-	,'anonymous block and while loop with manual increment post': {
-		topic: function(){
-			var str = "@{ var countNum = 0; while(countNum < 2){ \n countNum += 1; \n <p>Line #@countNum</p> \n countNum += 1; \n } }";
-			return vash.compile(str);
-		}
-		,'outputs 1 line': function(topic){
-			assert.equal( topic(), '<p>Line #1</p>');
 		}
 	}
 	,'mixing code and plain text, <text> escape': {
