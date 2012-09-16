@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>vash</title>
+		
+	</head>
+	<body id="" onload="">
+		
+		<script src="../src/vlexer.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vparser.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vast.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vcompiler.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vash.exports.js" type="text/javascript" charset="utf-8"></script>
+
+		<script src="../src/vruntime.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vhelpers.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vhelpers.layout.js" type="text/javascript" charset="utf-8"></script>
+		<!--<script src="../build/vash.closure.min.js" type="text/javascript" charset="utf-8"></script>-->
+
+		<div class="shop-container"></div>
+		
+		<script id="tpl-index" type="text/vash" charset="utf-8">
+			@html.extends('layout', function(model){
+
+				@html.block('content', function(model){
+
+					<h1 class="name">@model.location.name</h1>
+					@html.include( 'hours', model.location.hours )
+					<p class="menu"><a href="@model.location.menuLink">Menu</a></p>
+					<p class="address">
+						<a class='gmap' href="@model.location.gmapLink">
+							<span class="street">@model.location.street</span><br />
+							<span class="city">@model.location.city</span>,
+							<span class="state">@model.location.state</span>
+							<span class="zip">@model.location.zip</span>
+						</a>
+					</p>
+				})
+
+				@html.prepend('list', function(model){
+					<li>This is first</li>
+				})
+
+				@* 
+					This block will replace the parent. If there were another block in between 
+					here and the root, and it had a callback, this would reign supreme 
+				*@
+				@html.block('list', function(model){
+					<li>This is third</li>	
+				})
+
+				@html.prepend('list', function(model){
+					<li>This is second</li>
+				})
+
+				@html.append('list', function(model){
+					<li>This is second to last</li>
+				})
+
+				@html.append('list', function(model){
+					<li>This is last</li>
+				})
+			})
+		</script>
+
+		<script id="tpl-hours" type="text/vash" charset="utf-8">
+			<ol class="hours">
+				@model.forEach(function(ts){
+					<li>
+						<span class="day">@ts.day</span>
+						<span class="timeStart">@ts.start</span>
+						<span class="timeEnd">@ts.end</span>
+					</li>
+				})
+			</ol>
+
+			@html.prepend('footer', function(model){
+				<p>This is a footer from deep within</p>
+			})
+
+			@html.block('footer', function(){
+				<p>This is the footer, replaced from deep within.</p>
+			})
+
+			@html.append('footer', function(model){
+				<p>This is a footer from deep within last</p>
+			})
+		</script>
+
+		<script id="tpl-layout" type="text/vash" charset="utf-8">
+			<section>
+				@html.block('content')
+
+				<ul>
+					@html.block('list')	
+				</ul>
+			</section>	
+
+			<footer>
+				@html.block('footer')	
+			</footer>
+		</script>
+
+		<script type="text/javascript" charset="utf-8">
+
+			// tell vash layouts we're in a browser
+			vash.helpers.config.browser = true;
+
+			// this step is only necessary if your templates are not precompiled
+			// avoid this by using bin/vash
+			var readyTpl = function(selector, name){
+				var content = document.querySelectorAll(selector)[0].innerHTML;
+				vash.helpers.tplcache[name] = vash.compile(content);
+			}
+
+			// again, avoid having to "prime" your templates by precompiling.
+			// View lookups occur based on file path, not selector, which is
+			// why we have to specify the key of the template as the second parameter.
+			// This key is the same used in block/append/prepend/include calls.
+			readyTpl('#tpl-index', 'index');
+			readyTpl('#tpl-layout', 'layout');
+			readyTpl('#tpl-hours', 'hours');
+
+				
+			// our model for this example is relatively complex
+			var m = {
+				location: {
+					name: 'The House Next to the Chinese Restaurant'
+					,hours: [
+						{ day: 'M', start: '8:00AM', end: '11:00PM' }
+						,{ day: 'T', start: '8:00AM', end: '11:00PM' }
+						,{ day: 'W', start: '8:00AM', end: '11:00PM' }
+						,{ day: 'TR', start: '8:00AM', end: '11:00PM' }
+						,{ day: 'F-S', start: '8:00AM', end: '1:00AM' }
+						,{ day: 'SU', start: '11:00AM', end: '7:00PM' }
+					]
+					,street: '235 Mystreet Ave'
+					,city: 'Brooklyn'
+					,state: 'NY'
+					,zip: '11222'
+					,gmapLink: 'http://maps.google.com'
+					,menuLink: 'http://google.com'
+				}
+			}
+
+			// we're manually grabbing the template out of the cache by name. 
+			document.querySelectorAll('.shop-container')[0].innerHTML = vash.helpers.tplcache['index'](m);
+
+		</script>
+	</body>
+</html>
