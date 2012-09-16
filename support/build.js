@@ -11,12 +11,12 @@ var  fs = require('fs')
 	,ENC = 'utf8'
 
 	// DOGFOOD!
-	,vash = require('../build/vash')
-	,vashOpts = {
-		 favorText: true
-		,modelName: 'it'
-		,client: false
-	}
+	//,vash = require('../build/vash')
+	//,vashOpts = {
+	//	 favorText: true
+	//	,modelName: 'it'
+	//	,client: false
+	//}
 
 	,pkg = JSON.parse( fs.readFileSync(__dirname + '/../package.json', ENC) )
 	,buildNum = semver.inc( pkg.version, 'build' )
@@ -168,14 +168,30 @@ function reportLint(filePath, results, data){
     }
 }
 
+function simpleTpl(str, opts){
+
+	return function(model){
+		for(var i in model){
+			if(Object.prototype.hasOwnProperty.call(model, i)){
+				var re = new RegExp( '{{\\s*' + i + '\\s*}}', 'g' );
+				//console.log(re.source);
+				str = str.replace( re , model[i] )
+			}
+		}
+
+		return str;
+	}
+}
+
 function loadTemplates(list){
 
 	// compile templates, insert into existing list of paths
 	list.reduce(function(lib, path){
-		lib[ path.split('/').pop() ] = vash.compile( 
-			 fs.readFileSync( __dirname + '/' + path, ENC)
-			,vashOpts
-		);
+		//lib[ path.split('/').pop() ] = vash.compile( 
+		//	 fs.readFileSync( __dirname + '/' + path, ENC)
+		//	,vashOpts
+		//);
+		lib[ path.split('/').pop() ] = simpleTpl( fs.readFileSync( __dirname + '/' + path, ENC ) );
 		return lib;
 	}, list);
 }
@@ -291,26 +307,3 @@ cli
 cli.parse(process.argv);
 
 if (process.argv.length < 3) console.log( cli.helpInformation() );
-
-/*request.post({ 
-	url: 'http://closure-compiler.appspot.com/compile'
-	,method: 'POST'
-	,form: {
-		compilation_level: 'ADVANCED_OPTIMIZATIONS'
-		,output_format: 'text'
-		,output_info: 'compiled_code'
-		,js_code: exp
-		,js_externs: 'function define(){}function module(){}function exports(){}'
-		,formatting: 'pretty_print'
-	}
-}, function(err, resp, body){
-	if(!err){
-		fs.writeFileSync(__dirname + '/../build/vash.closure.min.js', body, 'utf8');		
-		console.log('finished build #' + buildNum);
-	} else {
-		console.log('finished build #' + buildNum + ', but was unable to minify: ' + err);
-	}
-
-	process.exit();
-})*/
-
