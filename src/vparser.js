@@ -111,9 +111,9 @@ VParser.prototype = {
 
 			if( next.type === start ){
 
-				if( (prev && prev.type !== escape && start !== end) || !prev ){
+				if( (prev && prev.type !== startEscape && start !== end) || !prev ){
 					nstart++;
-				} else if( start === end ) {
+				} else if( start === end && prev.type !== startEscape ) {
 					nend++;
 				}
 				

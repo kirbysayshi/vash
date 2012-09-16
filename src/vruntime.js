@@ -109,4 +109,31 @@
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
+	///////////////////////////////////////////////////////////////////////////
+	// ERROR REPORTING 
+
+	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
+	helpers.reportError = function(e, lineno, chr, orig){
+
+		var lines = orig.split('!LB!')
+			,contextSize = 3
+			,start = Math.max(0, lineno - contextSize)
+			,end = Math.min(lines.length, lineno + contextSize);
+
+		var contextStr = lines.slice(start, end).map(function(line, i, all){
+			var curr = i + start + 1;
+
+			return (curr === lineno ? '  > ' : '    ')
+				+ curr
+				+ ' | '
+				+ line;
+		}).join('\n');
+
+		e.message = 'Problem while rendering template at line '
+			+ lineno + ', character ' + chr
+			+ '.\nOriginal message: ' + e.message + '.'
+			+ '\nContext: \n\n' + contextStr + '\n\n';
+
+		throw e;
+	}
 }());

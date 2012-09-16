@@ -9,6 +9,7 @@ vash.config.debug = true;
 vash.config.client = false;
 
 var tryCompile = function(str){
+	vash.compile(str); // because we want to see the stupid error
 	assert.doesNotThrow( function(){ vash.compile(str) }, Error );
 
 	try {
@@ -630,8 +631,8 @@ vows.describe('vash templating library').addBatch({
 		,'is named properly': function(topic){
 			assert.equal( vash.compile(topic)( { header: 'a', header2: 'b' } ),  
 				'<div>'
-				+ '	<h1 class="header">a</h1>'
-				+ '	<h2 class="header2">b</h2>'
+				+ '	<h1 class=\'header\'>a</h1>'
+				+ '	<h2 class=\'header2\'>b</h2>'
 				+ '</div>' );
 		}
 	}
@@ -1095,9 +1096,138 @@ vows.describe('vash templating library').addBatch({
 					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
-
 	}
 
+	,"markup quotation marks:": {
+
+		"single quotes come out": {
+			topic: function(){
+				return "<text>It's followed by primary content.</text>"
+			}
+			,"as single quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), "It's followed by primary content.")	
+			}
+		}
+	
+		,"double quotes come out": {
+			topic: function(){
+				return '<text>It is "followed" by primary content.</text>'
+			}
+			,"as double quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), 'It is "followed" by primary content.')	
+			}
+		}
+
+		,"escaped single quotes come out": {
+			topic: function(){
+				return '<text>It\'s followed by primary content.</text>'
+			}
+			,"as single quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), "It's followed by primary content.")	
+			}
+		}
+
+		,"escaped double quotes come out": {
+			topic: function(){
+				return "<text>It is \"followed\" by primary content.</text>"
+			}
+			,"as double quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), 'It is "followed" by primary content.')	
+			}
+		}
+	}
+
+	,"block quotation marks:": {
+
+		"single quotes come out": {
+			topic: function(){
+				return "@{ var a = \"It's followed by primary content.\"; } @html.raw(a)"
+			}
+			,"as single quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), " It's followed by primary content.")	
+			}
+		}
+	
+		,"double quotes come out": {
+			topic: function(){
+				return '@{ var a = \'It is "followed" by primary content.\'; } @html.raw(a)'
+			}
+			,"as double quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), ' It is "followed" by primary content.')	
+			}
+		}
+
+		,"escaped single quotes come out": {
+			topic: function(){
+				return '@{ var a = "It\'s followed by primary content."; } @html.raw(a)'
+			}
+			,"as single quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), " It's followed by primary content.")	
+			}
+		}
+
+		,"escaped double quotes come out": {
+			topic: function(){
+				return '@{ var a = \'It is \"followed\" by primary content.\'; } @html.raw(a)'
+			}
+			,"as double quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), ' It is "followed" by primary content.')	
+			}
+		}
+	}
+
+	,"expression quotation marks:": {
+
+		"single quotes come out": {
+			topic: function(){
+				return "@html.raw(\"It's followed by primary content.\")"
+			}
+			,"as single quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), "It's followed by primary content.")	
+			}
+		}
+	
+		,"double quotes come out": {
+			topic: function(){
+				return '@html.raw(\'It is "followed" by primary content.\')'
+			}
+			,"as double quotes": function(topic){
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), 'It is "followed" by primary content.')	
+			}
+		}
+
+		,"escaped single quotes come out": {
+			topic: function(){
+				return "@html.raw('It\\'s followed by primary content.')"
+			}
+			,"as single quotes": function(topic){
+				vash.compile(topic, { useWith: false, debug: false });
+				var tpl = tryCompile(topic);
+				assert.equal(tpl(), "It's followed by primary content.")	
+			}
+		}
+
+		,"escaped double quotes come out": {
+			topic: function(){
+				return '@html.raw("It is \\"followed\\" by primary content.")'
+			}
+			,"as double quotes": function(topic){
+				var tpl = vash.compile(topic);
+				//var tpl = vash.compile(topic, { useWith: false, debug: false });
+				assert.equal(tpl(), 'It is "followed" by primary content.')	
+			}
+		}
+	}
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
