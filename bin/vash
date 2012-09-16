@@ -75,15 +75,16 @@ function file(filepath, options){
 	}
 }
 
+// TODO: if passed a directory, recursively traverse
 
 cli
-	.option('-t, --target-namespace [namespace]', 'Assign template to a [namespace]')
-	.option('-p, --property-name [name]', 'Assign template to property named [name]. Defaults to filename.')
-	.option('-f, --file [file]', 'Compile the template in [file]')
-	.option('-j, --json [json]', 'Pass options to the Vash compiler. See docs for valid options.')
-	.option('-o, --out [path]', 'Write template into [path] directory')
+	.option('-t, --target-namespace <namespace>', 'Assign template to a <namespace>. Recommended is `vash.helpers.tplcache` for view engine compatibility')
+	.option('-p, --property-name [name]', 'Assign template to property named <name>. Defaults to filename.')
+	.option('-f, --file <file>', 'Compile the template in <file>')
+	.option('-j, --json <json>', 'Pass options to the Vash compiler. See docs for valid options.')
+	.option('-o, --out <path>', 'Write template into <path> directory')
 	.option('-u, --uglify', 'Uglify the template, safely')
-	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '$')
+	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
 	.parse(process.argv)
 
 //console.log(cli)
