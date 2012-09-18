@@ -136,10 +136,12 @@ vQuery.fn.toTreeString = function(){
 	return buffer.join('\n');
 }
 
-vQuery.fn.maxCheck = function(){
+vQuery.fn.maxCheck = function(last){
 	if( this.length >= vQuery.maxSize ){
 		var e = new Error();
-		e.message = 'Maximum number of elements exceeded';
+		e.message = 'Maximum number of elements exceeded.\n'
+			+ 'This is typically caused by an unmatched character or tag. Parse tree follows:\n'
+			+ this.toTreeString();
 		e.name = 'vQueryDepthException';
 		throw e;
 	}
