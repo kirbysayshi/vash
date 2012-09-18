@@ -11,7 +11,13 @@
 	// definition, for ease of modularity and discoverability.
 
 	// grab/create the global. sigh.
-	vash = vash || {}
+	vash = typeof vash === 'undefined'
+		? typeof window !== 'undefined'
+			? ( window.vash = window.vash || {} )
+			: typeof module !== 'undefined' && module.exports
+				? exports = {}
+				: {}
+		: vash;
 
 	var helpers = (vash['helpers'] = vash['helpers'] || {});
 	
