@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1236
+ * Vash - JavaScript Template Parser, v0.5.2-1237
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -20,7 +20,13 @@
 	// definition, for ease of modularity and discoverability.
 
 	// grab/create the global. sigh.
-	vash = vash || {}
+	vash = typeof vash === 'undefined'
+		? typeof window !== 'undefined'
+			? ( window.vash = window.vash || {} )
+			: typeof module !== 'undefined' && module.exports
+				? exports = {}
+				: {}
+		: vash;
 
 	var helpers = (vash['helpers'] = vash['helpers'] || {});
 	

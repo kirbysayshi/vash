@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1236
+ * Vash - JavaScript Template Parser, v0.5.2-1237
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,13 +26,13 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.2-1236";
+	exports["version"] = "0.5.2-1237";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
 		,"helpersName": "html"
 		,"htmlEscape": true
-		,"debug": false
+		,"debug": true
 		,"debugParser": false
 		,"debugCompiler": false
 
@@ -56,7 +56,13 @@
 	// definition, for ease of modularity and discoverability.
 
 	// grab/create the global. sigh.
-	vash = vash || {}
+	vash = typeof vash === 'undefined'
+		? typeof window !== 'undefined'
+			? ( window.vash = window.vash || {} )
+			: typeof module !== 'undefined' && module.exports
+				? exports = {}
+				: {}
+		: vash;
 
 	var helpers = (vash['helpers'] = vash['helpers'] || {});
 	
@@ -218,6 +224,8 @@
 		// 
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
+		} else {
+			this.buffer.push(cbOutLines);
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -227,6 +235,7 @@
 	}
 
 }());
+
 ;(function(){
 
 
@@ -724,10 +733,12 @@ vQuery.fn.toTreeString = function(){
 	return buffer.join('\n');
 }
 
-vQuery.fn.maxCheck = function(){
+vQuery.fn.maxCheck = function(last){
 	if( this.length >= vQuery.maxSize ){
 		var e = new Error();
-		e.message = 'Maximum number of elements exceeded';
+		e.message = 'Maximum number of elements exceeded.\n'
+			+ 'This is typically caused by an unmatched character or tag. Parse tree follows:\n'
+			+ this.toTreeString();
 		e.name = 'vQueryDepthException';
 		throw e;
 	}
