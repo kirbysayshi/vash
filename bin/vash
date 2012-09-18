@@ -9,11 +9,23 @@ var  fs = require('fs')
 function prefix(tplStr, options){
 
 	if( options.targetNamespace ){
-	
+
 		tplStr = options.targetNamespace
 			+ '["' 
 				+ ( options.propertyName || options.file.replace(/\/|\\/g, options.separator) ) 
 			+ '"]=' + tplStr;
+
+		// ensure the simple namespace exists
+		var accum = '';
+		options.targetNamespace.split('.').reduce(function(all, prop, i){
+
+			accum += all + prop + ' = ' + all + prop + ' || {};\n';
+			all += prop;
+			return all + '.';
+
+		}, '')
+
+		tplStr = accum + tplStr;
 	}
 
 	return tplStr;
@@ -35,6 +47,21 @@ function ugly(tplStr, options){
 	return tplStr;
 }
 
+function execute(tpl, options){
+	var model = {};
+
+	if( options.execute ){
+
+		if( options.execute !== true ){
+			model = JSON.parse( options.execute );
+		}
+
+		return tpl(model);
+	}
+
+	return tpl;
+}
+
 function stdin(options){
 	var buffer = ''
 	process.stdin.resume();
@@ -46,8 +73,14 @@ function stdin(options){
 
 	process.stdin.on('end', function(){
 		var tpl = vash.compile(buffer, options.vopts);
-		tpl = prefix(tpl.toString(), options);
-		tpl = ugly(tpl, options);
+
+		if( options.execute ){
+			tpl = execute(tpl, options);
+		} else {
+			tpl = prefix(tpl.toString(), options);
+			tpl = ugly(tpl, options);
+		}
+
 		process.stdout.write(tpl);
 	})
 }
@@ -63,11 +96,15 @@ function file(filepath, options){
 			).replace(/\/|\\/g, options.separator)
 		)	
 
-	tpl = prefix(tpl.toString(), options);
-	tpl = ugly(tpl, options);
+	if( options.execute ){
+		tpl = execute(tpl, options);
+	} else {
+		tpl = prefix(tpl.toString(), options);
+		tpl = ugly(tpl, options);
+	}
 
 	if( options.out ) { 
-		fs.writeFile( outpath, tpl, 'utf8', function(err){ 
+		fs.writeFile( outpath, tpl.toString(), 'utf8', function(err){
 			if(err){ process.stderr.write( err ) }
 		} )
 	} else {
@@ -84,10 +121,12 @@ cli
 	.option('-j, --json <json>', 'Pass options to the Vash compiler. See docs for valid options.')
 	.option('-o, --out <path>', 'Write template into <path> directory')
 	.option('-u, --uglify', 'Uglify the template, safely')
+	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
+	.option('-r, --render [json]', 'Render the template using <json> as the model')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
 	.parse(process.argv)
 
-//console.log(cli)
+//console.log(cli.execute)
 
 if( cli.json ){ 
 	cli.vopts = JSON.parse(cli.json); 
