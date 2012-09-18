@@ -14,11 +14,6 @@
 	],
 	"repository": "git://github.com/kirbysayshi/vash",
 	"main": "build/vash",
-	"files": [
-		"build",
-		"test/vash.test.js",
-		"bin"
-	],
 	"engines": {
 		"node": ">= 0.6"
 	},
