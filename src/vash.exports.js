@@ -23,7 +23,7 @@
 		,"modelName": "model"
 		,"helpersName": "html"
 		,"htmlEscape": true
-		,"debug": false
+		,"debug": true
 		,"debugParser": false
 		,"debugCompiler": false
 
