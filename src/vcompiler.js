@@ -181,12 +181,11 @@ VCP.assemble = function(options, helpers){
 	if(options.debugCompiler){
 		console.log(joined);
 	}
-
+	
 	try {
 		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
 	} catch(e){
-		e.message += ' -> ' + joined;
-		throw e;
+		vash.helpers.reportError(e, 0, 0, joined, /\n/)
 	}	
 
 	// Link compiled function to helpers collection, but report original function
