@@ -471,7 +471,6 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), 'Plain Text\n' );
 		}
 	}
-	,'markup within a code block': {
 		topic: function(){
 			var str = '@if(true){ \n'
 				+ '<span>this is text \n'
@@ -1228,6 +1227,30 @@ vows.describe('vash templating library').addBatch({
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
 				assert.equal(tpl(), 'It is "followed" by primary content.')	
+			}
+		}
+	}
+
+	,"inline styles": {
+
+		"style tag with one id rule": {
+			topic: function(){
+				return '<style type="text/css">#header{ border-bottom: 0; }</style>'
+			}
+			,"is unchanged": function(topic){
+				var tpl = vash.compile(topic);
+				//var tpl = vash.compile(topic, { useWith: false, debug: false });
+				assert.equal(tpl(), topic)
+			}
+		}
+		,"style tag with two id rule": {
+			topic: function(){
+				return '<style type="text/css">#parallax_field #parallax_bg { position: absolute; top: -20px; left: -20px; width: 110%; height: 425px; z-index: 1; }'
+			}
+			,"is unchanged": function(topic){
+				var tpl = vash.compile(topic);
+				//var tpl = vash.compile(topic, { useWith: false, debug: false });
+				assert.equal(tpl(), topic)
 			}
 		}
 	}
