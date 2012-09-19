@@ -214,7 +214,7 @@ And more!
 
 # Express Support
 
-A basic example can be found in [test/vash.express.js](vash/tree/master/test/vash.express.js).
+A basic example can be found in [test/vash.express.js](vash/tree/master/test/vash.express.js). A more advanced example is available at [vash-express-example](https://github.com/kirbysayshi/vash-express-example).
 
 # Vash as a View Engine
 
