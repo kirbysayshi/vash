@@ -6,7 +6,8 @@
 	
 	// semi hacky guard to prevent non-nodejs erroring
 	if( typeof window === 'undefined' ){
-		var fs = require('fs')
+		var  fs = require('fs')
+			,path = require('path')
 	}
 
 	var helpers = vash.helpers;
@@ -41,13 +42,14 @@
 		var browser = helpers.config.browser
 			,tpl
 
-		// this is pretty hacky, probably won't work in browser
 		if( !browser && options.settings && options.settings.views && options.settings['view engine'] ){
 			filepath = filepath.indexOf(options.settings.views) > -1
 				? filepath
 				: options.settings.views 
 					+ '/' + filepath 
-					+ '.' + options.settings['view engine'];
+					+ ( path.extname(filepath)
+						? ''
+						: '.' + options.settings['view engine'] );
 		} 		
 		
 		// if browser, tpl must exist in tpl cache

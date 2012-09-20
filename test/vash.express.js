@@ -7,13 +7,15 @@ app.configure(function(){
 	
 	vash.config.debug = true;
 
-	app.engine('vash', vash.__express);
 
 	app.use(app.router);
 	app.use(express.static(__dirname + '/fixtures/public'));
 	app.use(express.bodyParser());
 	app.set('views', __dirname + '/fixtures/views');
 	app.set('view engine', 'vash')
+
+	// allow for .html extension for templates as well as vash
+	app.engine('html', vash.__express);
 })
 
 app.get('/', function(req, res){
