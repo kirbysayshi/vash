@@ -1,7 +1,7 @@
 var vows = require('vows')
 	,assert = require('assert')
-	,vash = process.argv[2]  
-		? require('../build/vash.' + process.argv[2] ) 
+	,vash = process.argv[2]
+		? require('../build/vash.' + process.argv[2] )
 		: require('../build/vash');
 
 vash.config.useWith = true;
@@ -48,8 +48,8 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'we get <li class="blue">the blue item</li>': function(topic){
 			//console.log(topic);
-			assert.equal( 
-				topic( { 
+			assert.equal(
+				topic( {
 					className: 'blue'
 					,itemName: 'the blue item' } )
 				,'<li class="blue">the blue item</li>' );
@@ -63,7 +63,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'we get the full self-closed tag': function(topic){
 			//console.log(topic);
-			assert.equal( 
+			assert.equal(
 				topic( { src: 'https://github.com' } )
 				,'<img src="https://github.com" alt="github" />' );
 		}
@@ -173,7 +173,7 @@ vows.describe('vash templating library').addBatch({
 				somearr: ['a', 'b']
 				,anotherarr: ['z', 'y']
 			};
-			
+
 			assert.equal(topic(model), '<li class="even">Some element, number 0, value a</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li><li class="odd">Some element, number 1, value b</li><li class="0-what">some text, even, value z</li><li class="1-what">some text, odd, value y</li>');
 		}
 	}
@@ -340,7 +340,7 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'anonymous blocks': {
-	
+
 		'empty,': {
 			topic: function(){
 				var str = "@{ }";
@@ -449,18 +449,37 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(["a", "b", "c"]), '<a><b>__a__</b><b>__b__</b><b>__c__</b></a>' )
 		}
 	}
-	,'mixing code and plain text, <text> escape': {
-		topic: function(){
-			var str = '@if (true) { \n'
-				+ '<text>Plain Text</text>\n'
-				+ '}';
-			return vash.compile(str);
+	,'<text> escape': {
+
+		'single line': {
+
+			topic: function(){
+				var str = '@if (true) { \n'
+					+ '<text>Plain Text</text>\n'
+					+ '}';
+				return vash.compile(str);
+			}
+			,'outputs plain text': function(topic){
+				assert.equal( topic(), 'Plain Text' );
+			}
+
 		}
-		,'outputs plain text': function(topic){
-			assert.equal( topic(), 'Plain Text' );
+
+		,'multiple lines': {
+
+			topic: function(){
+				var str = '@if (true) { \n'
+					+ '<text>Plain Text \n Plain Text \n</text>\n'
+					+ '}';
+				return vash.compile(str);
+			}
+			,'outputs plain text': function(topic){
+				assert.equal( topic(), 'Plain Text \n Plain Text \n' );
+			}
+
 		}
 	}
-	
+
 	,'@: escape': {
 		'single line': {
 			topic: function(){
@@ -581,9 +600,9 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'"else" is a keyword': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl( { 			
+			assert.equal(tpl( {
 				name: {
-					how: 'you' 
+					how: 'you'
 				}
 			} ), '<td>you</td>');
 		}
@@ -663,7 +682,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'is named properly': function(topic){
-			assert.equal( vash.compile(topic)( { header: 'a', header2: 'b' } ),  
+			assert.equal( vash.compile(topic)( { header: 'a', header2: 'b' } ),
 				'<div>'
 				+ '	<h1 class=\'header\'>a</h1>'
 				+ '	<h2 class=\'header2\'>b</h2>'
@@ -786,7 +805,7 @@ vows.describe('vash templating library').addBatch({
 				topic = tryCompile(topic)
 				assert.equal( topic(), ' and this content should be' )
 			}
-		
+
 		}
 		,'unclosed': {
 			topic: function(){
@@ -837,7 +856,7 @@ vows.describe('vash templating library').addBatch({
 		topic: function(){
 			var str = '<li>@it.name</li>'
 				,tpl;
-			
+
 			vash.config.modelName = 'it';
 			tpl = vash.compile(str, { useWith: false });
 			vash.config.modelName = 'model';
@@ -989,7 +1008,7 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'simple expression followed by @()': {
-		
+
 		topic: function(){
 			return '<li data-score="@model.Score" class="user-panel-track @(model.i % 2 === 0 ? \'even\' : \'odd\')">';
 		}
@@ -1029,7 +1048,7 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)({ name: 'what' }), ' <li>what</li>' );
 		}
 	}
-	
+
 	/*,'fat arrow': {
 
 		'with single parameter': {
@@ -1088,7 +1107,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
-			}	
+			}
 		}
 
 		,'force no escaping per call (html.raw)': {
@@ -1097,7 +1116,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
-			}	
+			}
 		}
 
 		,'multiple function calls': {
@@ -1105,7 +1124,7 @@ vows.describe('vash templating library').addBatch({
 				return vash.compile( '@function f(i){ <b>@i</b> }<span>@f(it)</span>@f(it)' );
 			}
 			,'are escaped': function(topic){
-				assert.equal( topic({ it: '<b>texted</b>' }), 
+				assert.equal( topic({ it: '<b>texted</b>' }),
 					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
@@ -1116,7 +1135,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'are escaped': function(topic){
 				//console.log( topic.toString() );
-				assert.equal( topic({ it: '<b>texted</b>' }), 
+				assert.equal( topic({ it: '<b>texted</b>' }),
 					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
@@ -1126,7 +1145,7 @@ vows.describe('vash templating library').addBatch({
 				return vash.compile( '@function f(i){ <b>@i</b> function d(i){ <b>@i</b> } @d(model.it) }<span>@f(model.it)</span>@f(model.it)' );
 			}
 			,'are escaped': function(topic){
-				assert.equal( topic({ it: '<b>texted</b>' }), 
+				assert.equal( topic({ it: '<b>texted</b>' }),
 					'<span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b></span><b>&lt;b&gt;texted&lt;/b&gt;</b><b>&lt;b&gt;texted&lt;/b&gt;</b>' );
 			}
 		}
@@ -1140,17 +1159,17 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), "It's followed by primary content.")	
+				assert.equal(tpl(), "It's followed by primary content.")
 			}
 		}
-	
+
 		,"double quotes come out": {
 			topic: function(){
 				return '<text>It is "followed" by primary content.</text>'
 			}
 			,"as double quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), 'It is "followed" by primary content.')	
+				assert.equal(tpl(), 'It is "followed" by primary content.')
 			}
 		}
 
@@ -1160,7 +1179,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), "It's followed by primary content.")	
+				assert.equal(tpl(), "It's followed by primary content.")
 			}
 		}
 
@@ -1170,7 +1189,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as double quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), 'It is "followed" by primary content.')	
+				assert.equal(tpl(), 'It is "followed" by primary content.')
 			}
 		}
 	}
@@ -1183,17 +1202,17 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), " It's followed by primary content.")	
+				assert.equal(tpl(), " It's followed by primary content.")
 			}
 		}
-	
+
 		,"double quotes come out": {
 			topic: function(){
 				return '@{ var a = \'It is "followed" by primary content.\'; } @html.raw(a)'
 			}
 			,"as double quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), ' It is "followed" by primary content.')	
+				assert.equal(tpl(), ' It is "followed" by primary content.')
 			}
 		}
 
@@ -1203,7 +1222,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), " It's followed by primary content.")	
+				assert.equal(tpl(), " It's followed by primary content.")
 			}
 		}
 
@@ -1213,7 +1232,7 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as double quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), ' It is "followed" by primary content.')	
+				assert.equal(tpl(), ' It is "followed" by primary content.')
 			}
 		}
 	}
@@ -1226,17 +1245,17 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), "It's followed by primary content.")	
+				assert.equal(tpl(), "It's followed by primary content.")
 			}
 		}
-	
+
 		,"double quotes come out": {
 			topic: function(){
 				return '@html.raw(\'It is "followed" by primary content.\')'
 			}
 			,"as double quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), 'It is "followed" by primary content.')	
+				assert.equal(tpl(), 'It is "followed" by primary content.')
 			}
 		}
 
@@ -1247,7 +1266,7 @@ vows.describe('vash templating library').addBatch({
 			,"as single quotes": function(topic){
 				vash.compile(topic, { useWith: false, debug: false });
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), "It's followed by primary content.")	
+				assert.equal(tpl(), "It's followed by primary content.")
 			}
 		}
 
@@ -1258,13 +1277,13 @@ vows.describe('vash templating library').addBatch({
 			,"as double quotes": function(topic){
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
-				assert.equal(tpl(), 'It is "followed" by primary content.')	
+				assert.equal(tpl(), 'It is "followed" by primary content.')
 			}
 		}
 	}
 
 	,"inline styles": {
-	
+
 		"style tag with one id rule": {
 			topic: function(){
 				return '<style type="text/css">#header{ border-bottom: 0; }</style>'
@@ -1272,7 +1291,7 @@ vows.describe('vash templating library').addBatch({
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
-				assert.equal(tpl(), topic)	
+				assert.equal(tpl(), topic)
 			}
 		}
 		,"style tag with two id rule": {
@@ -1282,7 +1301,7 @@ vows.describe('vash templating library').addBatch({
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
-				assert.equal(tpl(), topic)	
+				assert.equal(tpl(), topic)
 			}
 		}
 	}
