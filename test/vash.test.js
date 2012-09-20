@@ -1328,6 +1328,16 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
+		,'with explicit expression inside markup block': {
+			topic: function(){
+				return '@if(true){ <b>@(model.text)</b> }'
+			}
+			,'requires @': function(topic){
+				var tpl = vash.compile(topic, { favorText: true })
+				assert.equal( tpl({ text: 'yes' }), ' <b>yes</b> ' );
+			}
+		}
+
 		,'with text': {
 			topic: function(){
 				return '@if(true){ model.text }'
