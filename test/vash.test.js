@@ -1286,6 +1286,50 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 	}
+
+	,'favorText': {
+
+		'with expression': {
+			topic: function(){
+				return '@if(true){ @model.text }'
+			}
+			,'requires @': function(topic){
+				var tpl = vash.compile(topic, { favorText: true })
+				assert.equal( tpl({ text: 'yes' }), ' yes ' );
+			}
+		}
+
+		,'with expression inside markup block': {
+			topic: function(){
+				return '@if(true){ <b>@model.text</b> }'
+			}
+			,'requires @': function(topic){
+				var tpl = vash.compile(topic, { favorText: true })
+				assert.equal( tpl({ text: 'yes' }), ' <b>yes</b> ' );
+			}
+		}
+
+		,'with text': {
+			topic: function(){
+				return '@if(true){ model.text }'
+			}
+			,'outputs content': function(topic){
+				var tpl = vash.compile(topic, { favorText: true })
+				assert.equal( tpl(), ' model.text ' );
+			}
+		}
+
+		,'with html': {
+			topic: function(){
+				return '@if(true){ <b>model.text</b> }'
+			}
+			,'outputs content': function(topic){
+				var tpl = vash.compile(topic, { favorText: true })
+				assert.equal( tpl(), ' <b>model.text</b> ' );
+			}
+		}
+
+	}
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';

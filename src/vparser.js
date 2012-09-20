@@ -292,6 +292,7 @@ VParser.prototype = {
 	,handleBLK: function(curr){
 		
 		var  next = this.tokens[ this.tokens.length - 1 ]
+			,submode
 			,opener
 			,closer
 			,subTokens
@@ -332,8 +333,11 @@ VParser.prototype = {
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:
+				submode = this.options.favorText && curr.type === BRACE_OPEN
+					? MKP
+					: BLK;
 				
-				this.subParse(curr, BLK);
+				this.subParse( curr, submode );
 				
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
