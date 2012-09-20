@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1255
+ * Vash - JavaScript Template Parser, v0.5.3-1272
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.3-1255";
+	exports["version"] = "0.5.3-1272";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1133,6 +1133,7 @@ VParser.prototype = {
 	,handleBLK: function(curr){
 		
 		var  next = this.tokens[ this.tokens.length - 1 ]
+			,submode
 			,opener
 			,closer
 			,subTokens
@@ -1173,8 +1174,11 @@ VParser.prototype = {
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:
+				submode = this.options.favorText && curr.type === BRACE_OPEN
+					? MKP
+					: BLK;
 				
-				this.subParse(curr, BLK);
+				this.subParse( curr, submode );
 				
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
