@@ -170,11 +170,44 @@ Again, rendering is the same regardless:
 	// outputs:
 	// <li><strong>Raw</strong> content!</li>
 
-### vash.config.debug = true/false(default)
+### vash.config.debug = true(default)/false
 
-Setting `vash.config.debug` to `true` will compile templates with extensive debugging information, so if an error is thrown while rendering a template, exact location (line, charater) information can be given.
+Setting `vash.config.debug` to `true` will compile templates with extensive debugging information, so if an error is thrown while rendering a template (not compiling), exact location (line, character) information can be given.
 
-The default is `false`, because while the performance implications are negligible, there is a noteable increase in the size of the compiled template functions.
+This option is slightly misleading, because while `vash.config.debug` should primarily be used while developing, there are fairly negligible performance implications of running it in production.
+
+A template with `debug` set to `true` (default):
+
+	function anonymous(model, html) {
+		try {
+			html = html || vash.helpers;
+			html.__vo = html.__vo || [];
+			var __vo = html.__vo;
+			html.model = model;
+			var __vl = html.__vl = 0,__vc = html.__vc = 0;
+			html.__vl = __vl = 1, html.__vc = __vc = 1;
+			__vo.push(html.escape(model.someVal).toHtmlString());
+			html.__vl = __vl = 1, html.__vc = __vc = 7;
+		} catch(e){ html.reportError(e, __vl, __vc, "@model.someVal") }
+		delete html.__vo;
+		delete html.__vl
+		delete html.__vc
+		return __vo.join('');
+	}
+
+And that same template with `debug` set to `false`:
+
+	function anonymous(model, html) {
+		html = html || vash.helpers;
+		html.__vo = html.__vo || [];
+		var __vo = html.__vo;
+		html.model = model;
+		__vo.push(html.escape(model.someVal).toHtmlString());
+		delete html.__vo;
+		return __vo.join('');
+	}
+
+The primary differences are the removal of the `try/catch` block and line/character information (`__vl` and `__vc`).
 
 ### vash.config.debug[Compiler/Parser] = true/false(default)
 
