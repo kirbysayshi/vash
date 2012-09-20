@@ -460,17 +460,49 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), 'Plain Text' );
 		}
 	}
-	,'mixing code and plain text, @: escape': {
-		topic: function(){
-			var str = '@if (true) { \n'
-				+ '@:Plain Text\n'
-				+ '}';
-			return vash.compile(str);
+	
+	,'@: escape': {
+		'single line': {
+			topic: function(){
+				var str = '@if (true) { \n'
+					+ '@:Plain Text\n'
+					+ '}';
+				return str;
+			}
+			,'outputs plain text': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), 'Plain Text\n' );
+			}
 		}
-		,'outputs plain text': function(topic){
-			assert.equal( topic(), 'Plain Text\n' );
+		,'multiple lines': {
+			topic: function(){
+				var str = '@if (true) { \n'
+					+ '@:Plain Text\n'
+					+ '@:Plain Text\n'
+					+ '}';
+				return str;
+			}
+			,'outputs plain text': function(topic){
+				var tpl = vash.compile(topic)
+				assert.equal( tpl(), 'Plain Text\nPlain Text\n' );
+			}
+		}
+		,'single line with content on next line': {
+			topic: function(){
+				var str = '@if (true) { \n'
+					+ '@:Plain Text\n'
+					+ 'var a = "what";'
+					+ '}';
+				return str;
+			}
+			,'throws error': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), 'Plain Text\n' );
+			}
 		}
 	}
+
+	,'markup within a code block': {
 		topic: function(){
 			var str = '@if(true){ \n'
 				+ '<span>this is text \n'
@@ -1232,7 +1264,7 @@ vows.describe('vash templating library').addBatch({
 	}
 
 	,"inline styles": {
-
+	
 		"style tag with one id rule": {
 			topic: function(){
 				return '<style type="text/css">#header{ border-bottom: 0; }</style>'
@@ -1240,7 +1272,7 @@ vows.describe('vash templating library').addBatch({
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
-				assert.equal(tpl(), topic)
+				assert.equal(tpl(), topic)	
 			}
 		}
 		,"style tag with two id rule": {
@@ -1250,7 +1282,7 @@ vows.describe('vash templating library').addBatch({
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
 				//var tpl = vash.compile(topic, { useWith: false, debug: false });
-				assert.equal(tpl(), topic)
+				assert.equal(tpl(), topic)	
 			}
 		}
 	}
