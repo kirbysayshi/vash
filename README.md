@@ -6,13 +6,13 @@ Here's a quick example:
 
 	// compile template
 	var itemTpl = vash.compile( '<li data-description="@desc.name">This is item number: @number.</li>' );
-	
-	// generate using some data 
+
+	// generate using some data
 	var out = itemTpl({ desc: { name: 'templating functions seem to breed' }, number: 2 });
-	
+
 	// dump it
 	console.log( out )
-	
+
 	// outputs:
 	<li data-description="templating functions seem to breed">This is item number: 2.</li>
 
@@ -49,7 +49,14 @@ There are many more examples in the unit tests, located in `test/vash.test.js`. 
 
 # BUILD
 
-	support/build.js build && node test/vash.test.js && node test/vash.test.js min
+	support/tasks build
+	support/tasks test
+
+OR:
+
+	support/tasks test
+
+The	`test` task builds before running tests.
 
 Vash has a few builds for various purposes, found in the [build](vash/tree/master/build) folder. There are three primary use cases for Vash:
 
@@ -67,7 +74,7 @@ Given these use cases, there are a few different builds optimized:
 
 ### vash.compile(templateString, [options])
 
-Vash has one public method, `vash.compile()`. It accepts a string template, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template. 
+Vash has one public method, `vash.compile()`. It accepts a string template, and returns a function that, when executed, returns a generated string template. The compiled function accepts one parameter, `model`, which is the object that should be used to populate the template.
 
 `options` is an optional parameter that can be used to override the global `vash.config` for a single call to `compile`.
 
@@ -145,13 +152,13 @@ Again, rendering is the same regardless:
 	compiledTpl( { description: 'I am a banana!' } );
 	// outputs:
 	// <li>I'm a banana!</li>
-	
+
 ### vash.config.helpersName = "html"
 
 Determines the name of the internal variable through which registered helper methods can be reached. Example:
 
 	<li>@html.raw(model.description)</li>
-	
+
 vs
 
 	// vash.config.helpersName == "help";
@@ -162,7 +169,7 @@ Again, rendering is the same regardless:
 	compiledTpl( { description : '<strong>Raw</strong> content!' } );
 	// outputs:
 	// <li><strong>Raw</strong> content!</li>
-	
+
 ### vash.config.debug = true/false(default)
 
 Setting `vash.config.debug` to `true` will compile templates with extensive debugging information, so if an error is thrown while rendering a template, exact location (line, charater) information can be given.
@@ -184,7 +191,7 @@ When Vash encounters text that directly follows and opening brace of a block, it
 When `vash.config.favorText` is set to `true`, Vash will instead assume that most things are non-code (markup/text) unless it's very explicit.
 
 	@it.forEach(function(a){
-		var b = a; // vash.config.favorText assumes this line is content 
+		var b = a; // vash.config.favorText assumes this line is content
 	})
 
 This option is __EXPERIMENTAL__, and should be treated as such. It allows Vash to be used in a context like [Markdown](http://daringfireball.net/projects/markdown/syntax), where HTML tags, which typically help Vash tell the difference between code and content, are rare.
@@ -251,13 +258,13 @@ As of v0.5.1, Vash now offers runtime view engine support in the style of Jade's
 			<title>@model.title</title>
 			<link rel="stylesheet" href="site.css" type="text/css" media="screen" charset="utf-8">
 		</head>
-		<body>		
+		<body>
 			<section>
 				@html.block('content')
-			</section>	
+			</section>
 
 			<footer>
-				@html.block('footer')	
+				@html.block('footer')
 			</footer>
 		</body>
 	</html>
@@ -308,9 +315,9 @@ Vash cannot do this:
 
 # Current Test Results
 
-	support/build.js build && node test/vash.test.js
-	······································································································ 
-	✓ OK » 102 honored (0.182s) 
+	support/task test
+	······································································································
+	✓ OK » 102 honored (0.182s)
 
 # Why Vash?
 
@@ -323,10 +330,10 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 		> WK.tpl()
 		> japanese emoticons?
 		> _$8 is a valid JS identifier
-		> mootools has $$ 
-			> double dollars 
-			> the 60 billion double dollar man 
-				> Vash the Stampede! 
+		> mootools has $$
+			> double dollars
+			> the 60 billion double dollar man
+				> Vash the Stampede!
 				> vash.tpl()
 					> Very Awesome Scripted HTML
 					> ...maybe just vash

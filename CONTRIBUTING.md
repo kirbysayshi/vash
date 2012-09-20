@@ -11,8 +11,13 @@ Building Vash
 
 Simple as:
 
-	$ support/build.js build && node test/vash.test.js
+	$ support/task build
 
-If you need to test the minified, built version of `vash.js`:
+And tests (includes `build` task):
 
-	$ support/build.js build && node test/vash.test.js min
+	$ support/task test
+
+If you need to test the minified version of `vash.js`:
+
+	$ support/task test --min
+
