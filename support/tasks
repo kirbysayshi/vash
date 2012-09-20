@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 var  fs = require('fs')
+	,path = require('path')
 	,uglify = require('uglify-js')
 	,request = require('request')
 	,semver = require('semver')
@@ -24,8 +25,8 @@ var  fs = require('fs')
 	,exp = fs.readFileSync(__dirname + '/../src/vash.exports.js', ENC)
 
 	// this will be transformed into an object containing templates keyed by filename
-	,tpls = [ 
-		'../support/license.header.js' 
+	,tpls = [
+		'../support/license.header.js'
 	]
 
 	,fileGroups = {
@@ -60,7 +61,7 @@ var  fs = require('fs')
 			,'../src/vhelpers.js'
 			,'../src/vhelpers.layout.js'
 		]
-		
+
 		/*,browser: [
 			 '../src/vruntime.js'
 			,'../src/vhelpers.js'
@@ -96,7 +97,7 @@ function combine(files){
 	files.forEach(function(f){
 		b.push( fs.readFileSync(__dirname + '/' + f, ENC) );
 	});
-	
+
 	return b.join('\n');
 }
 
@@ -104,7 +105,7 @@ function minify(str){
 	var ast
 	 	,jsp = uglify.parser
 		,pro = uglify.uglify;
-	ast = jsp.parse(str); 
+	ast = jsp.parse(str);
 	ast = pro.ast_mangle(ast);
 	ast = pro.ast_squeeze(ast);
 	return pro.gen_code(ast);
@@ -163,7 +164,7 @@ function reportLint(filePath, results, data){
     if (str) {
         process.stdout.write(
         	filePath + ': ' + len + ' jshint error' + ((len === 1) ? '' : 's')
-        	+ "\n" + str 
+        	+ "\n" + str
         	+  "\n");
     }
 }
@@ -187,7 +188,7 @@ function loadTemplates(list){
 
 	// compile templates, insert into existing list of paths
 	list.reduce(function(lib, path){
-		//lib[ path.split('/').pop() ] = vash.compile( 
+		//lib[ path.split('/').pop() ] = vash.compile(
 		//	 fs.readFileSync( __dirname + '/' + path, ENC)
 		//	,vashOpts
 		//);
@@ -235,6 +236,25 @@ function build(){
 	console.log('finished build ' + buildNum);
 }
 
+function test(options){
+
+	var runner = require( path.join( __dirname, '../test/vash.test' ) ).run
+		,vall = require( path.join( __dirname, '../build/vash' ) )
+		,vmin = require( path.join( __dirname, '../build/vash.min' ) )
+		,reporter = require('vows/lib/vows/reporters/spec')
+
+		,testopts = {
+			reporter: reporter
+		}
+
+	runner(vall).run(testopts, function(){
+		if( options.min ){
+			console.log('Running test suite on vash.min.js...')
+			runner(vmin).run(testopts);
+		}
+	});
+}
+
 cli
 	.command('lint')
 	.description('Run all files through jshint')
@@ -247,19 +267,28 @@ cli
 
 cli
 	.command('all')
-	.description('Lint + Build')
-	.action(function(){ 
+	.description('Lint + Build + Test')
+	.action(function(){
 		lint(fileGroups.lint);
 		build();
 	});
+
+cli
+	.command('test')
+	.option('-m, --min', 'Also test the minified build')
+	.description('Build and run test suite')
+	.action(function(options){
+		build();
+		test(options);
+	})
 
 cli
 	.command('closure')
 	.option('-a, --advanced', 'enable ADVANCED_OPTIMIZATIONS (will most likely fail)')
 	.option('-p, --pretty_print', 'pretty print the output')
 	.description('Hit up closure-compiler.appspot, create vash.closure.min.js')
-	.action(function(options){ 
-		
+	.action(function(options){
+
 		loadTemplates(tpls);
 
 		var  license = tpls['license.header.js']
@@ -287,13 +316,13 @@ cli
 			delete reqopts.formatting;
 		}
 
-		request.post({ 
+		request.post({
 			url: 'http://closure-compiler.appspot.com/compile'
 			,method: 'POST'
 			,form: reqopts
 		}, function(err, resp, body){
 			if(!err){
-				fs.writeFileSync(__dirname + '/../build/vash.closure.min.js', body, 'utf8');		
+				fs.writeFileSync(__dirname + '/../build/vash.closure.min.js', body, 'utf8');
 				console.log('finished closure build ' + buildNum);
 			} else {
 				console.log('finished closure build ' + buildNum + ', but was unable to minify: ' + err);

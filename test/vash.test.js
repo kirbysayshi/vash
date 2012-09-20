@@ -1,8 +1,12 @@
 var vows = require('vows')
 	,assert = require('assert')
-	,vash = process.argv[2]
-		? require('../build/vash.' + process.argv[2] )
-		: require('../build/vash');
+	//,vash = process.argv[2]
+	//	? require(__dirname + '/../build/vash.' + process.argv[2] )
+	//	: require(__dirname + '/../build/vash');
+	//vash = require(__dirname + '/../build/vash')
+
+
+exports.run = function(vash){
 
 vash.config.useWith = true;
 vash.config.debug = true;
@@ -19,7 +23,7 @@ var tryCompile = function(str){
 	}
 }
 
-vows.describe('vash templating library').addBatch({
+return vows.describe('vash templating library').addBatch({
 	'a plain text template': {
 		topic: function(){
 			var tpl = vash.compile('<a href="">this is a <br /> simple template</a>');
@@ -104,7 +108,7 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( tpl({ payload: { desc: 'description!!!' } }), 'desc...' );
 		}
 	}
-	,'..': {
+	,'.. (double dot notation)': {
 		topic: function(){
 			return "@( false || 1..toString() )";
 		}
@@ -1371,4 +1375,6 @@ vows.describe('vash templating library').addBatch({
 	//	//	// could calling the tpl return a function?
 	//	//}
 	//}
-}).export(module);
+});
+
+}
