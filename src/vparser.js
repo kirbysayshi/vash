@@ -133,7 +133,7 @@ VParser.prototype = {
 		return tks.reverse();
 	}
 
-	,subParse: function(curr, modeToOpen){
+	,subParse: function(curr, modeToOpen, includeDelimsInSub){
 		var  subTokens
 			,closer
 			,miniParse
@@ -152,13 +152,24 @@ VParser.prototype = {
 		
 		closer = subTokens.shift();
 
-		this.ast.push(curr);
+		if( !includeDelimsInSub ){
+			this.ast.push(curr);
+		}
 
 		miniParse = new VParser( subTokens, parseOpts );
 		miniParse.parse();
 
+		if( includeDelimsInSub ){
+			// attach delimiters to [0] (first child), because ast is PROGRAM
+			miniParse.ast[0].unshift( curr );
+			miniParse.ast[0].push( closer );
+		}
+
 		this.ast.pushFlatten(miniParse.ast);
-		this.ast.push(closer);
+
+		if( !includeDelimsInSub ){
+			this.ast.push(closer);
+		}
 	}
 
 	,handleMKP: function(curr){
@@ -302,7 +313,7 @@ VParser.prototype = {
 				break;
 
 			case AT_COLON:
-				this.ast = this.ast.beget(MKP);
+				this.subParse(curr, MKP, true);
 				break;
 			
 			case TEXT_TAG_OPEN:
