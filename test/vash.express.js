@@ -1,10 +1,10 @@
-var 
-	 vash = require('../build/vash')
+var
+	 vash = require(__dirname + '/../build/vash')
 	,express = require('express')
 	,app = express();
 
 app.configure(function(){
-	
+
 	vash.config.debug = true;
 
 
@@ -16,11 +16,11 @@ app.configure(function(){
 
 	// allow for .html extension for templates as well as vash
 	app.engine('html', vash.__express);
+	app.engine('vash', vash.__express); // just because we're running within the Vash repo
 })
 
 app.get('/', function(req, res){
-	var d = req.param('d'); // json
-	
+
 	res.render('index.vash', {
 		 title: 'Vash Express Test'
 		,location: {

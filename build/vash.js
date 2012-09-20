@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1292
+ * Vash - JavaScript Template Parser, v0.5.3-1294
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.3-1292";
+	exports["version"] = "0.5.3-1294";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -242,8 +242,8 @@
 
 
 	///////////////////////////////////////////////////////////////////////////
-	// LAYOUT HELPERS 
-	
+	// LAYOUT HELPERS
+
 	// semi hacky guard to prevent non-nodejs erroring
 	if( typeof window === 'undefined' ){
 		var  fs = require('fs')
@@ -263,9 +263,9 @@
 	vash.loadFile = function(filepath, options, cb){
 
 		// options are passed in via Express
-		// { 
-		//   settings: 
-		//   { 
+		// {
+		//   settings:
+		//   {
 		//      env: 'development',
 		//   	'jsonp callback name': 'callback',
 		//   	'json spaces': 2,
@@ -275,7 +275,7 @@
 		//   _locals: [Function: locals],
 		//   cache: false
 		// }
-	
+
 		// extend works from right to left, using first arg as target
 		options = vQuery.extend( {}, vash.config, options || {} );
 
@@ -285,13 +285,13 @@
 		if( !browser && options.settings && options.settings.views && options.settings['view engine'] ){
 			filepath = filepath.indexOf(options.settings.views) > -1
 				? filepath
-				: options.settings.views 
-					+ '/' + filepath 
+				: path.join( options.settings.views
+					,filepath
 					+ ( path.extname(filepath)
 						? ''
-						: '.' + options.settings['view engine'] );
-		} 		
-		
+						: '.' + options.settings['view engine'] ) );
+		}
+
 		// if browser, tpl must exist in tpl cache
 		tpl = options.cache || browser
 			? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )
@@ -299,7 +299,7 @@
 
 		cb && cb(null, tpl);
 	}
-	
+
 	vash.renderFile = function(filepath, options, cb){
 
 		vash.loadFile(filepath, options, function(err, tpl){
@@ -319,7 +319,7 @@
 
 		this.model = origModel;
 	}
-	
+
 	helpers.include = function(name, model){
 
 		var self = this, origModel = this.model;
@@ -331,7 +331,7 @@
 
 		this.model = origModel;
 	}
-	
+
 	helpers.block = function(name, ctn){
 		var bstart, ctnLines, self = this;
 
@@ -374,7 +374,7 @@
 	}
 
 	helpers.prepend = function(name, ctn){
-	
+
 		if( !this.prepends[name] ){
 			this.prepends[name] = [];
 		}
@@ -383,7 +383,7 @@
 	}
 
 	helpers.hasBlock = function(name){
-		return typeof this.blocks[name] !== "undefined";	
+		return typeof this.blocks[name] !== "undefined";
 	}
 
 	helpers.hasPrepends = function(name){
