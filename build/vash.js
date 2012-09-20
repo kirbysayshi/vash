@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1239
+ * Vash - JavaScript Template Parser, v0.5.3-1255
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.2-1239";
+	exports["version"] = "0.5.3-1255";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -164,10 +164,12 @@
 	// ERROR REPORTING 
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-	helpers.reportError = function(e, lineno, chr, orig){
+	helpers.reportError = function(e, lineno, chr, orig, lb){
 
-		var lines = orig.split('!LB!')
-			,contextSize = 3
+		lb = lb || '!LB!';
+
+		var lines = orig.split(lb)
+			,contextSize = lineno == 0 && chr == 0 ? lines.length - 1 : 3
 			,start = Math.max(0, lineno - contextSize)
 			,end = Math.min(lines.length, lineno + contextSize);
 
@@ -438,6 +440,7 @@ PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
 PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
 PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
+PAIRS[AT_COLON] = NEWLINE;
 
 
 
@@ -540,7 +543,7 @@ VLexer.prototype = {
 				type: type
 				,line: this.lineno
 				,chr: this.charno
-				,val: captures[1]
+				,val: captures[1] || ''
 				,toString: function(){
 					return '[' + this.type
 						+ ' (' + this.line + ',' + this.chr + '): '
@@ -595,6 +598,7 @@ VLexer.prototype = {
 		}
 	}
 }
+
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 var vQuery = function(node){
@@ -970,7 +974,7 @@ VParser.prototype = {
 		return tks.reverse();
 	}
 
-	,subParse: function(curr, modeToOpen){
+	,subParse: function(curr, modeToOpen, includeDelimsInSub){
 		var  subTokens
 			,closer
 			,miniParse
@@ -989,13 +993,24 @@ VParser.prototype = {
 		
 		closer = subTokens.shift();
 
-		this.ast.push(curr);
+		if( !includeDelimsInSub ){
+			this.ast.push(curr);
+		}
 
 		miniParse = new VParser( subTokens, parseOpts );
 		miniParse.parse();
 
+		if( includeDelimsInSub ){
+			// attach delimiters to [0] (first child), because ast is PROGRAM
+			miniParse.ast[0].unshift( curr );
+			miniParse.ast[0].push( closer );
+		}
+
 		this.ast.pushFlatten(miniParse.ast);
-		this.ast.push(closer);
+
+		if( !includeDelimsInSub ){
+			this.ast.push(closer);
+		}
 	}
 
 	,handleMKP: function(curr){
@@ -1044,28 +1059,6 @@ VParser.prototype = {
 						break;
 				} }
 				break;
-			
-			case BRACE_OPEN: {
-
-				if( this.options.favorText ){
-					this.ast.push(curr);
-				} else {
-					this.ast = this.ast.beget( BLK );
-					this.tokens.push(curr); // defer	
-				}
-				break;
-			}
-
-			case BRACE_CLOSE: {
-
-				if( this.options.favorText ){
-					this.ast.push(curr);
-				} else {
-					this.ast = this.ast.parent;
-					this.tokens.push(curr); // defer	
-				}
-				break;
-			}
 			
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
@@ -1161,7 +1154,7 @@ VParser.prototype = {
 				break;
 
 			case AT_COLON:
-				this.ast = this.ast.beget(MKP);
+				this.subParse(curr, MKP, true);
 				break;
 			
 			case TEXT_TAG_OPEN:
@@ -1521,12 +1514,11 @@ VCP.assemble = function(options, helpers){
 	if(options.debugCompiler){
 		console.log(joined);
 	}
-
+	
 	try {
 		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
 	} catch(e){
-		e.message += ' -> ' + joined;
-		throw e;
+		vash.helpers.reportError(e, 0, 0, joined, /\n/)
 	}	
 
 	// Link compiled function to helpers collection, but report original function

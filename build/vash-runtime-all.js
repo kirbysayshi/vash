@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.2-1239
+ * Vash - JavaScript Template Parser, v0.5.3-1255
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -128,10 +128,12 @@
 	// ERROR REPORTING 
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-	helpers.reportError = function(e, lineno, chr, orig){
+	helpers.reportError = function(e, lineno, chr, orig, lb){
 
-		var lines = orig.split('!LB!')
-			,contextSize = 3
+		lb = lb || '!LB!';
+
+		var lines = orig.split(lb)
+			,contextSize = lineno == 0 && chr == 0 ? lines.length - 1 : 3
 			,start = Math.max(0, lineno - contextSize)
 			,end = Math.min(lines.length, lineno + contextSize);
 
