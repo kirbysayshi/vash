@@ -42,6 +42,7 @@ PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
 PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
 PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
+PAIRS[AT_COLON] = NEWLINE;
 
 
 
@@ -144,7 +145,7 @@ VLexer.prototype = {
 				type: type
 				,line: this.lineno
 				,chr: this.charno
-				,val: captures[1]
+				,val: captures[1] || ''
 				,toString: function(){
 					return '[' + this.type
 						+ ' (' + this.line + ',' + this.chr + '): '
