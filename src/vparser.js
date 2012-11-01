@@ -18,7 +18,7 @@ VParser.prototype = {
 		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
 
 			if(this.options.debugParser){
-				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
+				console.log(this.ast && this.ast.mode, curr.type, curr.toString(), curr.val);
 			}
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
@@ -51,7 +51,7 @@ VParser.prototype = {
 		if(this.options.debugParser && !this.options.initialMode){
 			// this should really only output on the true root
 
-			console.log(this.ast);
+			console.log(this.ast.toString());
 			console.log(this.ast.toTreeString());
 		}
 		
@@ -185,38 +185,50 @@ VParser.prototype = {
 				break;
 			
 			case AT:
-				if(next) { switch(next.type){
-					
-					case PAREN_OPEN:
-					case IDENTIFIER:
-					
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+				if(next) {
 
-						this.ast = this.ast.beget( EXP );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					case KEYWORD:
-					case FUNCTION:
-					case BRACE_OPEN:
+					if(this.options.saveAT) this.ast.push( curr );
 
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+					switch(next.type){
 
-						this.ast = this.ast.beget( BLK );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					default:
-						if(this.options.saveAT) this.ast.push( curr );
-						this.ast.push( this.tokens.pop() );
-						break;
-				} }
+						case PAREN_OPEN:
+						case IDENTIFIER:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( EXP );
+							break;
+
+						case KEYWORD:
+						case FUNCTION:
+						case BRACE_OPEN:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( BLK );
+							break;
+
+						case AT:
+
+							// we want to keep the token, but remove its
+							// "special" meaning because during compilation
+							// AT and AT_COLON are discarded
+							next.type = 'CONTENT';
+							this.ast.push( this.tokens.pop() );
+							break;
+
+						default:
+							this.ast.push( this.tokens.pop() );
+							break;
+					}
+
+				}
 				break;
 			
 			case TEXT_TAG_OPEN:

@@ -94,6 +94,9 @@ VCP.assemble = function(options, helpers){
 		for(i = 0; i < children.length; i++){
 			child = children[i];
 
+			// if saveAT is true, or if AT_COLON is used, these should not be compiled
+			if( child.type && child.type === AT || child.type === AT_COLON ) continue;
+
 			if(child.vquery){
 
 				visitNode(child);
