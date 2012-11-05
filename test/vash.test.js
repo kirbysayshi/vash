@@ -717,13 +717,30 @@ return vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)({name: 'what'}), '<1>This is content</1>' );
 		}
 	}
-	,'including email address in markup': {
+	,'email address': {
+
 		topic: function(){
-			var str = 'Hi philha@example.com';
-			return vash.compile(str);
+			return 'some.gr-at%email_address-indeed@complex-domain.subdom.edu'
 		}
-		,'does not leave markup mode': function(topic){
-			assert.equal(topic(), 'Hi philha@example.com');
+
+		,'included as content': {
+			topic: function(address){
+				return 'Hi ' + address;
+			}
+			,'does not leave markup mode': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), topic );
+			}
+		}
+
+		,'included within a href': {
+			topic: function(address){
+				return '<a href="mailto:' + address + '">' + address + '</a>'
+			}
+			,'is still just an email': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), topic );
+			}
 		}
 	}
 	,'explicit expression': {
@@ -1363,6 +1380,7 @@ return vows.describe('vash templating library').addBatch({
 		}
 
 	}
+
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
