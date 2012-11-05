@@ -132,7 +132,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
-				+ curr
+				+ (curr < 10 ? curr + ' ' : curr)
 				+ ' | '
 				+ line;
 		}).join('\n');
