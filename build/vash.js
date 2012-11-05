@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1294
+ * Vash - JavaScript Template Parser, v0.5.3-1385
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.3-1294";
+	exports["version"] = "0.5.3-1385";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -177,7 +177,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
-				+ curr
+				+ (curr < 10 ? curr + ' ' : curr)
 				+ ' | '
 				+ line;
 		}).join('\n');
@@ -457,14 +457,23 @@ PAIRS[AT_COLON] = NEWLINE;
 
 var TESTS = [
 
-	EMAIL, (/^([a-zA-Z0-9._%\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
-
+	// A real email address is considerably more complex, and unfortunately
+	// this complexity makes it impossible to differentiate between an address
+	// and an AT expression.
+	//
+	// Instead, this regex assumes the only valid characters for the user portion
+	// of the address are alphanumeric, period, and %. This means that a complex email like 
+	// who-something@example.com will be interpreted as an email, but incompletely. `who-`
+	// will be content, while `something@example.com` will be the email address.
+	//
+	// However, this is "Good Enough"© :).
+	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
 
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
 
 
-	,AT_COLON, (/^@\:/)
+	,AT_COLON, (/^(@\:)/)
 	,AT, (/^(@)/)
 
 
@@ -489,7 +498,17 @@ var TESTS = [
 
 	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
-		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
+		var  reHtml = /^(<[^\/ >]+?[^>]*?>)/
+			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
+
+		var tok = this.scan( reHtml, HTML_TAG_OPEN );
+
+		if( tok ){
+			this.spewIf( tok, reEmail );
+			this.spewIf( tok, /(@)/ );
+		}
+
+		return tok;
 	}
 	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
 
@@ -539,7 +558,7 @@ VLexer.prototype = {
 	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
-			this.input = this.input.substr((captures[0].length));
+			this.input = this.input.substr((captures[1].length));
 			
 			token = {
 				type: type
@@ -558,21 +577,21 @@ VLexer.prototype = {
 		}
 	}
 
-	,spewIf: function(tok, ifStr){
-		var parts, str;
+	,spewIf: function( tok, re ){
+		var result, index, spew
 
-		if(tok){
-			parts = tok.val.split(ifStr);
+		if( tok ){
+			result = re.exec( tok.val );
 
-			if(parts.length > 1){
-				tok.val = parts.shift();
-
-				str = ifStr + parts.join(ifStr);
-				this.input = str + this.input;
-				this.charno -= str.length;
+			if( result ){
+				index = tok.val.indexOf( result[1] );
+				spew = tok.val.substring( index );
+				this.input = spew + this.input;
+				this.charno -= spew.length;
+				tok.val = tok.val.substring( 0, index );
 			}
 		}
-		
+
 		return tok;
 	}
 
@@ -861,7 +880,7 @@ VParser.prototype = {
 		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
 
 			if(this.options.debugParser){
-				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
+				console.log(this.ast && this.ast.mode, curr.type, curr.toString(), curr.val);
 			}
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
@@ -894,7 +913,7 @@ VParser.prototype = {
 		if(this.options.debugParser && !this.options.initialMode){
 			// this should really only output on the true root
 
-			console.log(this.ast);
+			console.log(this.ast.toString());
 			console.log(this.ast.toTreeString());
 		}
 		
@@ -1028,38 +1047,50 @@ VParser.prototype = {
 				break;
 			
 			case AT:
-				if(next) { switch(next.type){
-					
-					case PAREN_OPEN:
-					case IDENTIFIER:
-					
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+				if(next) {
 
-						this.ast = this.ast.beget( EXP );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					case KEYWORD:
-					case FUNCTION:
-					case BRACE_OPEN:
+					if(this.options.saveAT) this.ast.push( curr );
 
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+					switch(next.type){
 
-						this.ast = this.ast.beget( BLK );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					default:
-						if(this.options.saveAT) this.ast.push( curr );
-						this.ast.push( this.tokens.pop() );
-						break;
-				} }
+						case PAREN_OPEN:
+						case IDENTIFIER:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( EXP );
+							break;
+
+						case KEYWORD:
+						case FUNCTION:
+						case BRACE_OPEN:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( BLK );
+							break;
+
+						case AT:
+
+							// we want to keep the token, but remove its
+							// "special" meaning because during compilation
+							// AT and AT_COLON are discarded
+							next.type = 'CONTENT';
+							this.ast.push( this.tokens.pop() );
+							break;
+
+						default:
+							this.ast.push( this.tokens.pop() );
+							break;
+					}
+
+				}
 				break;
 			
 			case TEXT_TAG_OPEN:
@@ -1432,6 +1463,9 @@ VCP.assemble = function(options, helpers){
 
 		for(i = 0; i < children.length; i++){
 			child = children[i];
+
+			// if saveAT is true, or if AT_COLON is used, these should not be compiled
+			if( child.type && child.type === AT || child.type === AT_COLON ) continue;
 
 			if(child.vquery){
 
