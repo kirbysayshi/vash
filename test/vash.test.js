@@ -1381,6 +1381,111 @@ return vows.describe('vash templating library').addBatch({
 
 	}
 
+	,'layout helpers': {
+
+		topic: function(){
+
+			this.opts = function(model){
+				return vash.vQuery.extend( model || {}, {
+					// mock up express settings
+					settings: {
+						views: __dirname + '/fixtures/views',
+						'view engine': 'vash'
+					}
+				});
+			}
+
+			return this.opts;
+		}
+
+		,'p': {
+			topic: function(opts){
+				vash.loadFile( 'p', opts(), this.callback );
+			}
+
+			,'renders': function( err, tpl ){
+				assert.equal( tpl( this.opts({ a: 'a' }) ), '<p>a</p>' )
+			}
+		}
+
+		,'includes': {
+
+			topic: function(opts){
+				vash.loadFile( 'list', opts(), this.callback );
+			}
+
+			,'renders': function( err, tpl ){
+				assert.equal( tpl( this.opts({ count: 2 }) ), '<ul><li>a</li><li>a</li></ul>' )
+			}
+		}
+
+		,'extends': {
+
+			topic: function(opts){
+				return function(inner){
+					return vash.compile('@html.extends("layout", function(){' + inner + '})');
+				}
+			}
+
+			,'renders blank': function( maker ){
+				assert.equal( maker('')( this.opts() ), '' )
+			}
+
+			,'renders expression': function( maker ){
+				assert.equal( maker('')( this.opts({ title: 'is title' }) ), 'is title' )
+			}
+
+			,'renders content block': function( maker ){
+				var block = '@html.block("content", function(model){<p>@model.a</p>})'
+				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p>' )
+			}
+
+			,'renders content block with include': function( maker ){
+				var block = '@html.block("content", function(model){@html.include("p")<p>@model.a</p>})'
+				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p><p>a</p>' )
+			}
+
+			,'renders content block with multiple include': function( maker ){
+				var  incp = '@html.include("p")'
+					,mb = '<p>@model.b</p>'
+					,block = '@html.block("content", function(model){' + incp + mb + incp + mb + '})'
+
+					,actual = maker(block)( this.opts({ a: 'a', b: 'b' }) )
+
+				console.log( 'actual', actual )
+				assert.equal( actual , '<p>a</p><p>b</p><p>a</p><p>b</p>' );
+			}
+
+			,'renders appended content block': function( maker ){
+				var  incp = '@html.include("p")'
+					,appf = '@html.append("footer", function(){<footer></footer>})'
+					,block = '@html.block("content", function(model){' + incp + appf + incp + '})'
+
+					,outp = '<p>a</p>'
+
+					,actual = maker(block)( this.opts({ a: 'a' }) )
+
+				console.log( 'actual', actual )
+				assert.equal( actual, outp + '<footer></footer>' + outp );
+			}
+
+			,'renders prepended/appended content block': function( maker ){
+				var  incp = '@html.include("p")'
+					,appf = '@html.append("footer", function(){<app></app>})'
+					,pref = '@html.prepend("footer", function(){<pre></pre>})'
+					,block = '@html.block("content", function(model){' + incp + appf + pref + incp + '})'
+
+					,outp = '<p>a</p>'
+
+					,actual = maker(block)( this.opts({ a: 'a' }) )
+
+				console.log( 'actual', actual )
+				assert.equal( actual, outp + '<pre></pre><app></app>' + outp );
+			}
+		}
+
+	}
+
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';
