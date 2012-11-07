@@ -1027,6 +1027,18 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( vash.compile(topic)(), '<div>This is content </div>' );
 			}
 		}
+
+		,'operators': {
+
+			topic: function(){
+				return '@for( var i = 0; i <= 0; i++ ){<p></p>}';
+			}
+
+			,'are not mistaken for tags': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), '<p></p>' );
+			}
+		}
 	}
 	,'simple expression followed by @()': {
 

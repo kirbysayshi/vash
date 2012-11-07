@@ -98,7 +98,7 @@ var TESTS = [
 
 	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
-		var  reHtml = /^(<[^\/ >]+?[^>]*?>)/
+		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 
 		var tok = this.scan( reHtml, HTML_TAG_OPEN );
