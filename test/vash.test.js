@@ -742,6 +742,14 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( tpl(), topic );
 			}
 		}
+
+		,'are not confused with': {
+			topic: '@model.title@console.log("")'
+			,'concatenated expressions': function( topic ){
+				var tpl = vash.compile( topic, { useWith: false } );
+				assert.equal( tpl({ title: 'who' }), 'who' );
+			}
+		}
 	}
 	,'explicit expression': {
 		topic: function(){
@@ -1437,7 +1445,7 @@ return vows.describe('vash templating library').addBatch({
 
 			topic: function(opts){
 				return function(inner){
-					return vash.compile('@console.log("extends call - start", html.__vo.length)@html.extends("layout", function(){' + inner + '})@console.log("extends call - end", html.__vo.length)');
+					return vash.compile('@html.extends("layout", function(){' + inner + '})');
 				}
 			}
 
