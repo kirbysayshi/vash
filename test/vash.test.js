@@ -1415,7 +1415,9 @@ return vows.describe('vash templating library').addBatch({
 			}
 
 			,'renders': function( err, tpl ){
-				assert.equal( tpl( this.opts({ count: 2 }) ), '<ul><li>a</li><li>a</li></ul>' )
+				var actual = tpl( this.opts({ count: 2 }) )
+				//console.log('actual', actual )
+				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
 			}
 		}
 
@@ -1423,7 +1425,7 @@ return vows.describe('vash templating library').addBatch({
 
 			topic: function(opts){
 				return function(inner){
-					return vash.compile('@html.extends("layout", function(){' + inner + '})');
+					return vash.compile('@console.log("extends call - start", html.__vo.length)@html.extends("layout", function(){' + inner + '})@console.log("extends call - end", html.__vo.length)');
 				}
 			}
 
@@ -1432,7 +1434,9 @@ return vows.describe('vash templating library').addBatch({
 			}
 
 			,'renders expression': function( maker ){
-				assert.equal( maker('')( this.opts({ title: 'is title' }) ), 'is title' )
+				var actual = maker('')( this.opts({ title: 'is title' }) )
+				console.log('actual', actual)
+				assert.equal( actual, 'is title' )
 			}
 
 			,'renders content block': function( maker ){
@@ -1452,7 +1456,7 @@ return vows.describe('vash templating library').addBatch({
 
 					,actual = maker(block)( this.opts({ a: 'a', b: 'b' }) )
 
-				console.log( 'actual', actual )
+				//console.log( 'actual', actual )
 				assert.equal( actual , '<p>a</p><p>b</p><p>a</p><p>b</p>' );
 			}
 
@@ -1465,8 +1469,8 @@ return vows.describe('vash templating library').addBatch({
 
 					,actual = maker(block)( this.opts({ a: 'a' }) )
 
-				console.log( 'actual', actual )
-				assert.equal( actual, outp + '<footer></footer>' + outp );
+				//console.log( 'actual', actual )
+				assert.equal( actual, outp + outp + '<footer></footer>' );
 			}
 
 			,'renders prepended/appended content block': function( maker ){
@@ -1479,8 +1483,8 @@ return vows.describe('vash templating library').addBatch({
 
 					,actual = maker(block)( this.opts({ a: 'a' }) )
 
-				console.log( 'actual', actual )
-				assert.equal( actual, outp + '<pre></pre><app></app>' + outp );
+				//console.log( 'actual', actual )
+				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
 			}
 		}
 
