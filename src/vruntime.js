@@ -6,7 +6,7 @@
 	// Ideally this is where any helper-specific configuration would go, things
 	// such as syntax highlighting callbacks, whether to temporarily disable
 	// html escaping, and others.
-	// 
+	//
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
@@ -20,7 +20,7 @@
 		: vash;
 
 	var helpers = (vash['helpers'] = vash['helpers'] || {});
-	
+
 	vash.helpers.config = {};
 
 	// CONFIG
@@ -46,22 +46,22 @@
 
 	helpers.raw = function( val ) {
 		var func = function() { return val; }
-		
-		val = val != null ? val : "";		
-		
+
+		val = val != null ? val : "";
+
 		return {
 			 toHtmlString: func
 			,toString: func
 		};
 	}
-		
+
 	helpers.escape = function( val ) {
 		var	func = function() { return val; }
 
 		val = val != null ? val : "";
-		
+
 		if ( typeof val.toHtmlString !== "function" ) {
-			
+
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
@@ -69,7 +69,7 @@
 				,toString: func
 			};
 		}
-		
+
 		return val;
 	}
 
@@ -80,11 +80,10 @@
 	// BUFFER MANIPULATION
 	//
 	// These are to be used from within helpers, to allow for manipulation of
-	// output in a sane manner. 
+	// output in a sane manner.
 
-	helpers.buffer = (function(){ 
-		var helpers = helpers;
-		
+	helpers.buffer = (function(){
+
 		return {
 
 			mark: function(){
@@ -109,14 +108,14 @@
 				}
 			}
 
-		} 
+		}
 	}());
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// ERROR REPORTING 
+	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
 	helpers.reportError = function(e, lineno, chr, orig, lb){

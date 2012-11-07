@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1385
+ * Vash - JavaScript Template Parser, v0.5.4-1386
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.3-1385";
+	exports["version"] = "0.5.4-1386";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -51,7 +51,7 @@
 	// Ideally this is where any helper-specific configuration would go, things
 	// such as syntax highlighting callbacks, whether to temporarily disable
 	// html escaping, and others.
-	// 
+	//
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
@@ -65,7 +65,7 @@
 		: vash;
 
 	var helpers = (vash['helpers'] = vash['helpers'] || {});
-	
+
 	vash.helpers.config = {};
 
 	// CONFIG
@@ -91,22 +91,22 @@
 
 	helpers.raw = function( val ) {
 		var func = function() { return val; }
-		
-		val = val != null ? val : "";		
-		
+
+		val = val != null ? val : "";
+
 		return {
 			 toHtmlString: func
 			,toString: func
 		};
 	}
-		
+
 	helpers.escape = function( val ) {
 		var	func = function() { return val; }
 
 		val = val != null ? val : "";
-		
+
 		if ( typeof val.toHtmlString !== "function" ) {
-			
+
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
@@ -114,7 +114,7 @@
 				,toString: func
 			};
 		}
-		
+
 		return val;
 	}
 
@@ -125,11 +125,10 @@
 	// BUFFER MANIPULATION
 	//
 	// These are to be used from within helpers, to allow for manipulation of
-	// output in a sane manner. 
+	// output in a sane manner.
 
-	helpers.buffer = (function(){ 
-		var helpers = helpers;
-		
+	helpers.buffer = (function(){
+
 		return {
 
 			mark: function(){
@@ -154,14 +153,14 @@
 				}
 			}
 
-		} 
+		}
 	}());
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// ERROR REPORTING 
+	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
 	helpers.reportError = function(e, lineno, chr, orig, lb){
@@ -1574,6 +1573,7 @@ VCP.assemble = function(options, helpers){
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
+	exports["vQuery"] = vQuery;
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {
