@@ -2,6 +2,8 @@
 
 Vash is an implementation of the [Razor](http://www.asp.net/webmatrix/tutorials/2-introduction-to-asp-net-web-programming-using-the-razor-syntax) templating syntax in JavaScript. A cheat sheet can be found on [Phil Haack's Blog](http://haacked.com/archive/2011/01/06/razor-syntax-quick-reference.aspx). I call this a "template-maker" because it's not a framework, and it's not a templating engine. Vash does one thing, and one thing only: turn a string template into a compiled JS function!
 
+Vash now has a ["playground"](http://codepen.io/kirbysayshi/full/IjrFw) of sorts at [CodePen.io](http://codepen.io). It uses the current version of `vash.js` from the `build` folder. Fork it to test your own template ideas!
+
 Here's a quick example:
 
 	// compile template
