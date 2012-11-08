@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.4-1386
+ * Vash - JavaScript Template Parser, v0.5.5-1514
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -285,7 +285,8 @@
 
 	helpers.include = function(name, model){
 
-		var self = this, origModel = this.model;
+		var  self = this
+			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(name, this.model, function(err, tpl){

@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.4-1386
+ * Vash - JavaScript Template Parser, v0.5.5-1514
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.4-1386";
+	exports["version"] = "0.5.5-1514";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -321,7 +321,8 @@
 
 	helpers.include = function(name, model){
 
-		var self = this, origModel = this.model;
+		var  self = this
+			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(name, this.model, function(err, tpl){
@@ -466,7 +467,7 @@ var TESTS = [
 	// will be content, while `something@example.com` will be the email address.
 	//
 	// However, this is "Good Enough"© :).
-	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
+	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
 
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
@@ -497,7 +498,7 @@ var TESTS = [
 
 	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
-		var  reHtml = /^(<[^\/ >]+?[^>]*?>)/
+		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 
 		var tok = this.scan( reHtml, HTML_TAG_OPEN );
@@ -1380,7 +1381,7 @@ VCP.assemble = function(options, helpers){
 
 	options = options || {};
 	helpers = helpers || {};
-	
+
 
 	var buffer = []
 		,escapeStack = []
@@ -1391,7 +1392,7 @@ VCP.assemble = function(options, helpers){
 		,joined
 		,compiledFunc
 		,linkedFunc
-		
+
 		,markupBuffer = [];
 
 	function insertDebugVars(tok){
@@ -1414,7 +1415,7 @@ VCP.assemble = function(options, helpers){
 	}
 
 	function visitBlockTok(tok, parentNode, index){
-		
+
 		buffer.push( tok.val /*.replace(reQuote, '\"')*/ );
 	}
 
@@ -1427,7 +1428,7 @@ VCP.assemble = function(options, helpers){
 		if(options.htmlEscape !== false){
 
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
-				start += options.helpersName + '.escape(';				
+				start += options.helpersName + '.escape(';
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
@@ -1444,7 +1445,7 @@ VCP.assemble = function(options, helpers){
 			end += "); \n";
 		}
 
-		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );		
+		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
 			insertDebugVars(tok);
@@ -1469,7 +1470,7 @@ VCP.assemble = function(options, helpers){
 			if(child.vquery){
 
 				visitNode(child);
-			
+
 			} else if(node.mode === MKP){
 
 				visitMarkupTok(child, node, i);
@@ -1479,7 +1480,7 @@ VCP.assemble = function(options, helpers){
 				visitBlockTok(child, node, i);
 
 			} else if(node.mode === EXP){
-				
+
 				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
 
 			}
@@ -1500,52 +1501,80 @@ VCP.assemble = function(options, helpers){
 		}
 	}
 
-	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.push( options.helpersName + ' = ' + options.helpersName + ' || vash.helpers; \n');
-	buffer.push( options.helpersName + '.__vo = ' + options.helpersName + '.__vo || []; \n');
-	buffer.push('var __vo = ' + options.helpersName + '.__vo; \n');
-	buffer.push( options.helpersName + '.model = ' + options.modelName + '; \n');
+	var pre = ''
+		+ 'HELPERSNAME = HELPERSNAME || vash.helpers; \n'
+		+ 'var __vo = HELPERSNAME.__vo = HELPERSNAME.__vo || []; \n'
+		+ 'HELPERSNAME.model = MODELNAME; \n'
 
-	if(options.debug){
-		buffer.push(
-			 'var __vl = ' + options.helpersName + '.__vl = 0,'
-			,'__vc = ' + options.helpersName + '.__vc = 0; \n'
-		);
+		// we mark the buffer to know the side effects of the currently running
+		// template
+		+ 'var __vomstart = HELPERSNAME.buffer.mark(); \n'
+
+		// `__vanddie`, if true, tells the template that, when finished, it
+		// should clear the buffer and mark execution as concluded. It is
+		// necessary to know if `__vexecuting` was set before or during this
+		// template.
+		+ 'var __vanddie; \n'
+
+		// `__vexecuting`, if set, means that another template is running / has
+		// run before the currently executing template. If this is true, then
+		// don't clear things out when this template finishes.
+		+ 'if( HELPERSNAME.__vexecuting ){ \n'
+		+ '  __vanddie = false; \n'
+		+ '} else { \n'
+		+ '  __vanddie = true; \n'
+		+ '  HELPERSNAME.__vexecuting = true; \n'
+		+ '} \n'
+
+	if( options.debug ){
+		pre += 'var __vl = HELPERSNAME.__vl = 0, __vc = HELPERSNAME.__vc = 0; \n'
 	}
-	
-	visitNode(this.ast);
 
-	if(options.useWith === true){
-		buffer.unshift( "with(" + options.modelName + " || {}){ \n" );
-		buffer.push("}");
+	pre += 'VASHTPLBODY';
+
+	if( options.useWith ){
+		pre = 'with( MODELNAME || {} ){ \n' + pre + '} \n'
 	}
 
-	if(options.debug){
-		buffer.unshift( 'try { \n' );
-		buffer.push( '} catch(e){ '
-			,options.helpersName + '.reportError'
-			,'(e, __vl, __vc, '
-			,'"' + this.originalMarkup
+	if( options.debug ){
+		pre = 'try { \n' + pre + '} catch( e ){ \n';
+		pre += ''
+			+ 'HELPERSNAME.reportError( e, __vl, __vc, '
+			+ '"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reQuote, '\\$1')
 				.replace(reEscapedQuote, '\\$1')
 			+ '"'
-			,') } \n' );
+			+ ' ); \n'
+		pre += '} \n';
 	}
 
-	buffer.push( 'delete ' + options.helpersName + '.__vo; \n');
-
-	if(options.debug){
-		buffer.push( 'delete ' + options.helpersName + '.__vl \n' );
-		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
+	if( options.debug ){
+		pre += ''
+			+ 'delete HELPERSNAME.__vl; \n'
+			+ 'delete HELPERSNAME.__vc; \n'
 	}
 
-	buffer.push("return __vo.join(''); \n");
+	pre += ''
+		+ 'var __vall = __vo.join(""); \n'
 
-	joined = buffer.join('');
+		// as said above, if `__vanddie` is true, then this is the "root" template
+		// or the first to be run this event loop.
+		+ 'if( __vanddie ){ \n'
+		+ '  HELPERSNAME.buffer.empty(); \n'
+		+ '  delete HELPERSNAME.__vexecuting; \n'
+		+ '} \n'
+		+ 'return __vall; \n'
 
-	// coalesce markup
-	joined = joined
+	visitNode(this.ast);
+
+	joined = pre
+		// substitutions
+		.replace( /VASHTPLBODY/g, buffer.join('') )
+		.replace( /HELPERSNAME/g, options.helpersName )
+		.replace( /MODELNAME/g, options.modelName )
+
+		// coalesce markup
 		.split("')MKPMKP('").join('')
 		.split("MKP(").join("__vo.push(")
 		.split(")MKP").join("); \n");
@@ -1553,18 +1582,18 @@ VCP.assemble = function(options, helpers){
 	if(options.debugCompiler){
 		console.log(joined);
 	}
-	
+
 	try {
-		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
+		compiledFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
 		vash.helpers.reportError(e, 0, 0, joined, /\n/)
-	}	
+	}
 
 	// Link compiled function to helpers collection, but report original function
 	// body for code generation purposes.
 	linkedFunc = function(model) { return compiledFunc(model, helpers); };
 	linkedFunc.toString = function() { return compiledFunc.toString(); };
-	
+
 	return linkedFunc;
 }
 

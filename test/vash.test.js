@@ -1455,7 +1455,7 @@ return vows.describe('vash templating library').addBatch({
 
 			,'renders expression': function( maker ){
 				var actual = maker('')( this.opts({ title: 'is title' }) )
-				console.log('actual', actual)
+				//console.log('actual', actual)
 				assert.equal( actual, 'is title' )
 			}
 

@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax template parser/generator, for JS",
-	"version": "0.5.4-1386",
+	"version": "0.5.5-1514",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"bin": {
 		"vash": "./bin/vash"
@@ -25,7 +25,7 @@
 		"benchmark": ">=0.2.2",
 		"dot": ">=0.1.7",
 		"express": "3.0.0rc4",
-		"vows": ">=0.6.2",
+		"vows": "~0.6.4",
 		"jshtml": ">=0.2.2",
 		"semver": ">=1.0.0",
 		"underscore": ">=v1.3.3",

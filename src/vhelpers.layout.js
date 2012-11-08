@@ -82,7 +82,8 @@
 
 	helpers.include = function(name, model){
 
-		var self = this, origModel = this.model;
+		var  self = this
+			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(name, this.model, function(err, tpl){
