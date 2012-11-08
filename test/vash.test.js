@@ -1441,6 +1441,53 @@ return vows.describe('vash templating library').addBatch({
 			}
 		}
 
+		,'block': {
+
+			topic: function(opts){
+				return function(before, inner, after){
+					before = before || '';
+					after = after || '';
+					return vash.compile(
+						before
+						+ '@html.block("main"' + ( inner ? ', function(model){' + inner + '}' : '' ) + ')'
+						+ after
+					)
+				}
+			}
+
+			,'renders blank': function( maker ){
+				assert.equal( maker()( this.opts() ), '' );
+			}
+
+			,'renders replace': function( maker ){
+				var ctn = '<p></p>'
+					,before = '@html.block("main", function(){' + ctn + '})'
+
+					,actual = maker(before, '', '')( this.opts() );
+
+				assert.equal( actual, ctn );
+			}
+
+			,'ignores subsequent blocks': function( maker ){
+				var ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,before = '@html.block("main", function(){' + ctnA + '})'
+						+ '@html.block("main", function(){' + ctnB + '})'
+
+					,actual = maker(before, '', '')( this.opts() );
+
+				assert.equal( actual, ctnA );
+			}
+
+			/*,'renders default content': function( maker ){
+				var ctn = '<p></p>'
+
+					,actual = maker('', ctn, '')( this.opts() );
+
+				assert.equal( actual, ctn );
+			}*/
+		}
+
 		,'extends': {
 
 			topic: function(opts){
@@ -1505,6 +1552,17 @@ return vows.describe('vash templating library').addBatch({
 
 				//console.log( 'actual', actual )
 				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
+			}
+
+			,'ignores subsequent blocks': function( maker ){
+				var  ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,block = '@html.block("content", function(){' + ctnA + '})'
+						+ '@html.block("content", function(){' + ctnB + '})'
+
+					,actual = maker(block)( this.opts() )
+
+				assert.equal( actual, ctnA );
 			}
 		}
 

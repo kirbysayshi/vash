@@ -120,7 +120,7 @@
 			}
 		}
 
-		if( ctn ){
+		if( ctn && !this.blocks[name] ){
 			this.blocks[name] = ctn;
 		}
 	}
