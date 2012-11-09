@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.5-1538
+ * Vash - JavaScript Template Parser, v0.5.5-1543
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.5-1538";
+	exports["version"] = "0.5.5-1543";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1341,10 +1341,15 @@ VParser.prototype = {
 				ahead = this.tokens[ this.tokens.length - 1 ];
 				if(
 					ahead &&
-					(  ahead.type === IDENTIFIER
-					|| ahead.type === KEYWORD
-					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD )
+					(  //ahead.type === IDENTIFIER
+					//|| ahead.type === KEYWORD
+					//|| ahead.type === FUNCTION
+					//|| ahead.type === PERIOD
+					// if it's "expressions all the way down", then there is no way
+					// to exit EXP mode without running out of tokens, i.e. we're 
+					// within a sub parser
+					//||
+					this.ast.parent && this.ast.parent.mode === EXP )
 				) {
 					this.ast.push(curr);
 				} else {

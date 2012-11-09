@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.5-1538
+ * Vash - JavaScript Template Parser, v0.5.5-1543
  *
  * https://github.com/kirbysayshi/vash
  *
