@@ -1499,11 +1499,11 @@ return vows.describe('vash templating library').addBatch({
 			}*/
 		}
 
-		,'extends': {
+		,'extend': {
 
 			topic: function(opts){
 				return function(inner){
-					return vash.compile('@html.extends("layout", function(){' + inner + '})');
+					return vash.compile('@html.extend("layout", function(){' + inner + '})');
 				}
 			}
 

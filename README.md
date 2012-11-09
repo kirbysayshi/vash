@@ -263,7 +263,7 @@ A basic example can be found in [test/vash.express.js](vash/tree/master/test/vas
 As of v0.5.1, Vash now offers runtime view engine support in the style of Jade's `block/append/prepend` and `extends/include`. This means that you can do:
 
 	// in index.vash
-	@html.extends('layout', function(model){
+	@html.extend('layout', function(model){
 
 		@html.block('content', function(model){
 

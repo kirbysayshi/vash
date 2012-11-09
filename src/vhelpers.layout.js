@@ -67,7 +67,7 @@
 		})
 	}
 
-	helpers.extends = function(path, ctn){
+	helpers.extend = function(path, ctn){
 		var  self = this
 			,origModel = this.model;
 
