@@ -62,7 +62,7 @@ var TESTS = [
 	// and an AT expression.
 	//
 	// Instead, this regex assumes the only valid characters for the user portion
-	// of the address are alphanumeric, period, and %. This means that a complex email like 
+	// of the address are alphanumeric, period, and %. This means that a complex email like
 	// who-something@example.com will be interpreted as an email, but incompletely. `who-`
 	// will be content, while `something@example.com` will be the email address.
 	//
@@ -154,12 +154,12 @@ function VLexer(str){
 }
 
 VLexer.prototype = {
-	
+
 	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
 			this.input = this.input.substr((captures[1].length));
-			
+
 			token = {
 				type: type
 				,line: this.lineno
