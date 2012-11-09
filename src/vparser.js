@@ -482,7 +482,11 @@ VParser.prototype = {
 					(  ahead.type === IDENTIFIER
 					|| ahead.type === KEYWORD
 					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD )
+					|| ahead.type === PERIOD
+					// if it's "expressions all the way down", then there is no way
+					// to exit EXP mode without running out of tokens, i.e. we're
+					// within a sub parser
+					|| this.ast.parent && this.ast.parent.mode === EXP )
 				) {
 					this.ast.push(curr);
 				} else {

@@ -774,19 +774,30 @@ return vows.describe('vash templating library').addBatch({
 			var str = '<span>@a.replace("x", "o")</span>';
 			return str;
 		}
-		,'throws syntax error': function(topic){
+		,'renders': function(topic){
 			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>oxx</span>');
 		}
 	}
-	,'expression with regex in func call': {
-		topic: function(){
-			var str = '<span>@a.replace(/x/gi, "o")</span>';
-			return str;
+
+	,'regex': {
+
+		'simple expression': {
+			topic: '<span>@a.replace(/a/gi, "o")</span>'
+			,'replaces': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl({ a: 'a' }), '<span>o</span>');
+			}
 		}
-		,'throws syntax error': function(topic){
-			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>ooo</span>');
+
+		,'period meta character': {
+			topic: '<span>@a.replace(/./gi, "o")</span>'
+			,'replaces': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl({ a: 'a' }), '<span>o</span>')
+			}
 		}
 	}
+
 	,'escaping the @ symbol': {
 		topic: function(){
 			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
