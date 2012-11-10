@@ -9,7 +9,7 @@ var vows = require('vows')
 exports.run = function(vash){
 
 vash.config.useWith = true;
-vash.config.debug = true;
+vash.config.debug = false;
 vash.config.client = false;
 
 var tryCompile = function(str){
@@ -1412,6 +1412,17 @@ return vows.describe('vash templating library').addBatch({
 
 	}
 
+	,'default helpers': {
+
+		'highlight': {
+			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
+			,'wraps with <pre><code>': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
+			}
+		}
+	}
+
 	,'layout helpers': {
 
 		topic: function(){
@@ -1575,6 +1586,34 @@ return vows.describe('vash templating library').addBatch({
 
 				assert.equal( actual, ctnA );
 			}
+
+			/*,'deep': {
+
+				topic: function(maker){
+					return function(before, inner, after){
+						before = before || '';
+						after = after || '';
+						return vash.compile(
+							before
+							+ '@html.extend("blockextends", function(model){' + inner + '})'
+							+ after
+						)
+					}
+				}
+
+				,'renders div + default': function( maker ){
+					assert.equal( maker()( this.opts() ), '<div><block></block></div>' );
+				}
+
+				,'renders wrapped article': function( maker ){
+					var inner = '<article></article>'
+						,block = '@html.block("content", function(){' + inner + '})'
+
+						,actual = maker(block)( this.opts() )
+
+					assert.equal( actual, '<div>' + inner + '</div>' )
+				}
+			}*/
 		}
 
 	}
