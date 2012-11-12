@@ -40,6 +40,7 @@
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
+	exports["vQuery"] = vQuery;
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {

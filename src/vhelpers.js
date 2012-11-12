@@ -34,7 +34,7 @@
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {
-			this.buffer.push(cbOutLines);
+			this.buffer.push( cbOutLines );
 		}
 
 		this.buffer.push( '</code></pre>' );

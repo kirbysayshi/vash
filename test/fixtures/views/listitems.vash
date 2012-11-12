@@ -1,0 +1,1 @@
+@for(var i = 0; i < model.count; i++){<li>a</li>}

@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1312
+ * Vash - JavaScript Template Parser, v0.5.7-1570
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -120,9 +120,9 @@
 
 		this.push = function( buffer ) {
 			if( buffer instanceof Array ) {
-				__vo.push.apply( helpers.__vo, buffer );
+				__vo.push.apply( __vo, buffer );
 			} else if ( arguments.length > 1 ) {
-				__vo.push.apply( helpers.__vo, Array.prototype.slice.call( arguments ));
+				__vo.push.apply( __vo, Array.prototype.slice.call( arguments ));
 			} else {
 				__vo.push( buffer );
 			}

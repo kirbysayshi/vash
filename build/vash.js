@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1312
+ * Vash - JavaScript Template Parser, v0.5.7-1570
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.3-1312";
+	exports["version"] = "0.5.7-1570";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -156,9 +156,9 @@
 
 		this.push = function( buffer ) {
 			if( buffer instanceof Array ) {
-				__vo.push.apply( helpers.__vo, buffer );
+				__vo.push.apply( __vo, buffer );
 			} else if ( arguments.length > 1 ) {
-				__vo.push.apply( helpers.__vo, Array.prototype.slice.call( arguments ));
+				__vo.push.apply( __vo, Array.prototype.slice.call( arguments ));
 			} else {
 				__vo.push( buffer );
 			}
@@ -244,7 +244,7 @@
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {
-			this.buffer.push(cbOutLines);
+			this.buffer.push( cbOutLines );
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -324,14 +324,15 @@
 		})
 	}
 
-	helpers.extends = function(path, ctn){
+	helpers.extend = function(path, ctn){
 		var  self = this
+			,buffer = this.buffer
 			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(path, this.model, function(err, tpl){
-			ctn(self.model); // the child content
-			tpl(self.model); // the tpl being extended
+			buffer.push(ctn(self.model)); // the child content
+			buffer.push(tpl(self.model)); // the tpl being extended
 		})
 
 		this.model = origModel;
@@ -339,11 +340,13 @@
 
 	helpers.include = function(name, model){
 
-		var self = this, origModel = this.model;
+		var  self = this
+			,buffer = this.buffer
+			,origModel = this.model;
 
 		// this is a synchronous callback
-		vash.loadFile(name, this.model, function(err, tpl){
-			tpl(model || self.model);
+		vash.loadFile(name, this.model, function(err, tpl){			
+			buffer.push( tpl(model || self.model));
 		})
 
 		this.model = origModel;
@@ -376,7 +379,7 @@
 			}
 		}
 
-		if( ctn ){
+		if( ctn && !this.blocks[name] ){
 			this.blocks[name] = ctn;
 		}
 	}
@@ -474,14 +477,23 @@ PAIRS[AT_COLON] = NEWLINE;
 
 var TESTS = [
 
-	EMAIL, (/^([a-zA-Z0-9._%\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
-
+	// A real email address is considerably more complex, and unfortunately
+	// this complexity makes it impossible to differentiate between an address
+	// and an AT expression.
+	//
+	// Instead, this regex assumes the only valid characters for the user portion
+	// of the address are alphanumeric, period, and %. This means that a complex email like
+	// who-something@example.com will be interpreted as an email, but incompletely. `who-`
+	// will be content, while `something@example.com` will be the email address.
+	//
+	// However, this is "Good Enough"© :).
+	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
 
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
 
 
-	,AT_COLON, (/^@\:/)
+	,AT_COLON, (/^(@\:)/)
 	,AT, (/^(@)/)
 
 
@@ -506,7 +518,17 @@ var TESTS = [
 
 	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
-		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
+		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
+			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
+
+		var tok = this.scan( reHtml, HTML_TAG_OPEN );
+
+		if( tok ){
+			this.spewIf( tok, reEmail );
+			this.spewIf( tok, /(@)/ );
+		}
+
+		return tok;
 	}
 	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
 
@@ -552,12 +574,12 @@ function VLexer(str){
 }
 
 VLexer.prototype = {
-	
+
 	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
-			this.input = this.input.substr((captures[0].length));
-			
+			this.input = this.input.substr((captures[1].length));
+
 			token = {
 				type: type
 				,line: this.lineno
@@ -575,21 +597,21 @@ VLexer.prototype = {
 		}
 	}
 
-	,spewIf: function(tok, ifStr){
-		var parts, str;
+	,spewIf: function( tok, re ){
+		var result, index, spew
 
-		if(tok){
-			parts = tok.val.split(ifStr);
+		if( tok ){
+			result = re.exec( tok.val );
 
-			if(parts.length > 1){
-				tok.val = parts.shift();
-
-				str = ifStr + parts.join(ifStr);
-				this.input = str + this.input;
-				this.charno -= str.length;
+			if( result ){
+				index = tok.val.indexOf( result[1] );
+				spew = tok.val.substring( index );
+				this.input = spew + this.input;
+				this.charno -= spew.length;
+				tok.val = tok.val.substring( 0, index );
 			}
 		}
-		
+
 		return tok;
 	}
 
@@ -878,11 +900,11 @@ VParser.prototype = {
 		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
 
 			if(this.options.debugParser){
-				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
+				console.log(this.ast && this.ast.mode, curr.type, curr.toString(), curr.val);
 			}
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
-				
+
 				this.ast = this.ast.beget( this.options.initialMode || MKP );
 
 				if(this.options.initialMode === EXP){
@@ -894,12 +916,12 @@ VParser.prototype = {
 				this.handleMKP(curr);
 				continue;
 			}
-			
+
 			if(this.ast.mode === BLK){
 				this.handleBLK(curr);
 				continue;
 			}
-			
+
 			if(this.ast.mode === EXP){
 				this.handleEXP(curr);
 				continue;
@@ -911,13 +933,13 @@ VParser.prototype = {
 		if(this.options.debugParser && !this.options.initialMode){
 			// this should really only output on the true root
 
-			console.log(this.ast);
+			console.log(this.ast.toString());
 			console.log(this.ast.toTreeString());
 		}
-		
+
 		return this.ast;
 	}
-	
+
 	,exceptionFactory: function(e, type, tok){
 
 		// second param is either a token or string?
@@ -953,7 +975,7 @@ VParser.prototype = {
 				break;
 			}
 		}
-		
+
 		return tks;
 	}
 
@@ -963,7 +985,7 @@ VParser.prototype = {
 			,nstart = 0
 			,nend = 0
 			,tks = [];
-		
+
 		// this is fairly convoluted because the start and end for single/double
 		// quotes is the same, and can also be escaped
 
@@ -976,20 +998,20 @@ VParser.prototype = {
 				} else if( start === end && prev.type !== startEscape ) {
 					nend++;
 				}
-				
+
 			} else if( next.type === end ){
 				nend++;
 				if(prev && prev.type === endEscape){ nend--; }
 			}
 
 			tks.push(next);
-			
+
 			if(nstart === nend) { break; }
 			prev = next;
 			next = this.tokens.pop();
 			if(!next) { throw this.exceptionFactory(new Error(), 'UNMATCHED', curr); }
 		}
-		
+
 		return tks.reverse();
 	}
 
@@ -998,18 +1020,18 @@ VParser.prototype = {
 			,closer
 			,miniParse
 			,parseOpts = vQuery.extend({}, this.options);
-		
+
 		parseOpts.initialMode = modeToOpen;
-		
+
 		subTokens = this.advanceUntilMatched(
 			curr
 			,curr.type
 			,PAIRS[ curr.type ]
 			,null
 			,AT );
-		
+
 		subTokens.pop();
-		
+
 		closer = subTokens.shift();
 
 		if( !includeDelimsInSub ){
@@ -1037,52 +1059,64 @@ VParser.prototype = {
 			,ahead = this.tokens[ this.tokens.length - 2 ]
 			,tagName = null
 			,opener;
-		
+
 		switch(curr.type){
-			
+
 			case AT_STAR_OPEN:
 				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
 				break;
-			
+
 			case AT:
-				if(next) { switch(next.type){
-					
-					case PAREN_OPEN:
-					case IDENTIFIER:
-					
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+				if(next) {
 
-						this.ast = this.ast.beget( EXP );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					case KEYWORD:
-					case FUNCTION:
-					case BRACE_OPEN:
+					if(this.options.saveAT) this.ast.push( curr );
 
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+					switch(next.type){
 
-						this.ast = this.ast.beget( BLK );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					default:
-						if(this.options.saveAT) this.ast.push( curr );
-						this.ast.push( this.tokens.pop() );
-						break;
-				} }
+						case PAREN_OPEN:
+						case IDENTIFIER:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( EXP );
+							break;
+
+						case KEYWORD:
+						case FUNCTION:
+						case BRACE_OPEN:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( BLK );
+							break;
+
+						case AT:
+
+							// we want to keep the token, but remove its
+							// "special" meaning because during compilation
+							// AT and AT_COLON are discarded
+							next.type = 'CONTENT';
+							this.ast.push( this.tokens.pop() );
+							break;
+
+						default:
+							this.ast.push( this.tokens.pop() );
+							break;
+					}
+
+				}
 				break;
-			
+
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
-				
+
 				if(tagName === null && next && next.type === AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
 				}
@@ -1099,17 +1133,17 @@ VParser.prototype = {
 				}
 
 				break;
-			
+
 			case TEXT_TAG_CLOSE:
 			case HTML_TAG_CLOSE:
 				tagName = curr.val.match(/^<\/([^>]+)/i);
-				
+
 				if(tagName === null && next && next.type === AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for </@exp>
 				}
-				
+
 				opener = this.ast.closest( MKP, tagName[1] );
-				
+
 				if(opener === null || opener.tagName !== tagName[1]){
 					// couldn't find opening tag
 					// could mean this closer is within a child parser
@@ -1117,7 +1151,7 @@ VParser.prototype = {
 				} else {
 					this.ast = opener;
 				}
-				
+
 				if(HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
 					this.ast.push( curr );
 				}
@@ -1146,11 +1180,11 @@ VParser.prototype = {
 				this.ast.push(curr);
 				break;
 		}
-		
+
 	}
 
 	,handleBLK: function(curr){
-		
+
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,submode
 			,opener
@@ -1159,16 +1193,16 @@ VParser.prototype = {
 			,parseOpts
 			,miniParse
 			,i;
-		
+
 		switch(curr.type){
-			
+
 			case AT:
 				if(next.type !== AT){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
 				}
 				break;
-			
+
 			case AT_STAR_OPEN:
 				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
 				break;
@@ -1176,7 +1210,7 @@ VParser.prototype = {
 			case AT_COLON:
 				this.subParse(curr, MKP, true);
 				break;
-			
+
 			case TEXT_TAG_OPEN:
 			case TEXT_TAG_CLOSE:
 			case HTML_TAG_SELFCLOSE:
@@ -1185,7 +1219,7 @@ VParser.prototype = {
 				this.ast = this.ast.beget(MKP);
 				this.tokens.push(curr); // defer
 				break;
-			
+
 			//case FAT_ARROW:
 			//	this.ast.push(curr)
 			//	this.ast = this.ast.beget(BLK);
@@ -1196,9 +1230,9 @@ VParser.prototype = {
 				submode = this.options.favorText && curr.type === BRACE_OPEN
 					? MKP
 					: BLK;
-				
+
 				this.subParse( curr, submode );
-				
+
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
 
@@ -1227,11 +1261,11 @@ VParser.prototype = {
 				this.ast.push(curr);
 				break;
 		}
-		
+
 	}
 
 	,handleEXP: function(curr){
-		
+
 		var ahead = null
 			,opener
 			,closer
@@ -1240,15 +1274,15 @@ VParser.prototype = {
 			,subTokens
 			,prev
 			,i;
-		
+
 		switch(curr.type){
-			
+
 			case KEYWORD:
 			case FUNCTION:
 				this.ast = this.ast.beget(BLK);
 				this.tokens.push(curr); // defer
 				break;
-			
+
 			case WHITESPACE:
 			case LOGICAL:
 			case ASSIGN_OPERATOR:
@@ -1269,7 +1303,7 @@ VParser.prototype = {
 			case IDENTIFIER:
 				this.ast.push(curr);
 				break;
-			
+
 			case SINGLE_QUOTE:
 			case DOUBLE_QUOTE:
 
@@ -1312,7 +1346,7 @@ VParser.prototype = {
 				}
 
 				break;
-			
+
 			case BRACE_OPEN:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(BLK);
@@ -1330,7 +1364,11 @@ VParser.prototype = {
 					(  ahead.type === IDENTIFIER
 					|| ahead.type === KEYWORD
 					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD )
+					|| ahead.type === PERIOD
+					// if it's "expressions all the way down", then there is no way
+					// to exit EXP mode without running out of tokens, i.e. we're
+					// within a sub parser
+					|| this.ast.parent && this.ast.parent.mode === EXP )
 				) {
 					this.ast.push(curr);
 				} else {
@@ -1338,7 +1376,7 @@ VParser.prototype = {
 					this.tokens.push(curr); // defer
 				}
 				break;
-			
+
 			default:
 
 				if( this.ast.parent && this.ast.parent.mode !== EXP ){
@@ -1518,7 +1556,7 @@ VCP.assemble = function(options, Helpers){
 		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
 	}
 
-	buffer.push( 'return ' + options.helpersName + '.buffer.flush( "" ); \n');
+	buffer.push( 'return ' + options.helpersName + '.buffer.flush(); \n');
 
 	joined = buffer.join( '' );
 
@@ -1553,6 +1591,7 @@ VCP.assemble = function(options, Helpers){
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
+	exports["vQuery"] = vQuery;
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {

@@ -18,11 +18,11 @@ VParser.prototype = {
 		while( this.prevTokens.push( curr ), (curr = this.tokens.pop()) ){
 
 			if(this.options.debugParser){
-				console.log(this.ast && this.ast.mode, curr.type, curr, curr.val);
+				console.log(this.ast && this.ast.mode, curr.type, curr.toString(), curr.val);
 			}
 
 			if(this.ast.mode === PRG || this.ast.mode === null){
-				
+
 				this.ast = this.ast.beget( this.options.initialMode || MKP );
 
 				if(this.options.initialMode === EXP){
@@ -34,12 +34,12 @@ VParser.prototype = {
 				this.handleMKP(curr);
 				continue;
 			}
-			
+
 			if(this.ast.mode === BLK){
 				this.handleBLK(curr);
 				continue;
 			}
-			
+
 			if(this.ast.mode === EXP){
 				this.handleEXP(curr);
 				continue;
@@ -51,13 +51,13 @@ VParser.prototype = {
 		if(this.options.debugParser && !this.options.initialMode){
 			// this should really only output on the true root
 
-			console.log(this.ast);
+			console.log(this.ast.toString());
 			console.log(this.ast.toTreeString());
 		}
-		
+
 		return this.ast;
 	}
-	
+
 	,exceptionFactory: function(e, type, tok){
 
 		// second param is either a token or string?
@@ -93,7 +93,7 @@ VParser.prototype = {
 				break;
 			}
 		}
-		
+
 		return tks;
 	}
 
@@ -103,7 +103,7 @@ VParser.prototype = {
 			,nstart = 0
 			,nend = 0
 			,tks = [];
-		
+
 		// this is fairly convoluted because the start and end for single/double
 		// quotes is the same, and can also be escaped
 
@@ -116,20 +116,20 @@ VParser.prototype = {
 				} else if( start === end && prev.type !== startEscape ) {
 					nend++;
 				}
-				
+
 			} else if( next.type === end ){
 				nend++;
 				if(prev && prev.type === endEscape){ nend--; }
 			}
 
 			tks.push(next);
-			
+
 			if(nstart === nend) { break; }
 			prev = next;
 			next = this.tokens.pop();
 			if(!next) { throw this.exceptionFactory(new Error(), 'UNMATCHED', curr); }
 		}
-		
+
 		return tks.reverse();
 	}
 
@@ -138,18 +138,18 @@ VParser.prototype = {
 			,closer
 			,miniParse
 			,parseOpts = vQuery.extend({}, this.options);
-		
+
 		parseOpts.initialMode = modeToOpen;
-		
+
 		subTokens = this.advanceUntilMatched(
 			curr
 			,curr.type
 			,PAIRS[ curr.type ]
 			,null
 			,AT );
-		
+
 		subTokens.pop();
-		
+
 		closer = subTokens.shift();
 
 		if( !includeDelimsInSub ){
@@ -177,52 +177,64 @@ VParser.prototype = {
 			,ahead = this.tokens[ this.tokens.length - 2 ]
 			,tagName = null
 			,opener;
-		
+
 		switch(curr.type){
-			
+
 			case AT_STAR_OPEN:
 				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
 				break;
-			
+
 			case AT:
-				if(next) { switch(next.type){
-					
-					case PAREN_OPEN:
-					case IDENTIFIER:
-					
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+				if(next) {
 
-						this.ast = this.ast.beget( EXP );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					case KEYWORD:
-					case FUNCTION:
-					case BRACE_OPEN:
+					if(this.options.saveAT) this.ast.push( curr );
 
-						if(this.ast.length === 0) {
-							this.ast = this.ast.parent;
-							this.ast.pop(); // remove empty MKP block
-						}
+					switch(next.type){
 
-						this.ast = this.ast.beget( BLK );
-						if(this.options.saveAT) this.ast.push( curr );
-						break;
-					
-					default:
-						if(this.options.saveAT) this.ast.push( curr );
-						this.ast.push( this.tokens.pop() );
-						break;
-				} }
+						case PAREN_OPEN:
+						case IDENTIFIER:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( EXP );
+							break;
+
+						case KEYWORD:
+						case FUNCTION:
+						case BRACE_OPEN:
+
+							if(this.ast.length === 0) {
+								this.ast = this.ast.parent;
+								this.ast.pop(); // remove empty MKP block
+							}
+
+							this.ast = this.ast.beget( BLK );
+							break;
+
+						case AT:
+
+							// we want to keep the token, but remove its
+							// "special" meaning because during compilation
+							// AT and AT_COLON are discarded
+							next.type = 'CONTENT';
+							this.ast.push( this.tokens.pop() );
+							break;
+
+						default:
+							this.ast.push( this.tokens.pop() );
+							break;
+					}
+
+				}
 				break;
-			
+
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
-				
+
 				if(tagName === null && next && next.type === AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
 				}
@@ -239,17 +251,17 @@ VParser.prototype = {
 				}
 
 				break;
-			
+
 			case TEXT_TAG_CLOSE:
 			case HTML_TAG_CLOSE:
 				tagName = curr.val.match(/^<\/([^>]+)/i);
-				
+
 				if(tagName === null && next && next.type === AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for </@exp>
 				}
-				
+
 				opener = this.ast.closest( MKP, tagName[1] );
-				
+
 				if(opener === null || opener.tagName !== tagName[1]){
 					// couldn't find opening tag
 					// could mean this closer is within a child parser
@@ -257,7 +269,7 @@ VParser.prototype = {
 				} else {
 					this.ast = opener;
 				}
-				
+
 				if(HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
 					this.ast.push( curr );
 				}
@@ -286,11 +298,11 @@ VParser.prototype = {
 				this.ast.push(curr);
 				break;
 		}
-		
+
 	}
 
 	,handleBLK: function(curr){
-		
+
 		var  next = this.tokens[ this.tokens.length - 1 ]
 			,submode
 			,opener
@@ -299,16 +311,16 @@ VParser.prototype = {
 			,parseOpts
 			,miniParse
 			,i;
-		
+
 		switch(curr.type){
-			
+
 			case AT:
 				if(next.type !== AT){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
 				}
 				break;
-			
+
 			case AT_STAR_OPEN:
 				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
 				break;
@@ -316,7 +328,7 @@ VParser.prototype = {
 			case AT_COLON:
 				this.subParse(curr, MKP, true);
 				break;
-			
+
 			case TEXT_TAG_OPEN:
 			case TEXT_TAG_CLOSE:
 			case HTML_TAG_SELFCLOSE:
@@ -325,7 +337,7 @@ VParser.prototype = {
 				this.ast = this.ast.beget(MKP);
 				this.tokens.push(curr); // defer
 				break;
-			
+
 			//case FAT_ARROW:
 			//	this.ast.push(curr)
 			//	this.ast = this.ast.beget(BLK);
@@ -336,9 +348,9 @@ VParser.prototype = {
 				submode = this.options.favorText && curr.type === BRACE_OPEN
 					? MKP
 					: BLK;
-				
+
 				this.subParse( curr, submode );
-				
+
 				subTokens = this.advanceUntilNot(WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
 
@@ -367,11 +379,11 @@ VParser.prototype = {
 				this.ast.push(curr);
 				break;
 		}
-		
+
 	}
 
 	,handleEXP: function(curr){
-		
+
 		var ahead = null
 			,opener
 			,closer
@@ -380,15 +392,15 @@ VParser.prototype = {
 			,subTokens
 			,prev
 			,i;
-		
+
 		switch(curr.type){
-			
+
 			case KEYWORD:
 			case FUNCTION:
 				this.ast = this.ast.beget(BLK);
 				this.tokens.push(curr); // defer
 				break;
-			
+
 			case WHITESPACE:
 			case LOGICAL:
 			case ASSIGN_OPERATOR:
@@ -409,7 +421,7 @@ VParser.prototype = {
 			case IDENTIFIER:
 				this.ast.push(curr);
 				break;
-			
+
 			case SINGLE_QUOTE:
 			case DOUBLE_QUOTE:
 
@@ -452,7 +464,7 @@ VParser.prototype = {
 				}
 
 				break;
-			
+
 			case BRACE_OPEN:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(BLK);
@@ -470,7 +482,11 @@ VParser.prototype = {
 					(  ahead.type === IDENTIFIER
 					|| ahead.type === KEYWORD
 					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD )
+					|| ahead.type === PERIOD
+					// if it's "expressions all the way down", then there is no way
+					// to exit EXP mode without running out of tokens, i.e. we're
+					// within a sub parser
+					|| this.ast.parent && this.ast.parent.mode === EXP )
 				) {
 					this.ast.push(curr);
 				} else {
@@ -478,7 +494,7 @@ VParser.prototype = {
 					this.tokens.push(curr); // defer
 				}
 				break;
-			
+
 			default:
 
 				if( this.ast.parent && this.ast.parent.mode !== EXP ){

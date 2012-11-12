@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1312
+ * Vash - JavaScript Template Parser, v0.5.7-1570
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -120,9 +120,9 @@
 
 		this.push = function( buffer ) {
 			if( buffer instanceof Array ) {
-				__vo.push.apply( helpers.__vo, buffer );
+				__vo.push.apply( __vo, buffer );
 			} else if ( arguments.length > 1 ) {
-				__vo.push.apply( helpers.__vo, Array.prototype.slice.call( arguments ));
+				__vo.push.apply( __vo, Array.prototype.slice.call( arguments ));
 			} else {
 				__vo.push( buffer );
 			}
@@ -208,7 +208,7 @@
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {
-			this.buffer.push(cbOutLines);
+			this.buffer.push( cbOutLines );
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -288,14 +288,15 @@
 		})
 	}
 
-	helpers.extends = function(path, ctn){
+	helpers.extend = function(path, ctn){
 		var  self = this
+			,buffer = this.buffer
 			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(path, this.model, function(err, tpl){
-			ctn(self.model); // the child content
-			tpl(self.model); // the tpl being extended
+			buffer.push(ctn(self.model)); // the child content
+			buffer.push(tpl(self.model)); // the tpl being extended
 		})
 
 		this.model = origModel;
@@ -303,11 +304,13 @@
 
 	helpers.include = function(name, model){
 
-		var self = this, origModel = this.model;
+		var  self = this
+			,buffer = this.buffer
+			,origModel = this.model;
 
 		// this is a synchronous callback
-		vash.loadFile(name, this.model, function(err, tpl){
-			tpl(model || self.model);
+		vash.loadFile(name, this.model, function(err, tpl){			
+			buffer.push( tpl(model || self.model));
 		})
 
 		this.model = origModel;
@@ -340,7 +343,7 @@
 			}
 		}
 
-		if( ctn ){
+		if( ctn && !this.blocks[name] ){
 			this.blocks[name] = ctn;
 		}
 	}

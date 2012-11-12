@@ -57,14 +57,23 @@ PAIRS[AT_COLON] = NEWLINE;
 
 var TESTS = [
 
-	EMAIL, (/^([a-zA-Z0-9._%\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/)
-
+	// A real email address is considerably more complex, and unfortunately
+	// this complexity makes it impossible to differentiate between an address
+	// and an AT expression.
+	//
+	// Instead, this regex assumes the only valid characters for the user portion
+	// of the address are alphanumeric, period, and %. This means that a complex email like
+	// who-something@example.com will be interpreted as an email, but incompletely. `who-`
+	// will be content, while `something@example.com` will be the email address.
+	//
+	// However, this is "Good Enough"© :).
+	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
 
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
 
 
-	,AT_COLON, (/^@\:/)
+	,AT_COLON, (/^(@\:)/)
 	,AT, (/^(@)/)
 
 
@@ -89,7 +98,17 @@ var TESTS = [
 
 	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
-		return this.spewIf(this.scan(/^(<[^\/ >]+?[^>]*?>)/, HTML_TAG_OPEN), '@');
+		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
+			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
+
+		var tok = this.scan( reHtml, HTML_TAG_OPEN );
+
+		if( tok ){
+			this.spewIf( tok, reEmail );
+			this.spewIf( tok, /(@)/ );
+		}
+
+		return tok;
 	}
 	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
 
@@ -135,12 +154,12 @@ function VLexer(str){
 }
 
 VLexer.prototype = {
-	
+
 	scan: function(regexp, type){
 		var captures, token;
 		if (captures = regexp.exec(this.input)) {
-			this.input = this.input.substr((captures[0].length));
-			
+			this.input = this.input.substr((captures[1].length));
+
 			token = {
 				type: type
 				,line: this.lineno
@@ -158,21 +177,21 @@ VLexer.prototype = {
 		}
 	}
 
-	,spewIf: function(tok, ifStr){
-		var parts, str;
+	,spewIf: function( tok, re ){
+		var result, index, spew
 
-		if(tok){
-			parts = tok.val.split(ifStr);
+		if( tok ){
+			result = re.exec( tok.val );
 
-			if(parts.length > 1){
-				tok.val = parts.shift();
-
-				str = ifStr + parts.join(ifStr);
-				this.input = str + this.input;
-				this.charno -= str.length;
+			if( result ){
+				index = tok.val.indexOf( result[1] );
+				spew = tok.val.substring( index );
+				this.input = spew + this.input;
+				this.charno -= spew.length;
+				tok.val = tok.val.substring( 0, index );
 			}
 		}
-		
+
 		return tok;
 	}
 

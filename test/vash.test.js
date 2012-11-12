@@ -9,7 +9,7 @@ var vows = require('vows')
 exports.run = function(vash){
 
 vash.config.useWith = true;
-vash.config.debug = true;
+vash.config.debug = false;
 vash.config.client = false;
 
 var tryCompile = function(str){
@@ -717,13 +717,38 @@ return vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)({name: 'what'}), '<1>This is content</1>' );
 		}
 	}
-	,'including email address in markup': {
+	,'email address': {
+
 		topic: function(){
-			var str = 'Hi philha@example.com';
-			return vash.compile(str);
+			return 'some.gr-at%email_address-indeed@complex-domain.subdom.edu'
 		}
-		,'does not leave markup mode': function(topic){
-			assert.equal(topic(), 'Hi philha@example.com');
+
+		,'included as content': {
+			topic: function(address){
+				return 'Hi ' + address;
+			}
+			,'does not leave markup mode': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), topic );
+			}
+		}
+
+		,'included within a href': {
+			topic: function(address){
+				return '<a href="mailto:' + address + '">' + address + '</a>'
+			}
+			,'is still just an email': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), topic );
+			}
+		}
+
+		,'are not confused with': {
+			topic: '@model.title@console.log("")'
+			,'concatenated expressions': function( topic ){
+				var tpl = vash.compile( topic, { useWith: false } );
+				assert.equal( tpl({ title: 'who' }), 'who' );
+			}
 		}
 	}
 	,'explicit expression': {
@@ -749,19 +774,30 @@ return vows.describe('vash templating library').addBatch({
 			var str = '<span>@a.replace("x", "o")</span>';
 			return str;
 		}
-		,'throws syntax error': function(topic){
+		,'renders': function(topic){
 			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>oxx</span>');
 		}
 	}
-	,'expression with regex in func call': {
-		topic: function(){
-			var str = '<span>@a.replace(/x/gi, "o")</span>';
-			return str;
+
+	,'regex': {
+
+		'simple expression': {
+			topic: '<span>@a.replace(/a/gi, "o")</span>'
+			,'replaces': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl({ a: 'a' }), '<span>o</span>');
+			}
 		}
-		,'throws syntax error': function(topic){
-			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>ooo</span>');
+
+		,'period meta character': {
+			topic: '<span>@a.replace(/./gi, "o")</span>'
+			,'replaces': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl({ a: 'a' }), '<span>o</span>')
+			}
 		}
 	}
+
 	,'escaping the @ symbol': {
 		topic: function(){
 			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
@@ -1008,6 +1044,18 @@ return vows.describe('vash templating library').addBatch({
 			,'closes parent': function(topic){
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 				assert.equal( vash.compile(topic)(), '<div>This is content </div>' );
+			}
+		}
+
+		,'operators': {
+
+			topic: function(){
+				return '@for( var i = 0; i <= 0; i++ ){<p></p>}';
+			}
+
+			,'are not mistaken for tags': function(topic){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), '<p></p>' );
 			}
 		}
 	}
@@ -1363,6 +1411,212 @@ return vows.describe('vash templating library').addBatch({
 		}
 
 	}
+
+	,'default helpers': {
+
+		'highlight': {
+			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
+			,'wraps with <pre><code>': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
+			}
+		}
+	}
+
+	,'layout helpers': {
+
+		topic: function(){
+
+			this.opts = function(model){
+				return vash.vQuery.extend( model || {}, {
+					// mock up express settings
+					settings: {
+						views: __dirname + '/fixtures/views',
+						'view engine': 'vash'
+					}
+				});
+			}
+
+			return this.opts;
+		}
+
+		,'p': {
+			topic: function(opts){
+				vash.loadFile( 'p', opts(), this.callback );
+			}
+
+			,'renders': function( err, tpl ){
+				assert.equal( tpl( this.opts({ a: 'a' }) ), '<p>a</p>' )
+			}
+		}
+
+		,'includes': {
+
+			topic: function(opts){
+				vash.loadFile( 'list', opts(), this.callback );
+			}
+
+			,'renders': function( err, tpl ){				
+				var actual = tpl( this.opts({ count: 2 }) )
+				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
+			}
+		}
+
+		,'block': {
+
+			topic: function(opts){
+				return function(before, inner, after){
+					before = before || '';
+					after = after || '';
+					return vash.compile(
+						before
+						+ '@html.block("main"' + ( inner ? ', function(model){' + inner + '}' : '' ) + ')'
+						+ after
+					)
+				}
+			}
+
+			,'renders blank': function( maker ){
+				assert.equal( maker()( this.opts() ), '' );
+			}
+
+			,'renders replace': function( maker ){
+				var ctn = '<p></p>'
+					,before = '@html.block("main", function(){' + ctn + '})'
+
+					,actual = maker(before, '', '')( this.opts() );
+
+				assert.equal( actual, ctn );
+			}
+
+			,'ignores subsequent blocks': function( maker ){
+				var ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,before = '@html.block("main", function(){' + ctnA + '})'
+						+ '@html.block("main", function(){' + ctnB + '})'
+
+					,actual = maker(before, '', '')( this.opts() );
+
+				assert.equal( actual, ctnA );
+			}
+
+			/*,'renders default content': function( maker ){
+				var ctn = '<p></p>'
+
+					,actual = maker('', ctn, '')( this.opts() );
+
+				assert.equal( actual, ctn );
+			}*/
+		}
+
+		,'extend': {
+
+			topic: function(opts){
+				return function(inner){
+					return vash.compile('@html.extend("layout", function(){' + inner + '})');
+				}
+			}
+
+			,'renders blank': function( maker ){
+				assert.equal( maker('')( this.opts() ), '' )
+			}
+
+			,'renders expression': function( maker ){
+				var actual = maker('')( this.opts({ title: 'is title' }) )
+				//console.log('actual', actual)
+				assert.equal( actual, 'is title' )
+			}
+
+			,'renders content block': function( maker ){
+				var block = '@html.block("content", function(model){<p>@model.a</p>})'
+				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p>' )
+			}
+
+			,'renders content block with include': function( maker ){
+				var block = '@html.block("content", function(model){@html.include("p")<p>@model.a</p>})'
+				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p><p>a</p>' )
+			}
+
+			,'renders content block with multiple include': function( maker ){
+				var  incp = '@html.include("p")'
+					,mb = '<p>@model.b</p>'
+					,block = '@html.block("content", function(model){' + incp + mb + incp + mb + '})'
+
+					,actual = maker(block)( this.opts({ a: 'a', b: 'b' }) )
+
+				//console.log( 'actual', actual )
+				assert.equal( actual , '<p>a</p><p>b</p><p>a</p><p>b</p>' );
+			}
+
+			,'renders appended content block': function( maker ){
+				var  incp = '@html.include("p")'
+					,appf = '@html.append("footer", function(){<footer></footer>})'
+					,block = '@html.block("content", function(model){' + incp + appf + incp + '})'
+
+					,outp = '<p>a</p>'
+
+					,actual = maker(block)( this.opts({ a: 'a' }) )
+
+				//console.log( 'actual', actual )
+				assert.equal( actual, outp + outp + '<footer></footer>' );
+			}
+
+			,'renders prepended/appended content block': function( maker ){
+				var  incp = '@html.include("p")'
+					,appf = '@html.append("footer", function(){<app></app>})'
+					,pref = '@html.prepend("footer", function(){<pre></pre>})'
+					,block = '@html.block("content", function(model){' + incp + appf + pref + incp + '})'
+
+					,outp = '<p>a</p>'
+
+					,actual = maker(block)( this.opts({ a: 'a' }) )
+
+				//console.log( 'actual', actual )
+				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
+			}
+
+			,'ignores subsequent blocks': function( maker ){
+				var  ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,block = '@html.block("content", function(){' + ctnA + '})'
+						+ '@html.block("content", function(){' + ctnB + '})'
+
+					,actual = maker(block)( this.opts() )
+
+				assert.equal( actual, ctnA );
+			}
+
+			/*,'deep': {
+
+				topic: function(maker){
+					return function(before, inner, after){
+						before = before || '';
+						after = after || '';
+						return vash.compile(
+							before
+							+ '@html.extend("blockextends", function(model){' + inner + '})'
+							+ after
+						)
+					}
+				}
+
+				,'renders div + default': function( maker ){
+					assert.equal( maker()( this.opts() ), '<div><block></block></div>' );
+				}
+
+				,'renders wrapped article': function( maker ){
+					var inner = '<article></article>'
+						,block = '@html.block("content", function(){' + inner + '})'
+
+						,actual = maker(block)( this.opts() )
+
+					assert.equal( actual, '<div>' + inner + '</div>' )
+				}
+			}*/
+		}
+
+	}
+
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';

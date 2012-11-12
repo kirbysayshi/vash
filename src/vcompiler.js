@@ -162,7 +162,7 @@ VCP.assemble = function(options, Helpers){
 		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
 	}
 
-	buffer.push( 'return ' + options.helpersName + '.buffer.flush( "" ); \n');
+	buffer.push( 'return ' + options.helpersName + '.buffer.flush(); \n');
 
 	joined = buffer.join( '' );
 
