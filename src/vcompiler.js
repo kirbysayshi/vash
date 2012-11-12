@@ -7,10 +7,10 @@ function VCompiler(ast, originalMarkup){
 
 var VCP = VCompiler.prototype;
 
-VCP.assemble = function(options, helpers){
+VCP.assemble = function(options, Helpers){
 
 	options = options || {};
-	helpers = helpers || {};
+	Helpers = Helpers || {};
 	
 
 	var buffer = []
@@ -68,7 +68,7 @@ VCP.assemble = function(options, helpers){
 
 		if(parentParentIsNotEXP && (index === 0 ) ){
 			insertDebugVars(tok);
-			start = "__vo.push(" + start;
+			start = options.helpersName + ".buffer.push(" + start;
 		}
 
 		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
@@ -128,11 +128,7 @@ VCP.assemble = function(options, helpers){
 		}
 	}
 
-	// suprisingly: http://jsperf.com/array-index-vs-push
-	buffer.push( options.helpersName + ' = ' + options.helpersName + ' || vash.helpers; \n');
-	buffer.push( options.helpersName + '.__vo = ' + options.helpersName + '.__vo || []; \n');
-	buffer.push('var __vo = ' + options.helpersName + '.__vo; \n');
-	buffer.push( options.helpersName + '.model = ' + options.modelName + '; \n');
+	// suprisingly: http://jsperf.com/array-index-vs-push		
 
 	if(options.debug){
 		buffer.push(
@@ -150,7 +146,7 @@ VCP.assemble = function(options, helpers){
 
 	if(options.debug){
 		buffer.unshift( 'try { \n' );
-		buffer.push( '} catch(e){ '
+		buffer.push( '} catch( e ) { '
 			,options.helpersName + '.reportError'
 			,'(e, __vl, __vc, '
 			,'"' + this.originalMarkup
@@ -161,36 +157,36 @@ VCP.assemble = function(options, helpers){
 			,') } \n' );
 	}
 
-	buffer.push( 'delete ' + options.helpersName + '.__vo; \n');
-
 	if(options.debug){
 		buffer.push( 'delete ' + options.helpersName + '.__vl \n' );
 		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
 	}
 
-	buffer.push("return __vo.join(''); \n");
+	buffer.push( 'return ' + options.helpersName + '.buffer.flush( "" ); \n');
 
-	joined = buffer.join('');
+	joined = buffer.join( '' );
 
 	// coalesce markup
 	joined = joined
-		.split("')MKPMKP('").join('')
-		.split("MKP(").join("__vo.push(")
-		.split(")MKP").join("); \n");
+		.split( "')MKPMKP('" ).join('')
+		.split( "MKP(" ).join( options.helpersName + ".buffer.push(" )
+		.split( ")MKP" ).join( "); \n" );
 
-	if(options.debugCompiler){
-		console.log(joined);
+	if ( options.debugCompiler ) {
+		console.log( joined );
 	}
 	
 	try {
-		compiledFunc = new Function(options.modelName, options.helpersName, joined);			
+		compiledFunc = new Function( options.modelName, options.helpersName, joined );			
 	} catch(e){
-		vash.helpers.reportError(e, 0, 0, joined, /\n/)
+		Helpers.reportError( e, 0, 0, joined, /\n/ );
 	}	
 
 	// Link compiled function to helpers collection, but report original function
 	// body for code generation purposes.
-	linkedFunc = function(model) { return compiledFunc(model, helpers); };
+	linkedFunc = function(model) {
+		return compiledFunc(model, new Helpers( model ));
+	};
 	linkedFunc.toString = function() { return compiledFunc.toString(); };
 	
 	return linkedFunc;

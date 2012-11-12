@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.3-1294
+ * Vash - JavaScript Template Parser, v0.5.3-1312
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -27,10 +27,22 @@
 				? exports = {}
 				: {}
 		: vash;
-
-	var helpers = (vash['helpers'] = vash['helpers'] || {});
+		
+	var helpers = vash['helpers']
+		,Helpers
+		,Buffer;
 	
-	vash.helpers.config = {};
+	if ( !helpers ) {
+		Helpers = function ( model ) {			
+			this.buffer = new Buffer();
+			this.model  = model;			
+		};
+		
+		vash['helpers']
+			= helpers
+			= Helpers.prototype
+			= { constructor: Helpers, config: {}};
+	}
 
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
@@ -54,7 +66,7 @@
 	// raw: explicitly prevent an expression or value from being HTML escaped.
 
 	helpers.raw = function( val ) {
-		var func = function() { return val; }
+		var func = function() { return val; };
 		
 		val = val != null ? val : "";		
 		
@@ -62,10 +74,10 @@
 			 toHtmlString: func
 			,toString: func
 		};
-	}
+	};
 		
 	helpers.escape = function( val ) {
-		var	func = function() { return val; }
+		var	func = function() { return val; };
 
 		val = val != null ? val : "";
 		
@@ -80,7 +92,7 @@
 		}
 		
 		return val;
-	}
+	};
 
 	// HTML ESCAPING
 	///////////////////////////////////////////////////////////////////////////
@@ -91,35 +103,36 @@
 	// These are to be used from within helpers, to allow for manipulation of
 	// output in a sane manner. 
 
-	helpers.buffer = (function(){ 
-		var helpers = helpers;
+	Buffer = function() {
+		var __vo = [];
 		
-		return {
+		this.mark = function() {
+			return __vo.length;
+		};
 
-			mark: function(){
-				return helpers.__vo.length;
+		this.empty = function() {
+			return __vo.splice( 0, __vo.length );
+		};
+
+		this.fromMark = function( mark ) {
+			return __vo.splice( mark, __vo.length );
+		};
+
+		this.push = function( buffer ) {
+			if( buffer instanceof Array ) {
+				__vo.push.apply( helpers.__vo, buffer );
+			} else if ( arguments.length > 1 ) {
+				__vo.push.apply( helpers.__vo, Array.prototype.slice.call( arguments ));
+			} else {
+				__vo.push( buffer );
 			}
+		};
+		
+		this.flush = function() {			
+			return this.empty().join( "" );
+		};
+	};
 
-			,empty: function(){
-				return helpers.__vo.splice(0, helpers.__vo.length);
-			}
-
-			,fromMark: function(mark){
-				return helpers.__vo.splice(mark, helpers.__vo.length);
-			}
-
-			,push: function(buffer){
-				if( buffer instanceof Array ) {
-					helpers.__vo.push.apply( helpers.__vo, buffer );
-				} else if (arguments.length > 1){
-					helpers.__vo.push.apply( helpers.__vo, Array.prototype.slice.call(arguments) );
-				} else {
-					helpers.__vo.push(buffer);
-				}
-			}
-
-		} 
-	}());
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
@@ -128,12 +141,12 @@
 	// ERROR REPORTING 
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-	helpers.reportError = function(e, lineno, chr, orig, lb){
+	helpers.constructor.reportError = function(e, lineno, chr, orig, lb){
 
 		lb = lb || '!LB!';
 
 		var lines = orig.split(lb)
-			,contextSize = lineno == 0 && chr == 0 ? lines.length - 1 : 3
+			,contextSize = lineno === 0 && chr === 0 ? lines.length - 1 : 3
 			,start = Math.max(0, lineno - contextSize)
 			,end = Math.min(lines.length, lineno + contextSize);
 
@@ -152,5 +165,9 @@
 			+ '\nContext: \n\n' + contextStr + '\n\n';
 
 		throw e;
-	}
+	};
+	
+	helpers.reportError = function() {
+		this.constructor.reportError.apply( this, arguments );
+	};
 }());
