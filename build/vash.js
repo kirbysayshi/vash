@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1572
+ * Vash - JavaScript Template Parser, v0.5.7-1583
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1572";
+	exports["version"] = "0.5.7-1583";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1405,7 +1405,7 @@ VCP.assemble = function(options, Helpers){
 
 	options = options || {};
 	Helpers = Helpers || {};
-	
+
 
 	var buffer = []
 		,escapeStack = []
@@ -1416,7 +1416,7 @@ VCP.assemble = function(options, Helpers){
 		,joined
 		,compiledFunc
 		,linkedFunc
-		
+
 		,markupBuffer = [];
 
 	function insertDebugVars(tok){
@@ -1439,7 +1439,7 @@ VCP.assemble = function(options, Helpers){
 	}
 
 	function visitBlockTok(tok, parentNode, index){
-		
+
 		buffer.push( tok.val /*.replace(reQuote, '\"')*/ );
 	}
 
@@ -1452,7 +1452,7 @@ VCP.assemble = function(options, Helpers){
 		if(options.htmlEscape !== false){
 
 			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
-				start += options.helpersName + '.escape(';				
+				start += options.helpersName + '.escape(';
 			}
 
 			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
@@ -1462,14 +1462,14 @@ VCP.assemble = function(options, Helpers){
 
 		if(parentParentIsNotEXP && (index === 0 ) ){
 			insertDebugVars(tok);
-			start = options.helpersName + ".buffer.push(" + start;
+			start = "HELPERSNAME.buffer.push(" + start;
 		}
 
 		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
 			end += "); \n";
 		}
 
-		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );		
+		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
 			insertDebugVars(tok);
@@ -1488,10 +1488,13 @@ VCP.assemble = function(options, Helpers){
 		for(i = 0; i < children.length; i++){
 			child = children[i];
 
+			// if saveAT is true, or if AT_COLON is used, these should not be compiled
+			if( child.type && child.type === AT || child.type === AT_COLON ) continue;
+
 			if(child.vquery){
 
 				visitNode(child);
-			
+
 			} else if(node.mode === MKP){
 
 				visitMarkupTok(child, node, i);
@@ -1501,7 +1504,7 @@ VCP.assemble = function(options, Helpers){
 				visitBlockTok(child, node, i);
 
 			} else if(node.mode === EXP){
-				
+
 				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
 
 			}
@@ -1522,69 +1525,75 @@ VCP.assemble = function(options, Helpers){
 		}
 	}
 
-	// suprisingly: http://jsperf.com/array-index-vs-push		
-
-	if(options.debug){
-		buffer.push(
-			 'var __vl = ' + options.helpersName + '.__vl = 0,'
-			,'__vc = ' + options.helpersName + '.__vc = 0; \n'
-		);
-	}
-	
-	visitNode(this.ast);
-
-	if(options.useWith === true){
-		buffer.unshift( "with(" + options.modelName + " || {}){ \n" );
-		buffer.push("}");
+	var pre = ''
+		
+	if( options.debug ){
+		pre += 'var __vl = HELPERSNAME.buffer.__vl = 0, __vc = HELPERSNAME.buffer.__vc = 0; \n'
 	}
 
-	if(options.debug){
-		buffer.unshift( 'try { \n' );
-		buffer.push( '} catch( e ) { '
-			,options.helpersName + '.reportError'
-			,'(e, __vl, __vc, '
-			,'"' + this.originalMarkup
+	pre += 'VASHTPLBODY';
+
+	if( options.useWith ){
+		pre = 'with( MODELNAME || {} ){ \n' + pre + '} \n'
+	}
+
+	if( options.debug ){
+		pre = 'try { \n' + pre + '} catch( e ){ \n';
+		pre += ''
+			+ 'HELPERSNAME.reportError( e, __vl, __vc, '
+			+ '"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reQuote, '\\$1')
 				.replace(reEscapedQuote, '\\$1')
 			+ '"'
-			,') } \n' );
+			+ ' ); \n'
+		pre += '} \n';
 	}
 
-	if(options.debug){
-		buffer.push( 'delete ' + options.helpersName + '.__vl \n' );
-		buffer.push( 'delete ' + options.helpersName + '.__vc \n' );
+	if( options.debug ){
+		pre += ''
+			+ 'delete HELPERSNAME.buffer.__vl; \n'
+			+ 'delete HELPERSNAME.buffer.__vc; \n'
 	}
 
-	buffer.push( 'return ' + options.helpersName + '.buffer.flush(); \n');
+	pre += ''
+		+ 'return HELPERSNAME.buffer.flush(); \n'
 
-	joined = buffer.join( '' );
+	visitNode(this.ast);
 
 	// coalesce markup
-	joined = joined
-		.split( "')MKPMKP('" ).join('')
-		.split( "MKP(" ).join( options.helpersName + ".buffer.push(" )
-		.split( ")MKP" ).join( "); \n" );
-
-	if ( options.debugCompiler ) {
-		console.log( joined );
-	}
+	joined = buffer
+		.join("")
+		.split("')MKPMKP('").join('')
+		.split("MKP(").join("HELPERSNAME.buffer.push(")
+		.split(")MKP").join("); \n");
 	
+	joined = pre
+		// substitutions
+		.replace( /VASHTPLBODY/g, joined )
+		.replace( /HELPERSNAME/g, options.helpersName )
+		.replace( /MODELNAME/g, options.modelName )
+
+		
+
+	if(options.debugCompiler){
+		console.log(joined);
+	}
+
 	try {
-		compiledFunc = new Function( options.modelName, options.helpersName, joined );			
+		compiledFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
-		Helpers.reportError( e, 0, 0, joined, /\n/ );
-	}	
+		Helpers.reportError(e, 0, 0, joined, /\n/)
+	}
 
 	// Link compiled function to helpers collection, but report original function
 	// body for code generation purposes.
-	linkedFunc = function(model) {
-		return compiledFunc(model, new Helpers( model ));
-	};
+	linkedFunc = function(model) { return compiledFunc(model, new Helpers( model )); };
 	linkedFunc.toString = function() { return compiledFunc.toString(); };
-	
+
 	return linkedFunc;
 }
+
 
 	/************** End injected code from build script */	
 	
