@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax templates, for JS",
-	"version": "0.5.7-1570",
+	"version": "0.5.7-1572",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"bin": {
 		"vash": "./bin/vash"
