@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1583
+ * Vash - JavaScript Template Parser, v0.5.7-1584
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -154,6 +154,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
+				+ (curr < 10 ? curr + ' ' : curr)
 				+ curr
 				+ ' | '
 				+ line;

@@ -145,6 +145,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
+				+ (curr < 10 ? curr + ' ' : curr)
 				+ curr
 				+ ' | '
 				+ line;
