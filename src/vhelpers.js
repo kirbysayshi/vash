@@ -21,16 +21,16 @@
 		cb();
 
 		// ... and then use fromMark() to grab the output added by cb().
-		// Allowing the user to have functions mitigates having to do a lot of 
+		// Allowing the user to have functions mitigates having to do a lot of
 		// manual string concatenation within a helper.
 		var cbOutLines = this.buffer.fromMark(startMark);
 
-		// The internal buffer should now be back to where it was before this 
+		// The internal buffer should now be back to where it was before this
 		// helper started.
 
 		this.buffer.push( '<pre><code>' );
 
-		// 
+		//
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {

@@ -132,7 +132,7 @@ VCP.assemble = function(options, Helpers){
 	}
 
 	var pre = ''
-		
+
 	if( options.debug ){
 		pre += 'var __vl = HELPERSNAME.buffer.__vl = 0, __vc = HELPERSNAME.buffer.__vc = 0; \n'
 	}
@@ -173,14 +173,14 @@ VCP.assemble = function(options, Helpers){
 		.split("')MKPMKP('").join('')
 		.split("MKP(").join("HELPERSNAME.buffer.push(")
 		.split(")MKP").join("); \n");
-	
+
 	joined = pre
 		// substitutions
 		.replace( /VASHTPLBODY/g, joined )
 		.replace( /HELPERSNAME/g, options.helpersName )
 		.replace( /MODELNAME/g, options.modelName )
 
-		
+
 
 	if(options.debugCompiler){
 		console.log(joined);

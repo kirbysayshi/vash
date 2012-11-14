@@ -1456,7 +1456,7 @@ return vows.describe('vash templating library').addBatch({
 				vash.loadFile( 'list', opts(), this.callback );
 			}
 
-			,'renders': function( err, tpl ){				
+			,'renders': function( err, tpl ){
 				var actual = tpl( this.opts({ count: 2 }) )
 				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
 			}

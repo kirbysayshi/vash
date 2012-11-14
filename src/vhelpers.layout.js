@@ -88,7 +88,7 @@
 			,origModel = this.model;
 
 		// this is a synchronous callback
-		vash.loadFile(name, this.model, function(err, tpl){			
+		vash.loadFile(name, this.model, function(err, tpl){
 			buffer.push( tpl(model || self.model));
 		})
 
