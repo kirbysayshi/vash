@@ -66,7 +66,7 @@
 
 		c = new VCompiler(p.ast, markup);
 
-		cmp = c.assemble(options, exports.helpers);
+		cmp = c.assemble(options, exports.helpers.constructor);
 		cmp.displayName = 'render';
 		return cmp;
 	};

@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.6-1547
+ * Vash - JavaScript Template Parser, v0.5.7-1583
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -15,7 +15,7 @@
 	// Ideally this is where any helper-specific configuration would go, things
 	// such as syntax highlighting callbacks, whether to temporarily disable
 	// html escaping, and others.
-	//
+	// 
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
@@ -27,10 +27,22 @@
 				? exports = {}
 				: {}
 		: vash;
-
-	var helpers = (vash['helpers'] = vash['helpers'] || {});
-
-	vash.helpers.config = {};
+		
+	var helpers = vash['helpers']
+		,Helpers
+		,Buffer;
+	
+	if ( !helpers ) {
+		Helpers = function ( model ) {			
+			this.buffer = new Buffer();
+			this.model  = model;			
+		};
+		
+		vash['helpers']
+			= helpers
+			= Helpers.prototype
+			= { constructor: Helpers, config: {}};
+	}
 
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
@@ -54,23 +66,23 @@
 	// raw: explicitly prevent an expression or value from being HTML escaped.
 
 	helpers.raw = function( val ) {
-		var func = function() { return val; }
-
-		val = val != null ? val : "";
-
+		var func = function() { return val; };
+		
+		val = val != null ? val : "";		
+		
 		return {
 			 toHtmlString: func
 			,toString: func
 		};
-	}
-
+	};
+		
 	helpers.escape = function( val ) {
-		var	func = function() { return val; }
+		var	func = function() { return val; };
 
 		val = val != null ? val : "";
-
+		
 		if ( typeof val.toHtmlString !== "function" ) {
-
+			
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
@@ -78,9 +90,9 @@
 				,toString: func
 			};
 		}
-
+		
 		return val;
-	}
+	};
 
 	// HTML ESCAPING
 	///////////////////////////////////////////////////////////////////////////
@@ -89,50 +101,52 @@
 	// BUFFER MANIPULATION
 	//
 	// These are to be used from within helpers, to allow for manipulation of
-	// output in a sane manner.
+	// output in a sane manner. 
 
-	helpers.buffer = (function(){
+	Buffer = function() {
+		var __vo = [];
+		
+		this.mark = function() {
+			return __vo.length;
+		};
 
-		return {
+		this.empty = function() {
+			return __vo.splice( 0, __vo.length );
+		};
 
-			mark: function(){
-				return helpers.__vo.length;
+		this.fromMark = function( mark ) {
+			return __vo.splice( mark, __vo.length );
+		};
+
+		this.push = function( buffer ) {
+			if( buffer instanceof Array ) {
+				__vo.push.apply( __vo, buffer );
+			} else if ( arguments.length > 1 ) {
+				__vo.push.apply( __vo, Array.prototype.slice.call( arguments ));
+			} else {
+				__vo.push( buffer );
 			}
+		};
+		
+		this.flush = function() {			
+			return this.empty().join( "" );
+		};
+	};
 
-			,empty: function(){
-				return helpers.__vo.splice(0, helpers.__vo.length);
-			}
-
-			,fromMark: function(mark){
-				return helpers.__vo.splice(mark, helpers.__vo.length);
-			}
-
-			,push: function(buffer){
-				if( buffer instanceof Array ) {
-					helpers.__vo.push.apply( helpers.__vo, buffer );
-				} else if (arguments.length > 1){
-					helpers.__vo.push.apply( helpers.__vo, Array.prototype.slice.call(arguments) );
-				} else {
-					helpers.__vo.push(buffer);
-				}
-			}
-
-		}
-	}());
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// ERROR REPORTING
+	// ERROR REPORTING 
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-	helpers.reportError = function(e, lineno, chr, orig, lb){
+	helpers.constructor.reportError = function(e, lineno, chr, orig, lb){
 
 		lb = lb || '!LB!';
 
 		var lines = orig.split(lb)
-			,contextSize = lineno == 0 && chr == 0 ? lines.length - 1 : 3
+			,contextSize = lineno === 0 && chr === 0 ? lines.length - 1 : 3
 			,start = Math.max(0, lineno - contextSize)
 			,end = Math.min(lines.length, lineno + contextSize);
 
@@ -140,7 +154,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
-				+ (curr < 10 ? curr + ' ' : curr)
+				+ curr
 				+ ' | '
 				+ line;
 		}).join('\n');
@@ -151,7 +165,11 @@
 			+ '\nContext: \n\n' + contextStr + '\n\n';
 
 		throw e;
-	}
+	};
+	
+	helpers.reportError = function() {
+		this.constructor.reportError.apply( this, arguments );
+	};
 }());
 
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
@@ -190,7 +208,7 @@
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {
-			this.buffer.push(cbOutLines);
+			this.buffer.push( cbOutLines );
 		}
 
 		this.buffer.push( '</code></pre>' );
@@ -272,12 +290,13 @@
 
 	helpers.extend = function(path, ctn){
 		var  self = this
+			,buffer = this.buffer
 			,origModel = this.model;
 
 		// this is a synchronous callback
 		vash.loadFile(path, this.model, function(err, tpl){
-			ctn(self.model); // the child content
-			tpl(self.model); // the tpl being extended
+			buffer.push(ctn(self.model)); // the child content
+			buffer.push(tpl(self.model)); // the tpl being extended
 		})
 
 		this.model = origModel;
@@ -286,11 +305,12 @@
 	helpers.include = function(name, model){
 
 		var  self = this
+			,buffer = this.buffer
 			,origModel = this.model;
 
 		// this is a synchronous callback
-		vash.loadFile(name, this.model, function(err, tpl){
-			tpl(model || self.model);
+		vash.loadFile(name, this.model, function(err, tpl){			
+			buffer.push( tpl(model || self.model));
 		})
 
 		this.model = origModel;
