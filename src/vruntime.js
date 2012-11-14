@@ -125,8 +125,13 @@
 		this.flush = function() {
 			return this.empty().join( "" );
 		};
-	};
 
+		this.toString = this.toHtmlString = function(){
+			// not using flush because then console.log( tpl() ) would artifically
+			// affect the output
+			return __vo.join( "" );
+		}
+	};
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
