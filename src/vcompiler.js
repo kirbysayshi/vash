@@ -28,8 +28,8 @@ VCP.assemble = function(options, Helpers){
 	function insertDebugVars(tok){
 		if(options.debug){
 			buffer.push(
-				 options.helpersName + '.__vl = __vl = ' + tok.line + ', '
-				,options.helpersName + '.__vc = __vc = ' + tok.chr + '; \n'
+				 options.helpersName + '.vl = ' + tok.line + ', '
+				,options.helpersName + '.vc = ' + tok.chr + '; \n'
 			);
 		}
 	}
@@ -133,10 +133,6 @@ VCP.assemble = function(options, Helpers){
 
 	var pre = ''
 
-	if( options.debug ){
-		pre += 'var __vl = HELPERSNAME.buffer.__vl = 0, __vc = HELPERSNAME.buffer.__vc = 0; \n'
-	}
-
 	pre += 'VASHTPLBODY';
 
 	if( options.useWith ){
@@ -146,7 +142,7 @@ VCP.assemble = function(options, Helpers){
 	if( options.debug ){
 		pre = 'try { \n' + pre + '} catch( e ){ \n';
 		pre += ''
-			+ 'HELPERSNAME.reportError( e, __vl, __vc, '
+			+ 'HELPERSNAME.reportError( e, HELPERSNAME.buffer.vl, HELPERSNAME.buffer.vc, '
 			+ '"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reQuote, '\\$1')
@@ -154,12 +150,6 @@ VCP.assemble = function(options, Helpers){
 			+ '"'
 			+ ' ); \n'
 		pre += '} \n';
-	}
-
-	if( options.debug ){
-		pre += ''
-			+ 'delete HELPERSNAME.buffer.__vl; \n'
-			+ 'delete HELPERSNAME.buffer.__vc; \n'
 	}
 
 	pre += ''
@@ -179,8 +169,6 @@ VCP.assemble = function(options, Helpers){
 		.replace( /VASHTPLBODY/g, joined )
 		.replace( /HELPERSNAME/g, options.helpersName )
 		.replace( /MODELNAME/g, options.modelName )
-
-
 
 	if(options.debugCompiler){
 		console.log(joined);

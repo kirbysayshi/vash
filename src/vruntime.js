@@ -97,6 +97,9 @@
 	Buffer = function() {
 		var __vo = [];
 
+		this.vl = 0;
+		this.vc = 0;
+
 		this.mark = function() {
 			return __vo.length;
 		};

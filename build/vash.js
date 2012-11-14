@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1584
+ * Vash - JavaScript Template Parser, v0.5.7-1585
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1584";
+	exports["version"] = "0.5.7-1585";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -51,7 +51,7 @@
 	// Ideally this is where any helper-specific configuration would go, things
 	// such as syntax highlighting callbacks, whether to temporarily disable
 	// html escaping, and others.
-	// 
+	//
 	// Each helper should define it's configuration options just above its own
 	// definition, for ease of modularity and discoverability.
 
@@ -63,17 +63,17 @@
 				? exports = {}
 				: {}
 		: vash;
-		
+
 	var helpers = vash['helpers']
 		,Helpers
 		,Buffer;
-	
+
 	if ( !helpers ) {
-		Helpers = function ( model ) {			
+		Helpers = function ( model ) {
 			this.buffer = new Buffer();
-			this.model  = model;			
+			this.model  = model;
 		};
-		
+
 		vash['helpers']
 			= helpers
 			= Helpers.prototype
@@ -103,22 +103,22 @@
 
 	helpers.raw = function( val ) {
 		var func = function() { return val; };
-		
-		val = val != null ? val : "";		
-		
+
+		val = val != null ? val : "";
+
 		return {
 			 toHtmlString: func
 			,toString: func
 		};
 	};
-		
+
 	helpers.escape = function( val ) {
 		var	func = function() { return val; };
 
 		val = val != null ? val : "";
-		
+
 		if ( typeof val.toHtmlString !== "function" ) {
-			
+
 			val = val.toString().replace( HTML_REGEX, HTML_REPLACER );
 
 			return {
@@ -126,7 +126,7 @@
 				,toString: func
 			};
 		}
-		
+
 		return val;
 	};
 
@@ -137,11 +137,14 @@
 	// BUFFER MANIPULATION
 	//
 	// These are to be used from within helpers, to allow for manipulation of
-	// output in a sane manner. 
+	// output in a sane manner.
 
 	Buffer = function() {
 		var __vo = [];
-		
+
+		this.vl = 0;
+		this.vc = 0;
+
 		this.mark = function() {
 			return __vo.length;
 		};
@@ -163,8 +166,8 @@
 				__vo.push( buffer );
 			}
 		};
-		
-		this.flush = function() {			
+
+		this.flush = function() {
 			return this.empty().join( "" );
 		};
 	};
@@ -174,7 +177,7 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// ERROR REPORTING 
+	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
 	helpers.constructor.reportError = function(e, lineno, chr, orig, lb){
@@ -203,7 +206,7 @@
 
 		throw e;
 	};
-	
+
 	helpers.reportError = function() {
 		this.constructor.reportError.apply( this, arguments );
 	};
@@ -232,16 +235,16 @@
 		cb();
 
 		// ... and then use fromMark() to grab the output added by cb().
-		// Allowing the user to have functions mitigates having to do a lot of 
+		// Allowing the user to have functions mitigates having to do a lot of
 		// manual string concatenation within a helper.
 		var cbOutLines = this.buffer.fromMark(startMark);
 
-		// The internal buffer should now be back to where it was before this 
+		// The internal buffer should now be back to where it was before this
 		// helper started.
 
 		this.buffer.push( '<pre><code>' );
 
-		// 
+		//
 		if( helpers.config.highlighter ){
 			this.buffer.push( helpers.config.highlighter(lang, cbOutLines.join('')).value );
 		} else {
@@ -346,7 +349,7 @@
 			,origModel = this.model;
 
 		// this is a synchronous callback
-		vash.loadFile(name, this.model, function(err, tpl){			
+		vash.loadFile(name, this.model, function(err, tpl){
 			buffer.push( tpl(model || self.model));
 		})
 
@@ -1423,8 +1426,8 @@ VCP.assemble = function(options, Helpers){
 	function insertDebugVars(tok){
 		if(options.debug){
 			buffer.push(
-				 options.helpersName + '.__vl = __vl = ' + tok.line + ', '
-				,options.helpersName + '.__vc = __vc = ' + tok.chr + '; \n'
+				 options.helpersName + '.vl = ' + tok.line + ', '
+				,options.helpersName + '.vc = ' + tok.chr + '; \n'
 			);
 		}
 	}
@@ -1527,10 +1530,6 @@ VCP.assemble = function(options, Helpers){
 	}
 
 	var pre = ''
-		
-	if( options.debug ){
-		pre += 'var __vl = HELPERSNAME.buffer.__vl = 0, __vc = HELPERSNAME.buffer.__vc = 0; \n'
-	}
 
 	pre += 'VASHTPLBODY';
 
@@ -1541,7 +1540,7 @@ VCP.assemble = function(options, Helpers){
 	if( options.debug ){
 		pre = 'try { \n' + pre + '} catch( e ){ \n';
 		pre += ''
-			+ 'HELPERSNAME.reportError( e, __vl, __vc, '
+			+ 'HELPERSNAME.reportError( e, HELPERSNAME.buffer.vl, HELPERSNAME.buffer.vc, '
 			+ '"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reQuote, '\\$1')
@@ -1549,12 +1548,6 @@ VCP.assemble = function(options, Helpers){
 			+ '"'
 			+ ' ); \n'
 		pre += '} \n';
-	}
-
-	if( options.debug ){
-		pre += ''
-			+ 'delete HELPERSNAME.buffer.__vl; \n'
-			+ 'delete HELPERSNAME.buffer.__vc; \n'
 	}
 
 	pre += ''
@@ -1568,14 +1561,14 @@ VCP.assemble = function(options, Helpers){
 		.split("')MKPMKP('").join('')
 		.split("MKP(").join("HELPERSNAME.buffer.push(")
 		.split(")MKP").join("); \n");
-	
+
 	joined = pre
 		// substitutions
 		.replace( /VASHTPLBODY/g, joined )
 		.replace( /HELPERSNAME/g, options.helpersName )
 		.replace( /MODELNAME/g, options.modelName )
 
-		
+
 
 	if(options.debugCompiler){
 		console.log(joined);
