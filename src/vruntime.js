@@ -101,15 +101,28 @@
 		this.vc = 0;
 
 		this.mark = function() {
-			return __vo.length;
+			var mark = new Mark( this );
+			mark.markedIndex = __vo.length;
+			__vo.push( mark.uid );
+			return mark;
+		};
+
+		this.fromMark = function( mark ) {
+			var found = mark.findInBuffer();
+
+			if( found > -1 ){
+				// automatically destroy the mark from the buffer
+				mark.destroy();
+				// `found` will still be valid for a manual splice
+				return __vo.splice( found, __vo.length );
+			}
+
+			// TODO: should not found behavior call this.empty(),
+			// or return an empty array?
 		};
 
 		this.empty = function() {
 			return __vo.splice( 0, __vo.length );
-		};
-
-		this.fromMark = function( mark ) {
-			return __vo.splice( mark, __vo.length );
 		};
 
 		this.push = function( buffer ) {
@@ -121,6 +134,25 @@
 				__vo.push( buffer );
 			}
 		};
+
+		this.indexOf = function( str ){
+
+			for( var i = 0; i < __vo.length; i++ ){
+				if( __vo[i] == str ){
+						return i;
+				}
+			}
+
+			return -1;
+		}
+
+		this.splice = function(){
+			return __vo.splice.apply( __vo, arguments );
+		}
+
+		this.index = function( idx ){
+			return __vo[ idx ];
+		}
 
 		this.flush = function() {
 			return this.empty().join( "" );
@@ -134,6 +166,47 @@
 	};
 
 	// BUFFER MANIPULATION
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// MARKS
+	// These can be used to manipulate the existing entries in the rendering
+	// context. For an example, see the highlight helper.
+
+	var Mark = function( buffer ){
+		this.uid = 'VASHMARK-' + ~~( Math.random() * 10000000 );
+		this.markedIndex = 0;
+		this.buffer = buffer;
+		this.destroyed = false;
+	}
+
+	Mark.prototype.destroy = function(){
+
+		var found = this.findInBuffer();
+
+		if( found > -1 ){
+			this.buffer.splice( found, 1 );
+			this.markedIndex = -1;
+			this.Helpers = null;
+		}
+
+		this.destroyed = true;
+	}
+
+	Mark.prototype.findInBuffer = function(){
+
+		if( this.destroyed ){
+			return -1;
+		}
+
+		if( this.markedIndex && this.buffer.index( this.markedIndex ) === this.uid ){
+			return this.markedIndex;
+		}
+
+		return this.markedIndex = this.buffer.indexOf( this.uid );
+	}
+
+	// MARKS
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
