@@ -11,8 +11,8 @@ function prefix(tplStr, options){
 	if( options.targetNamespace ){
 
 		tplStr = options.targetNamespace
-			+ '["' 
-				+ ( options.propertyName || options.file.replace(/\/|\\/g, options.separator) ) 
+			+ '["'
+				+ ( options.propertyName || options.file.replace(/\/|\\/g, options.separator) )
 			+ '"]=' + tplStr;
 
 		// ensure the simple namespace exists
@@ -38,7 +38,7 @@ function ugly(tplStr, options){
 		,pro = uglify.uglify;
 
 	if( options.uglify ){
-		ast = jsp.parse(tplStr); 
+		ast = jsp.parse(tplStr);
 		ast = pro.ast_mangle(ast);
 		ast = pro.ast_squeeze(ast);
 		tplStr = pro.gen_code(ast);
@@ -77,7 +77,9 @@ function stdin(options){
 		if( options.execute ){
 			tpl = execute(tpl, options);
 		} else {
-			tpl = prefix(tpl.toString(), options);
+			tpl = prefix( options.autolink
+				? tpl.toClientString()
+				: tpl.toString(), options);
 			tpl = ugly(tpl, options);
 		}
 
@@ -88,22 +90,24 @@ function stdin(options){
 function file(filepath, options){
 	var contents = fs.readFileSync( filepath, 'utf8' )
 		,tpl = vash.compile(contents, options.vopts)
-		,outpath = path.join( 
+		,outpath = path.join(
 			options.out
 			,path.join(
 				path.dirname(filepath)
 				,path.basename(filepath) + '.js'
 			).replace(/\/|\\/g, options.separator)
-		)	
+		)
 
 	if( options.execute ){
 		tpl = execute(tpl, options);
 	} else {
-		tpl = prefix(tpl.toString(), options);
+		tpl = prefix( options.autolink
+			? tpl.toClientString()
+			: tpl.toString(), options);
 		tpl = ugly(tpl, options);
 	}
 
-	if( options.out ) { 
+	if( options.out ) {
 		fs.writeFile( outpath, tpl.toString(), 'utf8', function(err){
 			if(err){ process.stderr.write( err ) }
 		} )
@@ -114,22 +118,39 @@ function file(filepath, options){
 
 // TODO: if passed a directory, recursively traverse
 
+cli.on('--help', function(){
+	console.log('  Examples:');
+	console.log('');
+	console.log('    $ echo \'<p>Hello!</p>\' | vash --json \'{ "debug": false }\' -t myapp.tplcache -p hello');
+	console.log('');
+	console.log('    > myapp = myapp || {};');
+	console.log('    > myapp.tplcache = myapp.tplcache || {};');
+	console.log('    > myapp.tplcache["hello"]=vash.link( function anonymous(model,html) {');
+	console.log('    > html.buffer.push(\'<p></p>\\n\'); ');
+	console.log('    > return html.buffer.flush(); ');
+	console.log('    > } )');
+	console.log('');
+	console.log('  Remember to include vash-runtime.js if precompiling for client-side usage.')
+	console.log('');
+});
+
 cli
 	.option('-t, --target-namespace <namespace>', 'Assign template to a <namespace>. Recommended is `vash.helpers.tplcache` for view engine compatibility')
-	.option('-p, --property-name [name]', 'Assign template to property named <name>. Defaults to filename.')
+	.option('-p, --property-name [name]', 'Assign template to property named <name>. Defaults to filename, and requires --target-namespace.')
 	.option('-f, --file <file>', 'Compile the template in <file>')
 	.option('-j, --json <json>', 'Pass options to the Vash compiler. See docs for valid options.')
 	.option('-o, --out <path>', 'Write template into <path> directory')
 	.option('-u, --uglify', 'Uglify the template, safely')
+	.option('-a, --no-autolink', 'Wrap each template in `vash.link`.')
 	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
 	.option('-r, --render [json]', 'Render the template using <json> as the model')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
 	.parse(process.argv)
 
-//console.log(cli.execute)
+console.log( cli.autolink )
 
-if( cli.json ){ 
-	cli.vopts = JSON.parse(cli.json); 
+if( cli.json ){
+	cli.vopts = JSON.parse(cli.json);
 }
 
 if(cli.file){
@@ -137,6 +158,6 @@ if(cli.file){
 	// assume file input
 	file( cli.file, cli )
 } else {
-	// assume stdin 
+	// assume stdin
 	stdin( cli );
 }
