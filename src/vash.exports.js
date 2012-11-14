@@ -41,6 +41,7 @@
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["vQuery"] = vQuery;
+	exports['link'] = VCompiler.assemble;
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {
@@ -64,10 +65,10 @@
 		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.ast, markup);
+		c = new VCompiler(p.ast, markup, exports.helpers.constructor);
 
-		cmp = c.assemble(options, exports.helpers.constructor);
-		cmp.displayName = 'render';
+		cmp = c.generate( options );
+		cmp = c.assemble( cmp );
 		return cmp;
 	};
 

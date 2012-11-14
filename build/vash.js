@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1585
+ * Vash - JavaScript Template Parser, v0.5.7-1605
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1585";
+	exports["version"] = "0.5.7-1605";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1398,18 +1398,17 @@ VParser.prototype = {
 
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VCompiler(ast, originalMarkup){
+function VCompiler(ast, originalMarkup, Helpers){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
+	this.Helpers = Helpers || vash.helpers.constructor;
 }
 
 var VCP = VCompiler.prototype;
 
-VCP.assemble = function(options, Helpers){
+VCP.generate = function(options){
 
 	options = options || {};
-	Helpers = Helpers || {};
-
 
 	var buffer = []
 		,escapeStack = []
@@ -1568,8 +1567,6 @@ VCP.assemble = function(options, Helpers){
 		.replace( /HELPERSNAME/g, options.helpersName )
 		.replace( /MODELNAME/g, options.modelName )
 
-
-
 	if(options.debugCompiler){
 		console.log(joined);
 	}
@@ -1577,17 +1574,33 @@ VCP.assemble = function(options, Helpers){
 	try {
 		compiledFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
-		Helpers.reportError(e, 0, 0, joined, /\n/)
+		this.Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
 
-	// Link compiled function to helpers collection, but report original function
-	// body for code generation purposes.
-	linkedFunc = function(model) { return compiledFunc(model, new Helpers( model )); };
-	linkedFunc.toString = function() { return compiledFunc.toString(); };
-
-	return linkedFunc;
+	return compiledFunc;
 }
 
+VCP.assemble = function( cmpFunc ){
+	return VCompiler.assemble( cmpFunc, this.Helpers );
+}
+
+VCompiler.assemble = function( cmpFunc, Helpers ){
+	Helpers = Helpers || vash.helpers.constructor;
+
+	var linked = function( model ){
+		return cmpFunc( model, new Helpers( model ) );
+	}
+
+	linked.toString = function(){
+		return cmpFunc.toString();
+	}
+
+	linked.toClientString = function(){
+		return 'vash.link( ' + cmpFunc.toString() + ' )';
+	}
+
+	return linked;
+}
 
 	/************** End injected code from build script */	
 	
@@ -1595,6 +1608,7 @@ VCP.assemble = function(options, Helpers){
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["vQuery"] = vQuery;
+	exports['link'] = VCompiler.assemble;
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {
@@ -1618,10 +1632,10 @@ VCP.assemble = function(options, Helpers){
 		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.ast, markup);
+		c = new VCompiler(p.ast, markup, exports.helpers.constructor);
 
-		cmp = c.assemble(options, exports.helpers.constructor);
-		cmp.displayName = 'render';
+		cmp = c.generate( options );
+		cmp = c.assemble( cmp );
 		return cmp;
 	};
 

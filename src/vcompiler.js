@@ -1,17 +1,16 @@
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VCompiler(ast, originalMarkup){
+function VCompiler(ast, originalMarkup, Helpers){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
+	this.Helpers = Helpers || vash.helpers.constructor;
 }
 
 var VCP = VCompiler.prototype;
 
-VCP.assemble = function(options, Helpers){
+VCP.generate = function(options){
 
 	options = options || {};
-	Helpers = Helpers || {};
-
 
 	var buffer = []
 		,escapeStack = []
@@ -177,14 +176,30 @@ VCP.assemble = function(options, Helpers){
 	try {
 		compiledFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
-		Helpers.reportError(e, 0, 0, joined, /\n/)
+		this.Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
 
-	// Link compiled function to helpers collection, but report original function
-	// body for code generation purposes.
-	linkedFunc = function(model) { return compiledFunc(model, new Helpers( model )); };
-	linkedFunc.toString = function() { return compiledFunc.toString(); };
-
-	return linkedFunc;
+	return compiledFunc;
 }
 
+VCP.assemble = function( cmpFunc ){
+	return VCompiler.assemble( cmpFunc, this.Helpers );
+}
+
+VCompiler.assemble = function( cmpFunc, Helpers ){
+	Helpers = Helpers || vash.helpers.constructor;
+
+	var linked = function( model ){
+		return cmpFunc( model, new Helpers( model ) );
+	}
+
+	linked.toString = function(){
+		return cmpFunc.toString();
+	}
+
+	linked.toClientString = function(){
+		return 'vash.link( ' + cmpFunc.toString() + ' )';
+	}
+
+	return linked;
+}

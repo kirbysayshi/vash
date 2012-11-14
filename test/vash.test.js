@@ -1,5 +1,6 @@
 var vows = require('vows')
 	,assert = require('assert')
+	,vm = require('vm')
 	//,vash = process.argv[2]
 	//	? require(__dirname + '/../build/vash.' + process.argv[2] )
 	//	: require(__dirname + '/../build/vash');
@@ -1615,6 +1616,47 @@ return vows.describe('vash templating library').addBatch({
 			}*/
 		}
 
+	}
+
+	,'decompilation': {
+
+		topic: function(){
+			var str = '<p></p>';
+			return vash.compile( str, { debug: false, useWith: false } );
+		}
+
+		,'of a linked function returns the generated function': function( tpl ){
+
+			var expected = ''
+				+ "function anonymous(model,html) {\n"
+				+ "html.buffer.push('<p></p>'); \n"
+				+ "return html.buffer.flush(); \n"
+				+ "\n"
+				+ "}"
+
+			assert.equal( tpl.toString(), expected )
+		}
+
+		,'using .toClientString returns vash.link': function( tpl ){
+
+			var expected = ''
+				+ "vash.link( "
+				+ "function anonymous(model,html) {"
+				+ "html.buffer.push('<p></p>'); "
+				+ "return html.buffer.flush(); "
+				+ "}"
+				+ " )"
+
+			assert.equal( tpl.toClientString().replace(/\n/g, ''), expected )
+		}
+
+		,'followed by relinking renders': function( tpl ){
+
+			var  client = tpl.toClientString() + '()'
+				,actual = vm.runInNewContext( client, { vash: vash } );
+
+			assert.equal( actual, tpl() );
+		}
 	}
 
 	//,'putting markup into a property': {
