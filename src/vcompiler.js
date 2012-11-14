@@ -7,10 +7,10 @@ function VCompiler(ast, originalMarkup){
 
 var VCP = VCompiler.prototype;
 
-VCP.assemble = function(options, helpers){
+VCP.assemble = function(options, Helpers){
 
 	options = options || {};
-	helpers = helpers || {};
+	Helpers = Helpers || {};
 
 
 	var buffer = []
@@ -68,7 +68,7 @@ VCP.assemble = function(options, helpers){
 
 		if(parentParentIsNotEXP && (index === 0 ) ){
 			insertDebugVars(tok);
-			start = "__vo.push(" + start;
+			start = "HELPERSNAME.buffer.push(" + start;
 		}
 
 		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
@@ -132,32 +132,9 @@ VCP.assemble = function(options, helpers){
 	}
 
 	var pre = ''
-		+ 'HELPERSNAME = HELPERSNAME || vash.helpers; \n'
-		+ 'var __vo = HELPERSNAME.__vo = HELPERSNAME.__vo || []; \n'
-		+ 'HELPERSNAME.model = MODELNAME; \n'
-
-		// we mark the buffer to know the side effects of the currently running
-		// template
-		+ 'var __vomstart = HELPERSNAME.buffer.mark(); \n'
-
-		// `__vanddie`, if true, tells the template that, when finished, it
-		// should clear the buffer and mark execution as concluded. It is
-		// necessary to know if `__vexecuting` was set before or during this
-		// template.
-		+ 'var __vanddie; \n'
-
-		// `__vexecuting`, if set, means that another template is running / has
-		// run before the currently executing template. If this is true, then
-		// don't clear things out when this template finishes.
-		+ 'if( HELPERSNAME.__vexecuting ){ \n'
-		+ '  __vanddie = false; \n'
-		+ '} else { \n'
-		+ '  __vanddie = true; \n'
-		+ '  HELPERSNAME.__vexecuting = true; \n'
-		+ '} \n'
-
+		
 	if( options.debug ){
-		pre += 'var __vl = HELPERSNAME.__vl = 0, __vc = HELPERSNAME.__vc = 0; \n'
+		pre += 'var __vl = HELPERSNAME.buffer.__vl = 0, __vc = HELPERSNAME.buffer.__vc = 0; \n'
 	}
 
 	pre += 'VASHTPLBODY';
@@ -181,33 +158,29 @@ VCP.assemble = function(options, helpers){
 
 	if( options.debug ){
 		pre += ''
-			+ 'delete HELPERSNAME.__vl; \n'
-			+ 'delete HELPERSNAME.__vc; \n'
+			+ 'delete HELPERSNAME.buffer.__vl; \n'
+			+ 'delete HELPERSNAME.buffer.__vc; \n'
 	}
 
 	pre += ''
-		+ 'var __vall = __vo.join(""); \n'
-
-		// as said above, if `__vanddie` is true, then this is the "root" template
-		// or the first to be run this event loop.
-		+ 'if( __vanddie ){ \n'
-		+ '  HELPERSNAME.buffer.empty(); \n'
-		+ '  delete HELPERSNAME.__vexecuting; \n'
-		+ '} \n'
-		+ 'return __vall; \n'
+		+ 'return HELPERSNAME.buffer.flush(); \n'
 
 	visitNode(this.ast);
 
+	// coalesce markup
+	joined = buffer
+		.join("")
+		.split("')MKPMKP('").join('')
+		.split("MKP(").join("HELPERSNAME.buffer.push(")
+		.split(")MKP").join("); \n");
+	
 	joined = pre
 		// substitutions
-		.replace( /VASHTPLBODY/g, buffer.join('') )
+		.replace( /VASHTPLBODY/g, joined )
 		.replace( /HELPERSNAME/g, options.helpersName )
 		.replace( /MODELNAME/g, options.modelName )
 
-		// coalesce markup
-		.split("')MKPMKP('").join('')
-		.split("MKP(").join("__vo.push(")
-		.split(")MKP").join("); \n");
+		
 
 	if(options.debugCompiler){
 		console.log(joined);
@@ -216,13 +189,14 @@ VCP.assemble = function(options, helpers){
 	try {
 		compiledFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
-		vash.helpers.reportError(e, 0, 0, joined, /\n/)
+		Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
 
 	// Link compiled function to helpers collection, but report original function
 	// body for code generation purposes.
-	linkedFunc = function(model) { return compiledFunc(model, helpers); };
+	linkedFunc = function(model) { return compiledFunc(model, new Helpers( model )); };
 	linkedFunc.toString = function() { return compiledFunc.toString(); };
 
 	return linkedFunc;
 }
+
