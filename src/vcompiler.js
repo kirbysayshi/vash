@@ -141,7 +141,7 @@ VCP.generate = function(options){
 	if( options.debug ){
 		pre = 'try { \n' + pre + '} catch( e ){ \n';
 		pre += ''
-			+ 'HELPERSNAME.reportError( e, HELPERSNAME.buffer.vl, HELPERSNAME.buffer.vc, '
+			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, '
 			+ '"' + this.originalMarkup
 				.replace(reLineBreak, '!LB!')
 				.replace(reQuote, '\\$1')

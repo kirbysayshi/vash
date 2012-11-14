@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1610
+ * Vash - JavaScript Template Parser, v0.5.7-1611
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -36,6 +36,9 @@
 		Helpers = function ( model ) {
 			this.buffer = new Buffer();
 			this.model  = model;
+
+			this.vl = 0;
+			this.vc = 0;
 		};
 
 		vash['helpers']
@@ -105,9 +108,6 @@
 
 	Buffer = function() {
 		var __vo = [];
-
-		this.vl = 0;
-		this.vc = 0;
 
 		this.mark = function() {
 			var mark = new Mark( this );
@@ -266,7 +266,7 @@
 
 	helpers.highlight = function(lang, cb){
 
-		// context (this) is vash.helpers
+		// context (this) is and instance of Helpers, aka a rendering context
 
 		// mark() returns an internal `Mark` object
 		// Use it to easily capture output...
@@ -277,12 +277,10 @@
 		cb();
 
 		// ... and then use fromMark() to grab the output added by cb().
-		// Allowing the user to have functions mitigates having to do a lot of
-		// manual string concatenation within a helper.
 		var cbOutLines = this.buffer.fromMark(startMark);
 
 		// The internal buffer should now be back to where it was before this
-		// helper started.
+		// helper started, and the output is completely contained within cbOutLines.
 
 		this.buffer.push( '<pre><code>' );
 
@@ -295,7 +293,7 @@
 		this.buffer.push( '</code></pre>' );
 
 		// returning is allowed, but could cause surprising effects. A return
-		// value will be directly added to the output.
+		// value will be directly added to the output directly following the above.
 	}
 
 }());

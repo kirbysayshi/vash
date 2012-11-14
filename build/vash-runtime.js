@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1610
+ * Vash - JavaScript Template Parser, v0.5.7-1611
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -36,6 +36,9 @@
 		Helpers = function ( model ) {
 			this.buffer = new Buffer();
 			this.model  = model;
+
+			this.vl = 0;
+			this.vc = 0;
 		};
 
 		vash['helpers']
@@ -105,9 +108,6 @@
 
 	Buffer = function() {
 		var __vo = [];
-
-		this.vl = 0;
-		this.vc = 0;
 
 		this.mark = function() {
 			var mark = new Mark( this );

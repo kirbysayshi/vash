@@ -27,6 +27,9 @@
 		Helpers = function ( model ) {
 			this.buffer = new Buffer();
 			this.model  = model;
+
+			this.vl = 0;
+			this.vc = 0;
 		};
 
 		vash['helpers']
@@ -96,9 +99,6 @@
 
 	Buffer = function() {
 		var __vo = [];
-
-		this.vl = 0;
-		this.vc = 0;
 
 		this.mark = function() {
 			var mark = new Mark( this );
