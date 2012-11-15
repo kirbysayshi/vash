@@ -1629,8 +1629,9 @@ return vows.describe('vash templating library').addBatch({
 
 			var expected = ''
 				+ "function anonymous(model,html) {\n"
-				+ "html.buffer.push('<p></p>'); \n"
-				+ "return html.buffer.flush(); \n"
+				+ "var __vbuffer = html.buffer; \n"
+				+ "__vbuffer.push('<p></p>'); \n"
+				+ "return html; \n"
 				+ "\n"
 				+ "}"
 
@@ -1642,8 +1643,9 @@ return vows.describe('vash templating library').addBatch({
 			var expected = ''
 				+ "vash.link( "
 				+ "function anonymous(model,html) {"
-				+ "html.buffer.push('<p></p>'); "
-				+ "return html.buffer.flush(); "
+				+ "var __vbuffer = html.buffer; "
+				+ "__vbuffer.push('<p></p>'); "
+				+ "return html; "
 				+ "}"
 				+ " )"
 
@@ -1655,7 +1657,7 @@ return vows.describe('vash templating library').addBatch({
 			var  client = tpl.toClientString() + '()'
 				,actual = vm.runInNewContext( client, { vash: vash } );
 
-			assert.equal( actual, tpl() );
+			assert.equal( actual.toString(), tpl().toString() );
 		}
 	}
 

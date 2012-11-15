@@ -38,6 +38,12 @@
 			= { constructor: Helpers, config: {}};
 	}
 
+	// this allows a template to return the context, and coercion
+	// will handle it
+	helpers.toString = helpers.toHtmlString = function(){
+		return this.buffer.toString();
+	}
+
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
 
@@ -90,6 +96,7 @@
 
 	// HTML ESCAPING
 	///////////////////////////////////////////////////////////////////////////
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// BUFFER MANIPULATION
@@ -159,7 +166,7 @@
 		};
 
 		this.toString = this.toHtmlString = function(){
-			// not using flush because then console.log( tpl() ) would artifically
+			// not using flush because then console.log( tpl() ) would artificially
 			// affect the output
 			return __vo.join( "" );
 		}

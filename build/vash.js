@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1611
+ * Vash - JavaScript Template Parser, v0.5.7-1634
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1611";
+	exports["version"] = "0.5.7-1634";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -83,6 +83,12 @@
 			= { constructor: Helpers, config: {}};
 	}
 
+	// this allows a template to return the context, and coercion
+	// will handle it
+	helpers.toString = helpers.toHtmlString = function(){
+		return this.buffer.toString();
+	}
+
 	// CONFIG
 	///////////////////////////////////////////////////////////////////////////
 
@@ -135,6 +141,7 @@
 
 	// HTML ESCAPING
 	///////////////////////////////////////////////////////////////////////////
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// BUFFER MANIPULATION
@@ -204,7 +211,7 @@
 		};
 
 		this.toString = this.toHtmlString = function(){
-			// not using flush because then console.log( tpl() ) would artifically
+			// not using flush because then console.log( tpl() ) would artificially
 			// affect the output
 			return __vo.join( "" );
 		}
@@ -1486,7 +1493,6 @@ VCP.generate = function(options){
 	options = options || {};
 
 	var buffer = []
-		,escapeStack = []
 
 		,reQuote = /(["'])/gi
 		,reEscapedQuote = /\\+(["'])/gi
@@ -1494,8 +1500,6 @@ VCP.generate = function(options){
 		,joined
 		,compiledFunc
 		,linkedFunc
-
-		,markupBuffer = [];
 
 	function insertDebugVars(tok){
 		if(options.debug){
@@ -1540,14 +1544,14 @@ VCP.generate = function(options){
 
 		if(parentParentIsNotEXP && (index === 0 ) ){
 			insertDebugVars(tok);
-			start = "HELPERSNAME.buffer.push(" + start;
+			start = "__vbuffer.push(" + start;
 		}
 
 		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
 			end += "); \n";
 		}
 
-		buffer.push( start + tok.val /*.replace(reQuote, '"').replace(reEscapedQuote, '\\$1')*/ + end );
+		buffer.push( start + tok.val + end );
 
 		if(parentParentIsNotEXP && index === parentNode.length - 1){
 			insertDebugVars(tok);
@@ -1603,29 +1607,35 @@ VCP.generate = function(options){
 		}
 	}
 
-	var pre = ''
-
-	pre += 'VASHTPLBODY';
-
-	if( options.useWith ){
-		pre = 'with( MODELNAME || {} ){ \n' + pre + '} \n'
+	function escapeForDebug( str ){
+		return str
+			.replace(reLineBreak, '!LB!')
+			.replace(reQuote, '\\$1')
+			.replace(reEscapedQuote, '\\$1')
 	}
 
-	if( options.debug ){
-		pre = 'try { \n' + pre + '} catch( e ){ \n';
-		pre += ''
+	function replaceDevTokens( str ){
+		return str
+			.replace( /HELPERSNAME/g, options.helpersName )
+			.replace( /MODELNAME/g, options.modelName );
+	}
+
+	var head = ''
+		+ (options.debug ? 'try { \n' : '')
+		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
+		+ (options.useWith ? 'with( MODELNAME || {} ){ \n' : '');
+
+	var foot = ''
+		+ 'return HELPERSNAME; \n'
+		+ (options.debug ? '} catch( e ){ \n'
 			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, '
-			+ '"' + this.originalMarkup
-				.replace(reLineBreak, '!LB!')
-				.replace(reQuote, '\\$1')
-				.replace(reEscapedQuote, '\\$1')
-			+ '"'
+			+ '"' + escapeForDebug( this.originalMarkup ) + '"'
 			+ ' ); \n'
-		pre += '} \n';
-	}
+			+ '} \n' : '')
+		+ (options.useWith ? '} \n' : '');
 
-	pre += ''
-		+ 'return HELPERSNAME.buffer.flush(); \n'
+	head = replaceDevTokens( head );
+	foot = replaceDevTokens( foot );
 
 	visitNode(this.ast);
 
@@ -1633,14 +1643,10 @@ VCP.generate = function(options){
 	joined = buffer
 		.join("")
 		.split("')MKPMKP('").join('')
-		.split("MKP(").join("HELPERSNAME.buffer.push(")
+		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = pre
-		// substitutions
-		.replace( /VASHTPLBODY/g, joined )
-		.replace( /HELPERSNAME/g, options.helpersName )
-		.replace( /MODELNAME/g, options.modelName )
+	joined = head + joined + foot;
 
 	if(options.debugCompiler){
 		console.log(joined);
