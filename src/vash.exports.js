@@ -65,9 +65,9 @@
 		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.ast, markup, exports.helpers.constructor);
+		c = new VCompiler(p.ast, markup, exports.helpers.constructor, options);
 
-		cmp = c.generate( options );
+		cmp = c.generate();
 		cmp = c.assemble( cmp );
 		return cmp;
 	};

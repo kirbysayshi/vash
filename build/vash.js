@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1634
+ * Vash - JavaScript Template Parser, v0.5.7-1643
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1634";
+	exports["version"] = "0.5.7-1643";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1480,145 +1480,137 @@ VParser.prototype = {
 
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VCompiler(ast, originalMarkup, Helpers){
+function VCompiler(ast, originalMarkup, Helpers, options){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
 	this.Helpers = Helpers || vash.helpers.constructor;
+	this.options = options || {};
+
+	this.reQuote = /(["'])/gi
+	this.reEscapedQuote = /\\+(["'])/gi
+	this.reLineBreak = /[\n\r]/gi
+	this.reHelpersName = /HELPERSNAME/g
+	this.reModelName = /MODELNAME/g
+	this.reOriginalMarkup = /ORIGINALMARKUP/g
+
+	this.buffer = [];
 }
 
 var VCP = VCompiler.prototype;
 
-VCP.generate = function(options){
+VCP.insertDebugVars = function(tok){
 
-	options = options || {};
+	if(this.options.debug){
+		this.buffer.push(
+			this.options.helpersName + '.vl = ' + tok.line + ', '
+			,this.options.helpersName + '.vc = ' + tok.chr + '; \n'
+		);
+	}
+}
 
-	var buffer = []
+VCP.visitMarkupTok = function(tok, parentNode, index){
 
-		,reQuote = /(["'])/gi
-		,reEscapedQuote = /\\+(["'])/gi
-		,reLineBreak = /[\n\r]/gi
-		,joined
-		,compiledFunc
-		,linkedFunc
+	this.insertDebugVars(tok);
+	this.buffer.push(
+		"MKP('" + tok.val
+			.replace(this.reQuote, '\\$1')
+			.replace(this.reLineBreak, '\\n')
+		+ "')MKP" );
+}
 
-	function insertDebugVars(tok){
-		if(options.debug){
-			buffer.push(
-				 options.helpersName + '.vl = ' + tok.line + ', '
-				,options.helpersName + '.vc = ' + tok.chr + '; \n'
-			);
+VCP.visitBlockTok = function(tok, parentNode, index){
+
+	this.buffer.push( tok.val );
+}
+
+VCP.visitExpressionTok = function(tok, parentNode, index, isHomogenous){
+
+	var  start = ''
+		,end = ''
+		,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== EXP;
+
+	if(this.options.htmlEscape !== false){
+
+		if( parentParentIsNotEXP && index === 0 && isHomogenous ){
+			start += this.options.helpersName + '.escape(';
+		}
+
+		if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
+			end += ").toHtmlString()";
 		}
 	}
 
-	function visitMarkupTok(tok, parentNode, index){
-
-		insertDebugVars(tok);
-		buffer.push(
-			"MKP('" + tok.val
-				.replace(reQuote, '\\$1')
-				.replace(reLineBreak, '\\n')
-			+ "')MKP" );
+	if(parentParentIsNotEXP && (index === 0 ) ){
+		this.insertDebugVars(tok);
+		start = "__vbuffer.push(" + start;
 	}
 
-	function visitBlockTok(tok, parentNode, index){
-
-		buffer.push( tok.val /*.replace(reQuote, '\"')*/ );
+	if( parentParentIsNotEXP && index === parentNode.length - 1 ){
+		end += "); \n";
 	}
 
-	function visitExpressionTok(tok, parentNode, index, isHomogenous){
+	this.buffer.push( start + tok.val + end );
 
-		var  start = ''
-			,end = ''
-			,parentParentIsNotEXP = parentNode.parent && parentNode.parent.mode !== EXP;
+	if(parentParentIsNotEXP && index === parentNode.length - 1){
+		this.insertDebugVars(tok);
+	}
+}
 
-		if(options.htmlEscape !== false){
+VCP.visitNode = function(node){
 
-			if( parentParentIsNotEXP && index === 0 && isHomogenous ){
-				start += options.helpersName + '.escape(';
-			}
+	var n, children = node.slice(0), nonExp, i, child;
 
-			if( parentParentIsNotEXP && index === parentNode.length - 1 && isHomogenous){
-				end += ").toHtmlString()";
-			}
-		}
-
-		if(parentParentIsNotEXP && (index === 0 ) ){
-			insertDebugVars(tok);
-			start = "__vbuffer.push(" + start;
-		}
-
-		if( parentParentIsNotEXP && index === parentNode.length - 1 ){
-			end += "); \n";
-		}
-
-		buffer.push( start + tok.val + end );
-
-		if(parentParentIsNotEXP && index === parentNode.length - 1){
-			insertDebugVars(tok);
-		}
+	if(node.mode === EXP && (node.parent && node.parent.mode !== EXP)){
+		// see if this node's children are all EXP
+		nonExp = node.filter(VCompiler.findNonExp).length;
 	}
 
-	function visitNode(node){
+	for(i = 0; i < children.length; i++){
+		child = children[i];
 
-		var n, children = node.slice(0), nonExp, i, child;
+		// if saveAT is true, or if AT_COLON is used, these should not be compiled
+		if( child.type && child.type === AT || child.type === AT_COLON ) continue;
 
-		if(node.mode === EXP && (node.parent && node.parent.mode !== EXP)){
-			// see if this node's children are all EXP
-			nonExp = node.filter(findNonExp).length;
-		}
+		if(child.vquery){
 
-		for(i = 0; i < children.length; i++){
-			child = children[i];
+			this.visitNode(child);
 
-			// if saveAT is true, or if AT_COLON is used, these should not be compiled
-			if( child.type && child.type === AT || child.type === AT_COLON ) continue;
+		} else if(node.mode === MKP){
 
-			if(child.vquery){
+			this.visitMarkupTok(child, node, i);
 
-				visitNode(child);
+		} else if(node.mode === BLK){
 
-			} else if(node.mode === MKP){
+			this.visitBlockTok(child, node, i);
 
-				visitMarkupTok(child, node, i);
+		} else if(node.mode === EXP){
 
-			} else if(node.mode === BLK){
+			this.visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
 
-				visitBlockTok(child, node, i);
-
-			} else if(node.mode === EXP){
-
-				visitExpressionTok(child, node, i, (nonExp > 0 ? false : true));
-
-			}
-		}
-
-	}
-
-	function findNonExp(node){
-
-		if(node.vquery && node.mode === EXP){
-			return node.filter(findNonExp).length > 0;
-		}
-
-		if(node.vquery && node.mode !== EXP){
-			return true;
-		} else {
-			return false;
 		}
 	}
 
-	function escapeForDebug( str ){
-		return str
-			.replace(reLineBreak, '!LB!')
-			.replace(reQuote, '\\$1')
-			.replace(reEscapedQuote, '\\$1')
-	}
+}
 
-	function replaceDevTokens( str ){
-		return str
-			.replace( /HELPERSNAME/g, options.helpersName )
-			.replace( /MODELNAME/g, options.modelName );
-	}
+VCP.escapeForDebug = function( str ){
+	return str
+		.replace(this.reLineBreak, '!LB!')
+		.replace(this.reQuote, '\\$1')
+		.replace(this.reEscapedQuote, '\\$1')
+}
+
+VCP.replaceDevTokens = function( str ){
+	return str
+		.replace( this.reHelpersName, this.options.helpersName )
+		.replace( this.reModelName, this.options.modelName );
+}
+
+VCP.generate = function(){
+
+	// clear whatever's in the current buffer
+	this.buffer.length = 0;
+
+	var options = this.options;
 
 	var head = ''
 		+ (options.debug ? 'try { \n' : '')
@@ -1628,19 +1620,18 @@ VCP.generate = function(options){
 	var foot = ''
 		+ 'return HELPERSNAME; \n'
 		+ (options.debug ? '} catch( e ){ \n'
-			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, '
-			+ '"' + escapeForDebug( this.originalMarkup ) + '"'
-			+ ' ); \n'
+			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '')
 		+ (options.useWith ? '} \n' : '');
 
-	head = replaceDevTokens( head );
-	foot = replaceDevTokens( foot );
+	head = this.replaceDevTokens( head );
+	foot = this.replaceDevTokens( foot )
+		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
 
-	visitNode(this.ast);
+	this.visitNode(this.ast);
 
 	// coalesce markup
-	joined = buffer
+	var joined = this.buffer
 		.join("")
 		.split("')MKPMKP('").join('')
 		.split("MKP(").join( "__vbuffer.push(")
@@ -1653,16 +1644,16 @@ VCP.generate = function(options){
 	}
 
 	try {
-		compiledFunc = new Function(options.modelName, options.helpersName, joined);
+		this.cmpFunc = new Function(options.modelName, options.helpersName, joined);
 	} catch(e){
 		this.Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
 
-	return compiledFunc;
+	return this.compiledFunc;
 }
 
 VCP.assemble = function( cmpFunc ){
-	return VCompiler.assemble( cmpFunc, this.Helpers );
+	return VCompiler.assemble( cmpFunc || this.cmpFunc, this.Helpers );
 }
 
 VCompiler.assemble = function( cmpFunc, Helpers ){
@@ -1681,6 +1672,19 @@ VCompiler.assemble = function( cmpFunc, Helpers ){
 	}
 
 	return linked;
+}
+
+VCompiler.findNonExp = function(node){
+
+	if(node.vquery && node.mode === EXP){
+		return node.filter(VCompiler.findNonExp).length > 0;
+	}
+
+	if(node.vquery && node.mode !== EXP){
+		return true;
+	} else {
+		return false;
+	}
 }
 
 	/************** End injected code from build script */	
@@ -1713,9 +1717,9 @@ VCompiler.assemble = function( cmpFunc, Helpers ){
 		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.ast, markup, exports.helpers.constructor);
+		c = new VCompiler(p.ast, markup, exports.helpers.constructor, options);
 
-		cmp = c.generate( options );
+		cmp = c.generate();
 		cmp = c.assemble( cmp );
 		return cmp;
 	};
