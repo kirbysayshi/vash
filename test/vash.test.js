@@ -1630,8 +1630,9 @@ return vows.describe('vash templating library').addBatch({
 			var expected = ''
 				+ "function anonymous(model,html) {\n"
 				+ "var __vbuffer = html.buffer; \n"
+				+ 'model = model || {}; \n'
 				+ "__vbuffer.push('<p></p>'); \n"
-				+ "return html; \n"
+				+ "return html.toString(); \n"
 				+ "\n"
 				+ "}"
 
@@ -1644,8 +1645,9 @@ return vows.describe('vash templating library').addBatch({
 				+ "vash.link( "
 				+ "function anonymous(model,html) {"
 				+ "var __vbuffer = html.buffer; "
+				+ 'model = model || {}; '
 				+ "__vbuffer.push('<p></p>'); "
-				+ "return html; "
+				+ "return html.toString(); "
 				+ "}"
 				+ " )"
 
@@ -1661,6 +1663,51 @@ return vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'keywords': {
+
+		topic: '@if( model instanceof Object ){ <p></p> }'
+
+		,'do not open extraneous blocks': function( topic ){
+			var tpl = vash.compile( topic );
+			assert.equal( tpl(), '<p></p>' );
+		}
+	}
+
+	,'switch statement': {
+
+		topic: '@switch(model){ case 1: <p></p>break; case 2: <b></b>break; }'
+
+		,'work': function( topic ){
+			var tpl = vash.compile( topic );
+			console.log( tpl(1).toString() );
+			assert.equal( tpl(1), '<p></p>' );
+			assert.equal( tpl(2), '<b></b>' );
+		}
+	}
+
+	/*,'implicit compilation': {
+
+		'is valid': {
+
+			topic: '<text>@model.a</text>'
+
+			,'within an expression': function( topic ){
+				var str = '@function help(res){ res(model) } @help(@' + topic + ')'
+					,tpl = vash.compile( str )
+					,actual = tpl({a : 'a'});
+
+				assert.equal( actual, ' a' );
+			}
+
+			,'within a block statement': function( topic ){
+				var str = '@{ var b = @' + topic + '; }@b'
+					,tpl = vash.compile( str )
+
+				var actual = tpl( {a: 'a'} );
+				assert.equal( actual.toString(), 'a' );
+			}
+		}
+	}*/
 	//,'putting markup into a property': {
 	//	topic: function(){
 	//		var str = '@{ var a = { b: <li class="whatwhat"></li> \n } \n }';

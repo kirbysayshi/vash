@@ -274,24 +274,24 @@ VParser.prototype = {
 					this.ast.push( curr );
 				}
 
-				if(
-					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
-				){
+				// close this ast if parent is BLK. if another tag follows, BLK will
+				// flip over to MKP
+				if( this.ast.parent && this.ast.parent.mode === BLK ){
 					this.ast = this.ast.parent;
 				}
+
 				break;
 
 			case HTML_TAG_SELFCLOSE:
 
 				this.ast.push(curr);
 
-				if(
-					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
-				){
+				// close this ast if parent is BLK. if another tag follows, BLK will
+				// flip over to MKP
+				if( this.ast.parent && this.ast.parent.mode === BLK ){
 					this.ast = this.ast.parent;
 				}
+
 				break;
 
 			default:
