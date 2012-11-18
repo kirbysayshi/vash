@@ -1663,6 +1663,17 @@ return vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'render-time options': {
+
+		topic: '@model'
+
+		,'allows for returning context': function( topic ){
+			var tpl = vash.compile( topic );
+			assert.equal( tpl('a'), 'a' );
+			assert.ok( tpl('a', { context: true }) instanceof vash.helpers.constructor )
+		}
+	}
+
 	,'keywords': {
 
 		topic: '@if( model instanceof Object ){ <p></p> }'

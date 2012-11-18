@@ -139,9 +139,11 @@ VCP.generate = function(){
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
 	var foot = ''
-		+ 'return HELPERSNAME.toString(); \n'
+		+ 'return (__vopts && __vopts.context) \n'
+		+ '  ? HELPERSNAME \n'
+		+ '  : HELPERSNAME.toString(); \n'
 		+ (options.debug ? '} catch( e ){ \n'
-			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '')
 		+ (options.useWith ? '} \n' : '');
 
@@ -165,7 +167,7 @@ VCP.generate = function(){
 	}
 
 	try {
-		this.cmpFunc = new Function(options.modelName, options.helpersName, joined);
+		this.cmpFunc = new Function(options.modelName, options.helpersName, '__vopts', joined);
 	} catch(e){
 		this.Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
@@ -180,8 +182,8 @@ VCP.assemble = function( cmpFunc ){
 VCompiler.assemble = function( cmpFunc, Helpers ){
 	Helpers = Helpers || vash.helpers.constructor;
 
-	var linked = function( model ){
-		return cmpFunc( model, new Helpers( model ) );
+	var linked = function( model, opts ){
+		return cmpFunc( model, new Helpers( model ), opts );
 	}
 
 	linked.toString = function(){
