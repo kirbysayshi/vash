@@ -135,10 +135,11 @@ VCP.generate = function(){
 	var head = ''
 		+ (options.debug ? 'try { \n' : '')
 		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
-		+ (options.useWith ? 'with( MODELNAME || {} ){ \n' : '');
+		+ 'MODELNAME = MODELNAME || {}; \n'
+		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
 	var foot = ''
-		+ 'return HELPERSNAME; \n'
+		+ 'return HELPERSNAME.toString(); \n'
 		+ (options.debug ? '} catch( e ){ \n'
 			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '')
