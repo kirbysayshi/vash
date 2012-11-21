@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.7-1643
+ * Vash - JavaScript Template Parser, v0.6.0-1644
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.7-1643";
+	exports["version"] = "0.6.0-1644";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -278,7 +278,7 @@
 			var curr = i + start + 1;
 
 			return (curr === lineno ? '  > ' : '    ')
-				+ (curr < 10 ? curr + ' ' : curr)
+				+ (curr < 10 ? ' ' : '')
 				+ curr
 				+ ' | '
 				+ line;
@@ -542,6 +542,8 @@ var  AT = 'AT'
 var PAIRS = {};
 
 // defined through indexing to help minification
+
+// open pairings
 PAIRS[AT_STAR_OPEN] = AT_STAR_CLOSE;
 PAIRS[BRACE_OPEN] = BRACE_CLOSE;
 PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
@@ -550,6 +552,12 @@ PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 PAIRS[AT_COLON] = NEWLINE;
 
+// closed pairings (reverse of open)
+PAIRS[AT_STAR_CLOSE] = AT_STAR_OPEN;
+PAIRS[BRACE_CLOSE] = BRACE_OPEN;
+PAIRS[HARD_PAREN_CLOSE] = HARD_PAREN_OPEN;
+PAIRS[PAREN_CLOSE] = PAREN_OPEN;
+PAIRS[NEWLINE] = AT_COLON;
 
 
 // The order of these is important, as it is the order in which
@@ -1242,24 +1250,24 @@ VParser.prototype = {
 					this.ast.push( curr );
 				}
 
-				if(
-					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
-				){
+				// close this ast if parent is BLK. if another tag follows, BLK will
+				// flip over to MKP
+				if( this.ast.parent && this.ast.parent.mode === BLK ){
 					this.ast = this.ast.parent;
 				}
+
 				break;
 
 			case HTML_TAG_SELFCLOSE:
 
 				this.ast.push(curr);
 
-				if(
-					this.ast.parent && this.ast.parent.mode === BLK
-					&& (next && (next.type === WHITESPACE || next.type === NEWLINE))
-				){
+				// close this ast if parent is BLK. if another tag follows, BLK will
+				// flip over to MKP
+				if( this.ast.parent && this.ast.parent.mode === BLK ){
 					this.ast = this.ast.parent;
 				}
+
 				break;
 
 			default:
@@ -1615,12 +1623,16 @@ VCP.generate = function(){
 	var head = ''
 		+ (options.debug ? 'try { \n' : '')
 		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
-		+ (options.useWith ? 'with( MODELNAME || {} ){ \n' : '');
+		+ 'MODELNAME = MODELNAME || {}; \n'
+		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
 	var foot = ''
-		+ 'return HELPERSNAME; \n'
+		+ '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
+		+ 'return (__vopts && __vopts.asContext) \n'
+		+ '  ? HELPERSNAME \n'
+		+ '  : HELPERSNAME.toString(); \n'
 		+ (options.debug ? '} catch( e ){ \n'
-			+ 'HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '')
 		+ (options.useWith ? '} \n' : '');
 
@@ -1644,7 +1656,7 @@ VCP.generate = function(){
 	}
 
 	try {
-		this.cmpFunc = new Function(options.modelName, options.helpersName, joined);
+		this.cmpFunc = new Function(options.modelName, options.helpersName, '__vopts', joined);
 	} catch(e){
 		this.Helpers.reportError(e, 0, 0, joined, /\n/)
 	}
@@ -1659,8 +1671,9 @@ VCP.assemble = function( cmpFunc ){
 VCompiler.assemble = function( cmpFunc, Helpers ){
 	Helpers = Helpers || vash.helpers.constructor;
 
-	var linked = function( model ){
-		return cmpFunc( model, new Helpers( model ) );
+	var linked = function( model, opts ){
+		if( typeof opts === 'function' ) { opts = { onRenderEnd: opts }; }
+		return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
 	}
 
 	linked.toString = function(){

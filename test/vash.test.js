@@ -1490,7 +1490,7 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( actual, ctn );
 			}
 
-			,'ignores subsequent blocks': function( maker ){
+			,'subsequent blocks do not redefine': function( maker ){
 				var ctnA = '<p></p>'
 					,ctnB = '<a></a>'
 					,before = '@html.block("main", function(){' + ctnA + '})'
@@ -1500,6 +1500,17 @@ return vows.describe('vash templating library').addBatch({
 
 				assert.equal( actual, ctnA );
 			}
+
+			/*,'subsequent blocks redefine': function( maker ){
+				var ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,before = '@html.block("main", function(){' + ctnA + '})'
+						+ '@html.block("main", function(){' + ctnB + '})'
+
+					,actual = maker(before, '', '')( this.opts() );
+
+				assert.equal( actual, ctnB );
+			}*/
 
 			/*,'renders default content': function( maker ){
 				var ctn = '<p></p>'
@@ -1576,7 +1587,7 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
 			}
 
-			,'ignores subsequent blocks': function( maker ){
+			,'subsequent blocks do not redefine': function( maker ){
 				var  ctnA = '<p></p>'
 					,ctnB = '<a></a>'
 					,block = '@html.block("content", function(){' + ctnA + '})'
@@ -1586,6 +1597,17 @@ return vows.describe('vash templating library').addBatch({
 
 				assert.equal( actual, ctnA );
 			}
+
+			/*,'subsequent blocks redefine': function( maker ){
+				var  ctnA = '<p></p>'
+					,ctnB = '<a></a>'
+					,block = '@html.block("content", function(){' + ctnA + '})'
+						+ '@html.block("content", function(){' + ctnB + '})'
+
+					,actual = maker(block)( this.opts() )
+
+				assert.equal( actual, ctnB );
+			}*/
 
 			/*,'deep': {
 
@@ -1627,31 +1649,14 @@ return vows.describe('vash templating library').addBatch({
 
 		,'of a linked function returns the generated function': function( tpl ){
 
-			var expected = ''
-				+ "function anonymous(model,html) {\n"
-				+ "var __vbuffer = html.buffer; \n"
-				+ 'model = model || {}; \n'
-				+ "__vbuffer.push('<p></p>'); \n"
-				+ "return html.toString(); \n"
-				+ "\n"
-				+ "}"
-
-			assert.equal( tpl.toString(), expected )
+			var result = tpl.toString().match(/^function anonymous\(model,html,__vopts\)/g);
+			assert.equal( ( result || [''] )[0], 'function anonymous(model,html,__vopts)' )
 		}
 
 		,'using .toClientString returns vash.link': function( tpl ){
 
-			var expected = ''
-				+ "vash.link( "
-				+ "function anonymous(model,html) {"
-				+ "var __vbuffer = html.buffer; "
-				+ 'model = model || {}; '
-				+ "__vbuffer.push('<p></p>'); "
-				+ "return html.toString(); "
-				+ "}"
-				+ " )"
-
-			assert.equal( tpl.toClientString().replace(/\n/g, ''), expected )
+			var result = tpl.toClientString().match(/^vash\.link\(/g);
+			assert.equal( ( result || [''] )[0], 'vash.link(' )
 		}
 
 		,'followed by relinking renders': function( tpl ){
@@ -1660,17 +1665,6 @@ return vows.describe('vash templating library').addBatch({
 				,actual = vm.runInNewContext( client, { vash: vash } );
 
 			assert.equal( actual.toString(), tpl().toString() );
-		}
-	}
-
-	,'render-time options': {
-
-		topic: '@model'
-
-		,'allows for returning context': function( topic ){
-			var tpl = vash.compile( topic );
-			assert.equal( tpl('a'), 'a' );
-			assert.ok( tpl('a', { context: true }) instanceof vash.helpers.constructor )
 		}
 	}
 
@@ -1693,6 +1687,59 @@ return vows.describe('vash templating library').addBatch({
 			console.log( tpl(1).toString() );
 			assert.equal( tpl(1), '<p></p>' );
 			assert.equal( tpl(2), '<b></b>' );
+		}
+	}
+
+	,'render options': {
+
+		topic: function(){ return vash.compile('<p></p>') }
+
+		,'asContext': {
+			topic: function( tpl ){
+				return tpl({}, { asContext: true });
+			}
+
+			,'returns a context': function( ctx ){
+				assert( ctx instanceof vash.helpers.constructor, 'ctx should be instance of Helpers')
+			}
+		}
+
+		,'onRenderEnd as parameter': {
+			topic: function( tpl ){
+				tpl( {}, this.callback );
+			}
+
+			,'is called': function( err, ctx ){
+				assert.ifError( err );
+				assert( ctx instanceof vash.helpers.constructor, 'ctx should be instance of Helpers')
+			}
+		}
+
+		,'onRenderEnd as option': {
+			topic: function( tpl ){
+				tpl( {}, { onRenderEnd: this.callback } );
+			}
+
+			,'is called': function( err, ctx ){
+				assert.ifError( err );
+				assert( ctx instanceof vash.helpers.constructor, 'ctx should be instance of Helpers')
+			}
+		}
+
+		,'injecting a context': {
+			topic: function( tpl ){
+				var ctx = new vash.helpers.constructor({ injected: true });
+				ctx.buffer.push('test');
+				return tpl({ injected: false }, { context: ctx, asContext: true })
+			}
+
+			,'overrides the model': function( ctx ){
+				assert.equal( ctx.model.injected, true );
+			}
+
+			,'retains buffer': function( ctx ){
+				assert.equal( ctx.toString(), 'test<p></p>' )
+			}
 		}
 	}
 

@@ -139,6 +139,7 @@ VCP.generate = function(){
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
 	var foot = ''
+		+ '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
 		+ 'return (__vopts && __vopts.asContext) \n'
 		+ '  ? HELPERSNAME \n'
 		+ '  : HELPERSNAME.toString(); \n'
@@ -183,6 +184,7 @@ VCompiler.assemble = function( cmpFunc, Helpers ){
 	Helpers = Helpers || vash.helpers.constructor;
 
 	var linked = function( model, opts ){
+		if( typeof opts === 'function' ) { opts = { onRenderEnd: opts }; }
 		return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
 	}
 
