@@ -105,7 +105,7 @@
 	// output in a sane manner.
 
 	Buffer = function() {
-		var __vo = [];
+		var __vo = this._vo = [];
 
 		this.mark = function() {
 			var mark = new Mark( this );
@@ -124,8 +124,19 @@
 				return __vo.splice( found, __vo.length );
 			}
 
-			// TODO: should not found behavior call this.empty(),
-			// or return an empty array?
+			return [];
+		};
+
+		this.spliceMark = function( mark, numToRemove, add ){
+			var found = mark.findInBuffer();
+
+			if( found > -1 ){
+				mark.destroy();
+				arguments[0] = found;
+				return __vo.splice.apply( __vo, arguments );
+			}
+
+			return [];
 		};
 
 		this.empty = function() {
@@ -194,7 +205,6 @@
 		if( found > -1 ){
 			this.buffer.splice( found, 1 );
 			this.markedIndex = -1;
-			this.Helpers = null;
 		}
 
 		this.destroyed = true;
