@@ -1435,6 +1435,9 @@ return vows.describe('vash templating library').addBatch({
 						views: __dirname + '/fixtures/views',
 						'view engine': 'vash'
 					}
+					,onRenderEnd: function(err, ctx){
+						ctx.finishLayout();
+					}
 				});
 			}
 
@@ -1458,7 +1461,8 @@ return vows.describe('vash templating library').addBatch({
 			}
 
 			,'renders': function( err, tpl ){
-				var actual = tpl( this.opts({ count: 2 }) )
+				var actual = tpl( this.opts({ count: 2 }) );
+
 				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
 			}
 		}
@@ -1478,6 +1482,7 @@ return vows.describe('vash templating library').addBatch({
 			}
 
 			,'renders blank': function( maker ){
+				console.log( maker()( this.opts(), { onRenderEnd: function(err, ctx){ console.log('onRenderEnd from blank', ctx ) } } ) );
 				assert.equal( maker()( this.opts() ), '' );
 			}
 
@@ -1485,7 +1490,7 @@ return vows.describe('vash templating library').addBatch({
 				var ctn = '<p></p>'
 					,before = '@html.block("main", function(){' + ctn + '})'
 
-					,actual = maker(before, '', '')( this.opts() );
+					,actual = maker(before, '', '')( this.opts());
 
 				assert.equal( actual, ctn );
 			}
@@ -1558,6 +1563,19 @@ return vows.describe('vash templating library').addBatch({
 
 				//console.log( 'actual', actual )
 				assert.equal( actual , '<p>a</p><p>b</p><p>a</p><p>b</p>' );
+			}
+
+			,'renders include that appends to content block': function( maker ){
+				var footer = '@html.block("footer", function(){ <footer></footer> })'
+					,include = '@html.include("footerappend")'
+					,block = '@html.block("content", function(){ ' + include + ' })'
+
+					,actual = maker( footer + block )( this.opts(), { onRenderEnd: function(err, ctx){
+						console.log(ctx)
+						throw Error();
+					}} )
+
+				assert.equal( actual, '<footer></footer><footer2></footer2>' )
 			}
 
 			,'renders appended content block': function( maker ){
