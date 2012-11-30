@@ -107,8 +107,8 @@
 	Buffer = function() {
 		var __vo = this._vo = [];
 
-		this.mark = function() {
-			var mark = new Mark( this );
+		this.mark = function( debugName ) {
+			var mark = new Mark( this, debugName );
 			mark.markedIndex = __vo.length;
 			__vo.push( mark.uid );
 			return mark;
@@ -191,11 +191,21 @@
 	// These can be used to manipulate the existing entries in the rendering
 	// context. For an example, see the highlight helper.
 
-	var Mark = function( buffer ){
-		this.uid = 'VASHMARK-' + ~~( Math.random() * 10000000 );
+	var Mark = vash['Mark'] = function( buffer, debugName ){
+		this.uid = '[VASHMARK-'
+			+ ~~( Math.random() * 10000000 )
+			+ (debugName ? ':' + debugName : '')
+			+ ']';
 		this.markedIndex = 0;
 		this.buffer = buffer;
 		this.destroyed = false;
+	}
+
+	var reMark = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
+
+	// tests if a string has a mark-like uid within it
+	Mark.uidLike = function( str ){
+		return (str || '').search( reMark ) > -1;
 	}
 
 	Mark.prototype.destroy = function(){
