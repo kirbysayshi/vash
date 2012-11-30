@@ -1611,18 +1611,30 @@ vows.describe('vash templating library').addBatch({
 			,'deep': {
 
 				topic: function(maker){
-
-					var opts = this.opts( { cache: true } )
-						,base = opts.settings.views
-						,layoutPath = base + '/l.vash'
-						,extendingPath = base + '/extending.vash'
-
-					this.layoutPath = layoutPath;
-					this.extendingPath = extendingPath;
+					var self = this;
 
 					// and this is how you mock the template cache...
-					vash.helpers.tplcache[ layoutPath ] = vash.compile( "<article>@html.block('content')</article>@html.block('footer', function(){<footer></footer>})" )
-					vash.helpers.tplcache[ extendingPath ] = vash.compile( "@html.extend('l', function(){<div>@html.block('content', function(){<block></block>})</div>})" )
+					this.installTplAt = function( filename, str ){
+						var opts = this.opts( { cache: true } )
+							,base = opts.settings.views
+							,p = path.join( base, filename )
+
+						vash.helpers.tplcache[ p ] = vash.compile( str );
+						return p;
+					}
+
+					this.layoutPath = this.installTplAt( 'l.vash',
+						"<article>@html.block('content')</article>"
+						+ "@html.block('footer', function(){<footer></footer>})" )
+
+					this.extendingPath = this.installTplAt( 'extending.vash',
+						"@html.extend('l', function(){"
+							+ "<div>"
+								+ "@html.block('content', function(){"
+									+ "<block></block>"
+								+ "})"
+							+ "</div>"
+						+ "})" )
 
 					return function(before, inner, after){
 						before = before || '';
@@ -1637,8 +1649,8 @@ vows.describe('vash templating library').addBatch({
 				}
 
 				,teardown: function(){
-					delete this.layoutPath;
-					delete this.extendingPath;
+					delete vash.helpers.tplcache[ this.layoutPath ];
+					delete vash.helpers.tplcache[ this.extendingPath ];
 				}
 
 				,'only works on highest block': function( maker ){
@@ -1669,6 +1681,21 @@ vows.describe('vash templating library').addBatch({
 					actual = maker( '', block)( opts )
 
 					assert.equal( actual, '<article><block></block></article><footer></footer>' )
+				}
+
+				,'includes can define new blocks if called within a block': function( maker ){
+
+					var name = this.installTplAt( 'i.vash',
+						"@html.block('included', function(){<inc></inc>})" );
+
+					var inner = '@html.block("content", function(){@html.include("i")})'
+						,tpl = maker( '', inner )
+
+						,actual = tpl( this.opts({cache: true}) )
+
+					assert.equal( actual, '<article><inc></inc></article><footer></footer>')
+
+					delete vash.helpers.tplcache[name];
 				}
 			}
 		}
