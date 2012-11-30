@@ -1,13 +1,17 @@
 var vows = require('vows')
 	,assert = require('assert')
+	,util = require('util')
+	,path = require('path')
 	,vm = require('vm')
-	//,vash = process.argv[2]
-	//	? require(__dirname + '/../build/vash.' + process.argv[2] )
-	//	: require(__dirname + '/../build/vash');
-	//vash = require(__dirname + '/../build/vash')
 
+	,program = require('commander')
+	,vash
 
-exports.run = function(vash){
+program
+	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../build/vash.js') )
+	.parse( process.argv );
+
+vash = require( program.whichv )
 
 vash.config.useWith = true;
 vash.config.debug = false;
@@ -24,7 +28,7 @@ var tryCompile = function(str){
 	}
 }
 
-return vows.describe('vash templating library').addBatch({
+vows.describe('vash templating library').addBatch({
 	'a plain text template': {
 		topic: function(){
 			var tpl = vash.compile('<a href="">this is a <br /> simple template</a>');
@@ -1482,7 +1486,6 @@ return vows.describe('vash templating library').addBatch({
 			}
 
 			,'renders blank': function( maker ){
-				console.log( maker()( this.opts(), { onRenderEnd: function(err, ctx){ console.log('onRenderEnd from blank', ctx ) } } ) );
 				assert.equal( maker()( this.opts() ), '' );
 			}
 
@@ -1495,18 +1498,7 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( actual, ctn );
 			}
 
-			,'subsequent blocks do not redefine': function( maker ){
-				var ctnA = '<p></p>'
-					,ctnB = '<a></a>'
-					,before = '@html.block("main", function(){' + ctnA + '})'
-						+ '@html.block("main", function(){' + ctnB + '})'
-
-					,actual = maker(before, '', '')( this.opts() );
-
-				assert.equal( actual, ctnA );
-			}
-
-			/*,'subsequent blocks redefine': function( maker ){
+			,'subsequent blocks redefine': function( maker ){
 				var ctnA = '<p></p>'
 					,ctnB = '<a></a>'
 					,before = '@html.block("main", function(){' + ctnA + '})'
@@ -1515,15 +1507,15 @@ return vows.describe('vash templating library').addBatch({
 					,actual = maker(before, '', '')( this.opts() );
 
 				assert.equal( actual, ctnB );
-			}*/
+			}
 
-			/*,'renders default content': function( maker ){
+			,'renders default content': function( maker ){
 				var ctn = '<p></p>'
 
 					,actual = maker('', ctn, '')( this.opts() );
 
 				assert.equal( actual, ctn );
-			}*/
+			}
 		}
 
 		,'extend': {
@@ -1570,10 +1562,7 @@ return vows.describe('vash templating library').addBatch({
 					,include = '@html.include("footerappend")'
 					,block = '@html.block("content", function(){ ' + include + ' })'
 
-					,actual = maker( footer + block )( this.opts(), { onRenderEnd: function(err, ctx){
-						console.log(ctx)
-						throw Error();
-					}} )
+					,actual = maker( footer + block )( this.opts() )
 
 				assert.equal( actual, '<footer></footer><footer2></footer2>' )
 			}
@@ -1585,7 +1574,10 @@ return vows.describe('vash templating library').addBatch({
 
 					,outp = '<p>a</p>'
 
-					,actual = maker(block)( this.opts({ a: 'a' }) )
+					,opts = this.opts({ a: 'a' })
+
+
+				var actual = maker(block)( opts )
 
 				//console.log( 'actual', actual )
 				assert.equal( actual, outp + outp + '<footer></footer>' );
@@ -1605,18 +1597,7 @@ return vows.describe('vash templating library').addBatch({
 				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
 			}
 
-			,'subsequent blocks do not redefine': function( maker ){
-				var  ctnA = '<p></p>'
-					,ctnB = '<a></a>'
-					,block = '@html.block("content", function(){' + ctnA + '})'
-						+ '@html.block("content", function(){' + ctnB + '})'
-
-					,actual = maker(block)( this.opts() )
-
-				assert.equal( actual, ctnA );
-			}
-
-			/*,'subsequent blocks redefine': function( maker ){
+			,'subsequent blocks redefine': function( maker ){
 				var  ctnA = '<p></p>'
 					,ctnB = '<a></a>'
 					,block = '@html.block("content", function(){' + ctnA + '})'
@@ -1625,35 +1606,71 @@ return vows.describe('vash templating library').addBatch({
 					,actual = maker(block)( this.opts() )
 
 				assert.equal( actual, ctnB );
-			}*/
+			}
 
-			/*,'deep': {
+			,'deep': {
 
 				topic: function(maker){
+
+					var opts = this.opts( { cache: true } )
+						,base = opts.settings.views
+						,layoutPath = base + '/l.vash'
+						,extendingPath = base + '/extending.vash'
+
+					this.layoutPath = layoutPath;
+					this.extendingPath = extendingPath;
+
+					// and this is how you mock the template cache...
+					vash.helpers.tplcache[ layoutPath ] = vash.compile( "<article>@html.block('content')</article>@html.block('footer', function(){<footer></footer>})" )
+					vash.helpers.tplcache[ extendingPath ] = vash.compile( "@html.extend('l', function(){<div>@html.block('content', function(){<block></block>})</div>})" )
+
 					return function(before, inner, after){
 						before = before || '';
 						after = after || '';
+						inner = inner || '';
 						return vash.compile(
 							before
-							+ '@html.extend("blockextends", function(model){' + inner + '})'
+							+ '@html.extend("extending", function(model){' + inner + '})'
 							+ after
 						)
 					}
 				}
 
-				,'renders div + default': function( maker ){
-					assert.equal( maker()( this.opts() ), '<div><block></block></div>' );
+				,teardown: function(){
+					delete this.layoutPath;
+					delete this.extendingPath;
 				}
 
-				,'renders wrapped article': function( maker ){
-					var inner = '<article></article>'
+				,'only works on highest block': function( maker ){
+
+					var actual = maker()( this.opts({ cache: true }) );
+
+					assert.equal( actual, '<article><block></block></article><footer></footer>' )
+				}
+
+				,'inner wrapped by article': function( maker ){
+					var inner = '<inner></inner>'
 						,block = '@html.block("content", function(){' + inner + '})'
+						,opts = this.opts({ cache: true })
+						,actual
 
-						,actual = maker(block)( this.opts() )
+					actual = maker( '', block)( opts )
 
-					assert.equal( actual, '<div>' + inner + '</div>' )
+					assert.equal( actual, '<article>' + inner + '</article><footer></footer>' )
 				}
-			}*/
+
+				,'blocks only defined in child are ignored': function( maker ){
+
+					var inner = '<inner></inner>'
+						,block = '@html.block("inner", function(){' + inner + '})'
+						,opts = this.opts({ cache: true })
+						,actual
+
+					actual = maker( '', block)( opts )
+
+					assert.equal( actual, '<article><block></block></article><footer></footer>' )
+				}
+			}
 		}
 
 	}
@@ -1702,7 +1719,6 @@ return vows.describe('vash templating library').addBatch({
 
 		,'work': function( topic ){
 			var tpl = vash.compile( topic );
-			console.log( tpl(1).toString() );
 			assert.equal( tpl(1), '<p></p>' );
 			assert.equal( tpl(2), '<b></b>' );
 		}
@@ -1796,6 +1812,4 @@ return vows.describe('vash templating library').addBatch({
 	//	//	// could calling the tpl return a function?
 	//	//}
 	//}
-});
-
-}
+}).export(module)

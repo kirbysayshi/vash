@@ -1,0 +1,1 @@
+@html.extend('layout', function(){<div>@html.block('content', function(){<block></block>})</div>})
