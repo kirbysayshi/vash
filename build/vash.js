@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.0-1644
+ * Vash - JavaScript Template Parser, v0.5.9-1729
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.6.0-1644";
+	exports["version"] = "0.5.9-1729";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -150,10 +150,10 @@
 	// output in a sane manner.
 
 	Buffer = function() {
-		var __vo = [];
+		var __vo = this._vo = [];
 
-		this.mark = function() {
-			var mark = new Mark( this );
+		this.mark = function( debugName ) {
+			var mark = new Mark( this, debugName );
 			mark.markedIndex = __vo.length;
 			__vo.push( mark.uid );
 			return mark;
@@ -169,8 +169,19 @@
 				return __vo.splice( found, __vo.length );
 			}
 
-			// TODO: should not found behavior call this.empty(),
-			// or return an empty array?
+			return [];
+		};
+
+		this.spliceMark = function( mark, numToRemove, add ){
+			var found = mark.findInBuffer();
+
+			if( found > -1 ){
+				mark.destroy();
+				arguments[0] = found;
+				return __vo.splice.apply( __vo, arguments );
+			}
+
+			return [];
 		};
 
 		this.empty = function() {
@@ -225,11 +236,21 @@
 	// These can be used to manipulate the existing entries in the rendering
 	// context. For an example, see the highlight helper.
 
-	var Mark = function( buffer ){
-		this.uid = 'VASHMARK-' + ~~( Math.random() * 10000000 );
+	var Mark = vash['Mark'] = function( buffer, debugName ){
+		this.uid = '[VASHMARK-'
+			+ ~~( Math.random() * 10000000 )
+			+ (debugName ? ':' + debugName : '')
+			+ ']';
 		this.markedIndex = 0;
 		this.buffer = buffer;
 		this.destroyed = false;
+	}
+
+	var reMark = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
+
+	// tests if a string has a mark-like uid within it
+	Mark.uidLike = function( str ){
+		return (str || '').search( reMark ) > -1;
 	}
 
 	Mark.prototype.destroy = function(){
@@ -239,7 +260,6 @@
 		if( found > -1 ){
 			this.buffer.splice( found, 1 );
 			this.markedIndex = -1;
-			this.Helpers = null;
 		}
 
 		this.destroyed = true;
@@ -359,9 +379,6 @@
 	helpers.config.browser = false;
 
 	helpers.tplcache = {};
-	helpers.blocks = {};
-	helpers.appends = [];
-	helpers.prepends = [];
 
 	vash.loadFile = function(filepath, options, cb){
 
@@ -406,20 +423,112 @@
 	vash.renderFile = function(filepath, options, cb){
 
 		vash.loadFile(filepath, options, function(err, tpl){
-			cb(err, tpl(options));
+			// auto setup an `onRenderEnd` callback to seal the layout
+			var prevORE = options.onRenderEnd;
+
+			cb( err, tpl(options, function(err, ctx){
+				ctx.finishLayout()
+				if( prevORE ) prevORE(err, ctx);
+			}) );
 		})
+	}
+
+	helpers._ensureLayoutProps = function(){
+		this.appends = this.appends || {};
+		this.prepends = this.prepends || {};
+		this.blocks = this.blocks || {};
+
+		this.blockMarks = this.blockMarks || {};
+	}
+
+	helpers.finishLayout = function(){
+		this._ensureLayoutProps();
+
+		var self = this, name, marks, blocks, prepends, appends, injectMark, m, content
+
+		// each time `.block` is called, a mark is added to the buffer and
+		// the `blockMarks` stack. Find the newest/"highest" mark on the stack
+		// for each named block, and insert the rendered content (prepends, block, appends)
+		// in place of that mark
+
+		for( name in this.blockMarks ){
+
+			marks = this.blockMarks[name];
+
+			prepends = this.prepends[name];
+			blocks = this.blocks[name];
+			appends = this.appends[name];
+
+			injectMark = marks.pop();
+
+			// mark current point in buffer in prep to grab rendered content
+			m = this.buffer.mark();
+
+			prepends && prepends.forEach(function(p){ self.buffer.push( p ); });
+
+			// a block might never have a callback defined, e.g. is optional
+			// with no default content
+			block = blocks.pop();
+			block && this.buffer.push( block );
+
+			appends && appends.forEach(function(a){ self.buffer.push( a ); });
+
+			// grab rendered content
+			content = this.buffer.fromMark( m );
+
+			// inject it at the right position (mark)...
+			content.unshift( injectMark, 0 );
+			this.buffer.spliceMark.apply( this.buffer, content );
+
+			// kill all other marks using this block name
+			marks.forEach(function(m){ m.destroy(); });
+		}
+
+		// this should only be able to happen once
+		delete this.blockMarks;
+		delete this.prepends;
+		delete this.blocks;
+		delete this.appends;
+
+		// and return the whole thing
+		return this.toString();
 	}
 
 	helpers.extend = function(path, ctn){
 		var  self = this
 			,buffer = this.buffer
-			,origModel = this.model;
+			,origModel = this.model
+			,layoutCtx;
+
+		this._ensureLayoutProps();
 
 		// this is a synchronous callback
 		vash.loadFile(path, this.model, function(err, tpl){
-			buffer.push(ctn(self.model)); // the child content
-			buffer.push(tpl(self.model)); // the tpl being extended
-		})
+
+			// any content that is outside of a block but within an "extend"
+			// callback is completely thrown away, as the destination for such
+			// content is undefined
+			var start = self.buffer.mark();
+
+			ctn(self.model);
+
+			// ... and just throw it away
+			var  content = self.buffer.fromMark( start )
+				// TODO: unless it's a mark id? Removing everything means a block
+				// MUST NOT be defined in an extend callback
+				//,filtered = content.filter( vash.Mark.uidLike )
+
+			//self.buffer.push( filtered );
+
+			// `isExtending` is necessary because named blocks in the layout
+			// will be interpreted after named blocks in the content. Since
+			// layout named blocks should only be used as placeholders in the
+			// event that their content is redefined, `block` must know to add
+			// the defined content at the head or tail or the block stack.
+			self.isExtending = true;
+			tpl( self.model, { context: self } );
+			self.isExtending = false;
+		});
 
 		this.model = origModel;
 	}
@@ -430,74 +539,70 @@
 			,buffer = this.buffer
 			,origModel = this.model;
 
+		// TODO: should this be in a new context? Jade looks like an include
+		// is not shared with parent context
+
 		// this is a synchronous callback
 		vash.loadFile(name, this.model, function(err, tpl){
-			buffer.push( tpl(model || self.model));
-		})
+			tpl( model || self.model, { context: self } );
+		});
 
 		this.model = origModel;
 	}
 
 	helpers.block = function(name, ctn){
-		var bstart, ctnLines, self = this;
+		this._ensureLayoutProps();
 
-		// Because this is at RUNTIME, blocks are tricky. Blocks can "overwrite"
-		// each other, but the "highest level" block must not have a callback.
-		// This signifies that it should render out, instead of replacing.
-		// In the future, this should be handled at compile time, which would
-		// remove this restriction.
+		var  self = this
+			// ensure that we have a list of marks for this name
+			,marks = this.blockMarks[name] || ( this.blockMarks[name] = [] )
+			// ensure a list of blocks for this name
+			,blocks = this.blocks[name] || ( this.blocks[name] = [] )
+			,start
+			,content;
 
-		if( !ctn ){
+		// render out the content immediately, if defined, to attempt to grab
+		// "dependencies" like other includes, blocks, etc
+		if( ctn ){
+			start = this.buffer.mark();
+			ctn( this.model );
+			content = this.buffer.fromMark( start );
 
-			if( this.hasPrepends(name) ){
-				this.prepends[name].forEach(function(a){ a(self.model); });
-				this.prepends[name].length = 0;
+			// add rendered content to named list of blocks
+			if( content.length && !this.isExtending ){
+				blocks.push( content );
 			}
 
-			if( this.hasBlock(name) ){
-				this.blocks[name](this.model);
-				delete this.blocks[name];
-			}
-
-			if( this.hasAppends(name) ){
-				this.appends[name].forEach(function(a){ a(self.model); });
-				this.appends[name].length = 0;
+			// if extending the rendered content must be allowed to be redefined
+			if( content.length && this.isExtending ){
+				blocks.unshift( content );
 			}
 		}
 
-		if( ctn && !this.blocks[name] ){
-			this.blocks[name] = ctn;
-		}
+		// mark the current location as "where this block will end up"
+		marks.push( this.buffer.mark( 'block-' + name ) );
+	}
+
+	helpers._handlePrependAppend = function( type, name, ctn ){
+		this._ensureLayoutProps();
+
+		var start = this.buffer.mark()
+			,content
+			,stack = this[type]
+			,namedStack = stack[name] || ( stack[name] = [] )
+
+		ctn( this.model );
+		content = this.buffer.fromMark( start );
+
+		namedStack.push( content );
 	}
 
 	helpers.append = function(name, ctn){
-
-		if( !this.appends[name] ){
-			this.appends[name] = [];
-		}
-
-		this.appends[name].push(ctn);
+		this._handlePrependAppend( 'appends', name, ctn );
 	}
 
 	helpers.prepend = function(name, ctn){
-
-		if( !this.prepends[name] ){
-			this.prepends[name] = [];
-		}
-
-		this.prepends[name].push(ctn);
-	}
-
-	helpers.hasBlock = function(name){
-		return typeof this.blocks[name] !== "undefined";
-	}
-
-	helpers.hasPrepends = function(name){
-		return this.prepends[name] && (this.prepends[name].length > 0);
-	}
-
-	helpers.hasAppends = function(name){
-		return this.appends[name] && (this.appends[name].length > 0);
+		this._handlePrependAppend( 'prepends', name, ctn );
 	}
 
 }());
@@ -542,8 +647,6 @@ var  AT = 'AT'
 var PAIRS = {};
 
 // defined through indexing to help minification
-
-// open pairings
 PAIRS[AT_STAR_OPEN] = AT_STAR_CLOSE;
 PAIRS[BRACE_OPEN] = BRACE_CLOSE;
 PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
@@ -552,12 +655,6 @@ PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 PAIRS[AT_COLON] = NEWLINE;
 
-// closed pairings (reverse of open)
-PAIRS[AT_STAR_CLOSE] = AT_STAR_OPEN;
-PAIRS[BRACE_CLOSE] = BRACE_OPEN;
-PAIRS[HARD_PAREN_CLOSE] = HARD_PAREN_OPEN;
-PAIRS[PAREN_CLOSE] = PAREN_OPEN;
-PAIRS[NEWLINE] = AT_COLON;
 
 
 // The order of these is important, as it is the order in which
@@ -1668,11 +1765,29 @@ VCP.assemble = function( cmpFunc ){
 	return VCompiler.assemble( cmpFunc || this.cmpFunc, this.Helpers );
 }
 
+VCompiler.noop = function(){}
+
 VCompiler.assemble = function( cmpFunc, Helpers ){
 	Helpers = Helpers || vash.helpers.constructor;
 
 	var linked = function( model, opts ){
-		if( typeof opts === 'function' ) { opts = { onRenderEnd: opts }; }
+
+		// allow for signature: model, callback
+		if( typeof opts === 'function' ) {
+			opts = { onRenderEnd: opts };
+		}
+
+		opts = opts || {};
+
+		// allow for passing in onRenderEnd via model
+		if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+			opts.onRenderEnd = model.onRenderEnd;
+		}
+
+		if( model && model.onRenderEnd ){
+			delete model.onRenderEnd;
+		}
+
 		return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
 	}
 
