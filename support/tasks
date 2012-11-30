@@ -2,6 +2,7 @@
 
 var  fs = require('fs')
 	,path = require('path')
+	,child_process = require('child_process')
 	,uglify = require('uglify-js')
 	,request = require('request')
 	,semver = require('semver')
@@ -238,19 +239,20 @@ function build(){
 
 function test(options){
 
-	var runner = require( path.join( __dirname, '../test/vash.test' ) ).run
-		,vall = require( path.join( __dirname, '../build/vash' ) )
-		,vmin = require( path.join( __dirname, '../build/vash.min' ) )
-		,reporter = require('vows/lib/vows/reporters/spec')
-
-		,testopts = {
-			reporter: reporter
+	var  vows = path.join( __dirname, '../node_modules/vows/bin/vows' )
+		,args = [
+			path.join( __dirname, '../test/vash.test.js' )
+			,'--spec'
+		]
+		,opts = {
+			stdio: 'inherit'
 		}
 
-	runner(vall).run(testopts, function(){
+	child_process.spawn( vows, args, opts ).on('exit', function(err, code, signal){
 		if( options.min ){
 			console.log('Running test suite on vash.min.js...')
-			runner(vmin).run(testopts);
+			args.push( '--whichv ' + path.join( __dirname, '../build/vash.min.js') );
+			child_process.spawn( vows, args, opts );
 		}
 	});
 }
