@@ -1,35 +1,35 @@
 {
-	"name": "vash",
-	"description": "Razor syntax for JS templating",
-	"version": "0.5.9-1729",
-	"author": "Andrew Petersen <senofpeter@gmail.com>",
-	"bin": {
-		"vash": "./bin/vash"
-	},
-	"keywords": [
-		"razor",
-		"parser",
-		"template",
-		"express"
-	],
-	"repository": "git://github.com/kirbysayshi/vash",
-	"main": "build/vash",
-	"engines": {
-		"node": ">= 0.6"
-	},
-	"dependencies": {
-		"commander": "0.6.1",
-		"uglify-js": "1.0.6"
-	},
-	"devDependencies": {
-		"benchmark": ">=0.2.2",
-		"dot": ">=0.1.7",
-		"express": "3.0.0rc4",
-		"vows": "~0.6.4",
-		"jshtml": ">=0.2.2",
-		"semver": ">=1.0.0",
-		"underscore": ">=v1.3.3",
-		"request": "2.9",
-		"jshint": "0.8.0"
-	}
+  "name": "vash",
+  "description": "Razor syntax for JS templating",
+  "version": "0.5.9-1730",
+  "author": "Andrew Petersen <senofpeter@gmail.com>",
+  "bin": {
+    "vash": "./bin/vash"
+  },
+  "keywords": [
+    "razor",
+    "parser",
+    "template",
+    "express"
+  ],
+  "repository": "git://github.com/kirbysayshi/vash",
+  "main": "build/vash",
+  "engines": {
+    "node": ">= 0.6"
+  },
+  "dependencies": {
+    "commander": "0.6.1",
+    "uglify-js": "1.0.6"
+  },
+  "devDependencies": {
+    "benchmark": ">=0.2.2",
+    "dot": ">=0.1.7",
+    "express": "3.0.0rc4",
+    "vows": "~0.6.4",
+    "jshtml": ">=0.2.2",
+    "semver": ">=1.0.0",
+    "underscore": ">=v1.3.3",
+    "request": "2.9",
+    "jshint": "0.8.0"
+  }
 }
