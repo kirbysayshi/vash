@@ -12,6 +12,8 @@
 		<script src="../src/vast.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vcompiler.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vash.exports.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vruntime.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vhelpers.layout.js" type="text/javascript" charset="utf-8"></script>
 		<!--<script src="../build/vash.closure.min.js" type="text/javascript" charset="utf-8"></script>-->
 		
 		<script id="test" type="text/razor-js" charset="utf-8">
@@ -22,6 +24,32 @@
 		</script>
 
 		<script type="text/javascript" charset="utf-8">
+
+			var mkOpts = function(model){
+				return vash.vQuery.extend( model || {}, {
+					// mock up express settings
+					settings: {
+						views: '',
+						'view engine': 'vash'
+					}
+					,onRenderEnd: function(err, ctx){
+						ctx.finishLayout();
+					}
+				});
+			}
+
+			var installTplAt = function( filename, str ){
+				var opts = mkOpts( { cache: true } )
+					,base = opts.settings.views
+					,p = ( base ? base + '/' : '') + filename
+
+				vash.helpers.tplcache[ p ] = vash.compile( str );
+				return p;
+			}
+
+			var uninstallTplAt = function( filename ){
+				return delete vash.helpers.tplcache[ filename ];
+			}
 			
 			var opts = { debugParser: true, debugCompiler: true, debug: true, modelName: 'model' }
 
@@ -39,6 +67,13 @@
 			var c = new VCompiler(ast, lexerContent);
 			c.debug = true;
 			
+			vash.helpers.config.browser = true;
+
+			var includedPath = installTplAt( 'i.vash', '@html.block("content", function(){ <p></p> })')
+				,layoutPath = installTplAt( 'layout.vash', '@html.block("content")@html.block("footer")')
+				,tpl = vash.compile( '@html.extend("layout.vash",function(){ @html.append("footer", function(){ @html.include("i.vash") }) })' )
+
+				tpl( mkOpts({ cache: true }) );
 
 		</script>
 	</body>

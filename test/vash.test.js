@@ -1445,6 +1445,20 @@ vows.describe('vash templating library').addBatch({
 				});
 			}
 
+			// and this is how you mock the template cache...
+			this.installTplAt = function( filename, str ){
+				var opts = this.opts( { cache: true } )
+					,base = opts.settings.views
+					,p = path.join( base, filename )
+
+				vash.helpers.tplcache[ p ] = vash.compile( str );
+				return p;
+			}
+
+			this.uninstallTplAt = function( filename ){
+				return delete vash.helpers.tplcache[ filename ];
+			}
+
 			return this.opts;
 		}
 
@@ -1468,6 +1482,21 @@ vows.describe('vash templating library').addBatch({
 				var actual = tpl( this.opts({ count: 2 }) );
 
 				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
+			}
+
+			,'containing redefining block redefines': function( err, tpl ){
+
+				var  parentPath = this.installTplAt( 'parent.vash', '@html.block("c", function(){<p></p>})@html.include("included")' )
+					,includedPath = this.installTplAt( 'included.vash', '@html.block("c", function(){<span></span>})' )
+
+					,parent = vash.helpers.tplcache[ parentPath ]
+
+				var actual = parent( this.opts({ cache: true }) );
+
+				assert.equal( actual, '<span></span>' )
+
+				this.uninstallTplAt( parentPath )
+				this.uninstallTplAt( includedPath )
 			}
 		}
 
@@ -1613,16 +1642,6 @@ vows.describe('vash templating library').addBatch({
 				topic: function(maker){
 					var self = this;
 
-					// and this is how you mock the template cache...
-					this.installTplAt = function( filename, str ){
-						var opts = this.opts( { cache: true } )
-							,base = opts.settings.views
-							,p = path.join( base, filename )
-
-						vash.helpers.tplcache[ p ] = vash.compile( str );
-						return p;
-					}
-
 					this.layoutPath = this.installTplAt( 'l.vash',
 						"<article>@html.block('content')</article>"
 						+ "@html.block('footer', function(){<footer></footer>})" )
@@ -1696,6 +1715,19 @@ vows.describe('vash templating library').addBatch({
 					assert.equal( actual, '<article><inc></inc></article><footer></footer>')
 
 					delete vash.helpers.tplcache[name];
+				}
+
+				,'includes can redefine a block': function( maker ){
+
+					var includedPath = this.installTplAt( 'i.vash', '@html.block("content", function(){ <p></p> })')
+						,tpl = vash.compile( '@html.extend("layout",function(){ @html.append("footer", function(){ @html.include("i") }) })' )
+
+					debugger;
+					var actual = tpl( this.opts({ cache: true }) )
+
+					assert.equal( actual, '<p></p>' );
+
+					this.uninstallTplAt( includedPath )
 				}
 			}
 		}
