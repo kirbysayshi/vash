@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.9-1729
+ * Vash - JavaScript Template Parser, v0.5.9-1739
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -443,9 +443,12 @@
 			// inject it at the right position (mark)...
 			content.unshift( injectMark, 0 );
 			this.buffer.spliceMark.apply( this.buffer, content );
+		}
 
-			// kill all other marks using this block name
-			marks.forEach(function(m){ m.destroy(); });
+		for( name in this.blockMarks ){
+
+			// kill all other marks registered as blocks
+			this.blockMarks[name].forEach(function(m){ m.destroy(); });
 		}
 
 		// this should only be able to happen once
