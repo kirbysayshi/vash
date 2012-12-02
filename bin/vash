@@ -147,8 +147,6 @@ cli
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
 	.parse(process.argv)
 
-console.log( cli.autolink )
-
 if( cli.json ){
 	cli.vopts = JSON.parse(cli.json);
 }
