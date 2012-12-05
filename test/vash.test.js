@@ -1498,6 +1498,16 @@ vows.describe('vash templating library').addBatch({
 				this.uninstallTplAt( parentPath )
 				this.uninstallTplAt( includedPath )
 			}
+
+			,'given unique model renders': function( err, tpl ){
+
+				var  t = this.installTplAt( 'something/t.vash', '@html.include("something/i.vash", { u: "u" })' )
+					,i = this.installTplAt( 'something/i.vash', '<p>@model.u</p>' )
+
+					,opts = this.opts({ cache: true })
+
+				assert.equal( vash.helpers.tplcache[ t ]( opts ), '<p>u</p>' )
+			}
 		}
 
 		,'block': {
@@ -1732,6 +1742,78 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
+	}
+
+	,'layout engine view lookups': {
+
+		topic: function(){
+
+			this.opts = function( viewpath ){
+				return {
+					settings: {
+						views: viewpath,
+						'view engine': 'vash'
+					}
+				}
+			}
+
+			return true; // to avoid weird vows async stuff
+		}
+
+		,'with extension and engine': function(){
+			var path = __dirname + '/fixtures/views/'
+				,opts = this.opts( path )
+
+			vash.loadFile( 'p.vash', opts, function(err, tpl){
+				assert.ifError( err );
+				assert.equal( tpl(), '<p></p>' )
+			})
+		}
+
+		,'with extension and not engine': function(){
+			var path = __dirname + '/fixtures/views/'
+				,opts = this.opts( path )
+
+			delete opts.settings['view engine'];
+
+			vash.loadFile( 'p.vash', opts, function(err, tpl){
+				assert.ifError( err );
+				assert.equal( tpl(), '<p></p>' )
+			})
+		}
+
+		,'without extension and with engine': function(){
+			var path = __dirname + '/fixtures/views/'
+				,opts = this.opts( path )
+
+			vash.loadFile( 'p', opts, function(err, tpl){
+				assert.ifError( err );
+				assert.equal( tpl(), '<p></p>' )
+			})
+		}
+
+		,'with forward slashes': function( ){
+			var path = __dirname + '/fixtures/views/'
+
+			vash.loadFile( 'p', this.opts( path ), function(err, tpl){
+				assert.ifError( err );
+				assert.equal( tpl(), '<p></p>' )
+			})
+		}
+
+		,'with back slashes': function( ){
+
+			// the `path` module normalizes separators based on platform
+			// so it's basically impossible to test on non-windows
+			if( process.platform === 'win32' ){
+				var path = __dirname + '\\fixtures\\views\\'
+
+				vash.loadFile( 'p', this.opts( path ), function(err, tpl){
+					assert.ifError( err );
+					assert.equal( tpl(), '<p></p>' )
+				})
+			}
+		}
 	}
 
 	,'decompilation': {
