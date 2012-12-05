@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.9-1739
+ * Vash - JavaScript Template Parser, v0.5.11-1767
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -360,28 +360,44 @@
 		//   cache: false
 		// }
 
+		// The only required options are:
+		//
+		// settings: {
+		//     views: ''
+		// }
+
 		// extend works from right to left, using first arg as target
 		options = vQuery.extend( {}, vash.config, options || {} );
 
 		var browser = helpers.config.browser
 			,tpl
 
-		if( !browser && options.settings && options.settings.views && options.settings['view engine'] ){
-			filepath = filepath.indexOf(options.settings.views) > -1
-				? filepath
-				: path.join( options.settings.views
-					,filepath
-					+ ( path.extname(filepath)
-						? ''
-						: '.' + options.settings['view engine'] ) );
+		if( !browser && options.settings && options.settings.views ){
+			// this will really only have an effect on windows
+			filepath = path.normalize( filepath );
+
+			if( filepath.indexOf( path.normalize( options.settings.views ) ) === -1 ){
+				// not an absolute path
+				filepath = path.join( options.settings.views, filepath );
+
+			}
+
+			if( !path.extname( filepath ) ){
+				filepath += '.' + ( options.settings['view engine'] || 'vash' )
+			}
 		}
 
-		// if browser, tpl must exist in tpl cache
-		tpl = options.cache || browser
-			? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )
-			: vash.compile( fs.readFileSync(filepath, 'utf8') )
+		try {
 
-		cb && cb(null, tpl);
+			// if browser, tpl must exist in tpl cache
+			tpl = options.cache || browser
+				? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )
+				: vash.compile( fs.readFileSync(filepath, 'utf8') )
+
+			cb && cb(null, tpl);
+		} catch(e) {
+			cb && cb(e, null);
+		}
 	}
 
 	vash.renderFile = function(filepath, options, cb){
