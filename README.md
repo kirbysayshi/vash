@@ -258,7 +258,7 @@ And more!
 
 # Express Support
 
-A basic example can be found in [test/vash.express.js](vash/tree/master/test/vash.express.js). A more advanced example is available at [vash-express-example](https://github.com/kirbysayshi/vash-express-example).
+A basic example can be found at [vash-express-example](https://github.com/kirbysayshi/vash-express-example).
 
 # Vash as a View Engine
 
@@ -313,8 +313,6 @@ There are a few limitations currently. This all occurs at runtime, which is why 
 	@html.block('content', function(it){
 		<h1 class="name">@it.location.name</h1>
 	})
-
-The "root-most" `block` definition must not have any content attached to it (e.g. a callback), as shown in the `layout.vash` file above. This is to allow Vash to know when a block should be overriden vs output. Again, this is happening at runtime; there is no way for Vash to currently know what the "root" template is or when all templates have been included. Therefore, if Vash encounters a previously defined block that has no content, it knows to finally output.
 
 # Errata
 
