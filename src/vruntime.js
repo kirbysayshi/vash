@@ -237,6 +237,48 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
+	// VASH.LINK
+	// Reconstitute precompiled functions
+
+	vash['link'] = function( cmpFunc, Helpers ){
+		Helpers = Helpers || vash.helpers.constructor;
+
+		var linked = function( model, opts ){
+
+			// allow for signature: model, callback
+			if( typeof opts === 'function' ) {
+				opts = { onRenderEnd: opts };
+			}
+
+			opts = opts || {};
+
+			// allow for passing in onRenderEnd via model
+			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			if( model && model.onRenderEnd ){
+				delete model.onRenderEnd;
+			}
+
+			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
+		}
+
+		linked.toString = function(){
+			return cmpFunc.toString();
+		}
+
+		linked.toClientString = function(){
+			return 'vash.link( ' + cmpFunc.toString() + ' )';
+		}
+
+		return linked;
+	}
+
+	// VASH.LINK
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
 	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
