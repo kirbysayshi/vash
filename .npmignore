@@ -4,10 +4,6 @@
 .gitattributes
 .gitignore
 .npmignore
-AUTHORS
-CONTRIBUTING.md
 Icon?
 docs
 node_modules
-src
-support
