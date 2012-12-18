@@ -15,7 +15,7 @@
 		? typeof window !== 'undefined'
 			? ( window.vash = window.vash || {} )
 			: typeof module !== 'undefined' && module.exports
-				? exports = {}
+				? exports
 				: {}
 		: vash;
 
