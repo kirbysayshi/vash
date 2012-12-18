@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.11-1767
+ * Vash - JavaScript Template Parser, v0.5.11-1773
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -24,7 +24,7 @@
 		? typeof window !== 'undefined'
 			? ( window.vash = window.vash || {} )
 			: typeof module !== 'undefined' && module.exports
-				? exports = {}
+				? exports
 				: {}
 		: vash;
 
@@ -243,6 +243,48 @@
 	}
 
 	// MARKS
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.LINK
+	// Reconstitute precompiled functions
+
+	vash['link'] = function( cmpFunc, Helpers ){
+		Helpers = Helpers || vash.helpers.constructor;
+
+		var linked = function( model, opts ){
+
+			// allow for signature: model, callback
+			if( typeof opts === 'function' ) {
+				opts = { onRenderEnd: opts };
+			}
+
+			opts = opts || {};
+
+			// allow for passing in onRenderEnd via model
+			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			if( model && model.onRenderEnd ){
+				delete model.onRenderEnd;
+			}
+
+			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
+		}
+
+		linked.toString = function(){
+			return cmpFunc.toString();
+		}
+
+		linked.toClientString = function(){
+			return 'vash.link( ' + cmpFunc.toString() + ' )';
+		}
+
+		return linked;
+	}
+
+	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////

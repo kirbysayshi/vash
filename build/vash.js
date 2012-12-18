@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.11-1767
+ * Vash - JavaScript Template Parser, v0.5.11-1773
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.11-1767";
+	exports["version"] = "0.5.11-1773";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -60,7 +60,7 @@
 		? typeof window !== 'undefined'
 			? ( window.vash = window.vash || {} )
 			: typeof module !== 'undefined' && module.exports
-				? exports = {}
+				? exports
 				: {}
 		: vash;
 
@@ -279,6 +279,48 @@
 	}
 
 	// MARKS
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.LINK
+	// Reconstitute precompiled functions
+
+	vash['link'] = function( cmpFunc, Helpers ){
+		Helpers = Helpers || vash.helpers.constructor;
+
+		var linked = function( model, opts ){
+
+			// allow for signature: model, callback
+			if( typeof opts === 'function' ) {
+				opts = { onRenderEnd: opts };
+			}
+
+			opts = opts || {};
+
+			// allow for passing in onRenderEnd via model
+			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			if( model && model.onRenderEnd ){
+				delete model.onRenderEnd;
+			}
+
+			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
+		}
+
+		linked.toString = function(){
+			return cmpFunc.toString();
+		}
+
+		linked.toClientString = function(){
+			return 'vash.link( ' + cmpFunc.toString() + ' )';
+		}
+
+		return linked;
+	}
+
+	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
@@ -1781,45 +1823,10 @@ VCP.generate = function(){
 }
 
 VCP.assemble = function( cmpFunc ){
-	return VCompiler.assemble( cmpFunc || this.cmpFunc, this.Helpers );
+	return vash.link( cmpFunc || this.cmpFunc, this.Helpers );
 }
 
 VCompiler.noop = function(){}
-
-VCompiler.assemble = function( cmpFunc, Helpers ){
-	Helpers = Helpers || vash.helpers.constructor;
-
-	var linked = function( model, opts ){
-
-		// allow for signature: model, callback
-		if( typeof opts === 'function' ) {
-			opts = { onRenderEnd: opts };
-		}
-
-		opts = opts || {};
-
-		// allow for passing in onRenderEnd via model
-		if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
-			opts.onRenderEnd = model.onRenderEnd;
-		}
-
-		if( model && model.onRenderEnd ){
-			delete model.onRenderEnd;
-		}
-
-		return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
-	}
-
-	linked.toString = function(){
-		return cmpFunc.toString();
-	}
-
-	linked.toClientString = function(){
-		return 'vash.link( ' + cmpFunc.toString() + ' )';
-	}
-
-	return linked;
-}
 
 VCompiler.findNonExp = function(node){
 
@@ -1834,13 +1841,13 @@ VCompiler.findNonExp = function(node){
 	}
 }
 
-	/************** End injected code from build script */	
-	
+	/************** End injected code from build script */
+
 	exports["VLexer"] = VLexer;
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["vQuery"] = vQuery;
-	exports['link'] = VCompiler.assemble;
+
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {
