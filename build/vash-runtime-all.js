@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.11-1773
+ * Vash - JavaScript Template Parser, v0.5.13-1800
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -10,23 +10,15 @@
 /*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
-	///////////////////////////////////////////////////////////////////////////
-	// CONFIG
-	// Ideally this is where any helper-specific configuration would go, things
-	// such as syntax highlighting callbacks, whether to temporarily disable
-	// html escaping, and others.
-	//
-	// Each helper should define it's configuration options just above its own
-	// definition, for ease of modularity and discoverability.
+	vash = typeof vash === 'undefined' ? {} : vash;
 
-	// grab/create the global. sigh.
-	vash = typeof vash === 'undefined'
-		? typeof window !== 'undefined'
-			? ( window.vash = window.vash || {} )
-			: typeof module !== 'undefined' && module.exports
-				? exports
-				: {}
-		: vash;
+	if(!vash.compile && typeof define === 'function' && define['amd']){
+		define(function(){ return vash }); // AMD
+	} else if(!vash.compile && typeof module === 'object' && module['exports']){
+		module['exports'] = vash; // NODEJS
+	} else if(!vash.compile){
+		window['vash'] = vash; // BROWSER
+	}
 
 	var helpers = vash['helpers']
 		,Helpers
@@ -52,10 +44,6 @@
 	helpers.toString = helpers.toHtmlString = function(){
 		return this.buffer.toString();
 	}
-
-	// CONFIG
-	///////////////////////////////////////////////////////////////////////////
-
 
 	///////////////////////////////////////////////////////////////////////////
 	// HTML ESCAPING
