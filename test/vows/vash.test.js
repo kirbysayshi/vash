@@ -8,27 +8,32 @@ var vows = require('vows')
 	,vash
 
 program
-	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../build/vash.js') )
+	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../../build/vash') )
 	.parse( process.argv );
 
-vash = require( program.whichv )
+vash = require( program.whichv );
 
-vash.config.useWith = true;
+vash.config.useWith = false;
 vash.config.debug = false;
-vash.config.client = false;
 
 var tryCompile = function(str){
+	vash.config.useWith = true;
 	vash.compile(str); // because we want to see the stupid error
 	assert.doesNotThrow( function(){ vash.compile(str) }, Error );
 
+	var ret;
+
 	try {
-		return vash.compile(str);
+		ret = vash.compile(str);
 	} catch(e){
-		return function(){};
+		ret = function(){};
 	}
-}
+	vash.config.useWith = false;
+	return ret;
+};
 
 vows.describe('vash templating library').addBatch({
+
 	'a plain text template': {
 		topic: function(){
 			var tpl = vash.compile('<a href="">this is a <br /> simple template</a>');
@@ -40,7 +45,7 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'during "why are you using a template?"-style idiotic edge-cased interpolation': {
 		topic: function(){
-			return vash.compile('@i', { htmlEscape: false });
+			return vash.compile('@i', { htmlEscape: false, useWith: true });
 		}
 		,'we get 2 from just @i': function(topic){
 			assert.equal( topic({ i: 2 }), 2 );
@@ -53,7 +58,7 @@ vows.describe('vash templating library').addBatch({
 		topic: function(){
 			var str = '<li class="@className">@itemName</li>';
 			//console.log( vash._parse(str) )
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'we get <li class="blue">the blue item</li>': function(topic){
 			//console.log(topic);
@@ -68,7 +73,7 @@ vows.describe('vash templating library').addBatch({
 		topic: function(){
 			var str = '<img src="@src" alt="github" />';
 			//console.log( vash._parse(str) )
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'we get the full self-closed tag': function(topic){
 			//console.log(topic);
@@ -80,7 +85,7 @@ vows.describe('vash templating library').addBatch({
 	,'property references': {
 		topic: function(){
 			var str = '<li>@model.name</li>'
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'are interpolated': function(topic){
 			assert.equal( topic({ model: {name: 'what'}}), "<li>what</li>" );
@@ -143,7 +148,7 @@ vows.describe('vash templating library').addBatch({
 	,'for blocks and markup with interpolation/expression': {
 		topic: function(){
 			var str = "@for(var i = 0; i < 1; i++){ <li class=\"@i\">list item</li> \n }";
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'output markup': function(topic){
 			assert.equal(topic(), '<li class="0">list item</li>');
@@ -152,7 +157,7 @@ vows.describe('vash templating library').addBatch({
 	,'for blocks and markup with complex interpolation/expression': {
 		topic: function(){
 			var str = "@for(var i = 0; i < 1; i++){ <li class=\"@(i % 2 == 0 ? \"blue\" : \"red\")\">list item</li> \n }";
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'output markup': function(topic){
 			assert.equal(topic(), '<li class="blue">list item</li>');
@@ -161,7 +166,7 @@ vows.describe('vash templating library').addBatch({
 	,'nested for blocks and markup with complex interpolation/expression': {
 		topic: function(){
 			var str = "@for(var i = 0; i < 1; i++){ for(var j = 0; j < 2; j++) { <li class=\"@(i % 2 == 0 ? \"blue\" : \"red\")\">list item</li> \n } }";
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'output markup': function(topic){
 			assert.equal(topic(), '<li class="blue">list item</li><li class="blue">list item</li>');
@@ -175,7 +180,7 @@ vows.describe('vash templating library').addBatch({
 				+ "		<li class=\"@j-what\">some text, @( (j+2) % 2 === 0 ? 'even' : 'odd' ), value @anotherarr[j]</li> \n"
 				+ "	}"
 			+ "}";
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'output markup': function(topic){
 			var model = {
@@ -288,7 +293,7 @@ vows.describe('vash templating library').addBatch({
 	,'expression with indexed properties': {
 		topic: function(){
 			var str = '<a href="@what.how[0]"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'outputs G': function(topic){
 			assert.equal( topic({ what: { how: 'G' }}), '<a href="G"></a>');
@@ -297,7 +302,7 @@ vows.describe('vash templating library').addBatch({
 	,'expression with indexed properties and method call': {
 		topic: function(){
 			var str = '<a href="@what.how()[0]"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'outputs G': function(topic){
 			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="G"></a>');
@@ -306,7 +311,7 @@ vows.describe('vash templating library').addBatch({
 	,'expression with indexed properties and method call with additional property': {
 		topic: function(){
 			var str = '<a href="@what.how()[0].length"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'outputs 1': function(topic){
 			assert.equal( topic({ what: { how: function() { return 'G'; } }}), '<a href="1"></a>');
@@ -315,7 +320,7 @@ vows.describe('vash templating library').addBatch({
 	,'expression with indexed property followed by valid identifer': {
 		topic: function(){
 			var str = '<a href="@what[0]yeah"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'outputs 1yeah': function(topic){
 			assert.equal( topic({ what: '1'}), '<a href="1yeah"></a>');
@@ -324,7 +329,7 @@ vows.describe('vash templating library').addBatch({
 	,'explicit expression followed by bracket, @escape': {
 		topic: function(){
 			var str = '<a href="somename_@(what.how)@[0]"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'uses brackets as markup': function(topic){
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
@@ -333,7 +338,7 @@ vows.describe('vash templating library').addBatch({
 	,'explicit expression followed by bracket': {
 		topic: function(){
 			var str = '<a href="somename_@(what.how)[0]"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'uses brackets as markup': function(topic){
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[0]"></a>');
@@ -342,7 +347,7 @@ vows.describe('vash templating library').addBatch({
 	,'expression followed by empty bracket': {
 		topic: function(){
 			var str = '<a href="somename_@what.how[]"></a>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'uses brackets as markup': function(topic){
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[]"></a>');
@@ -584,7 +589,9 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'disregards newline re-entry into BLK mode': function(topic){
+			vash.config.useWith = true;
 			var tpl = tryCompile(topic);
+			vash.config.useWith = false;
 			assert.equal(tpl( { name: {how: 'you' } } ), 'you');
 		}
 	}
@@ -691,7 +698,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'is named properly': function(topic){
-			assert.equal( vash.compile(topic)( { header: 'a', header2: 'b' } ),
+			assert.equal( vash.compile(topic, { useWith: true })( { header: 'a', header2: 'b' } ),
 				'<div>'
 				+ '	<h1 class=\'header\'>a</h1>'
 				+ '	<h2 class=\'header2\'>b</h2>'
@@ -703,7 +710,7 @@ vows.describe('vash templating library').addBatch({
 			return '<@name>This is content</@name>';
 		}
 		,'is allowed': function(topic){
-			assert.equal( vash.compile(topic)({name: 'what'}), '<what>This is content</what>' );
+			assert.equal( vash.compile(topic, { useWith: true })({name: 'what'}), '<what>This is content</what>' );
 		}
 	}
 	,'simple expression as tagname within block': {
@@ -711,7 +718,7 @@ vows.describe('vash templating library').addBatch({
 			return '@if(true){ <@name>This is content</@name> }';
 		}
 		,'is allowed': function(topic){
-			assert.equal( vash.compile(topic)({name: 'what'}), '<what>This is content</what> ' );
+			assert.equal( vash.compile(topic, { useWith: true })({name: 'what'}), '<what>This is content</what> ' );
 		}
 	}
 	,'complex expression as tagname': {
@@ -719,7 +726,7 @@ vows.describe('vash templating library').addBatch({
 			return '<@name[0].length>This is content</@name[0].length>';
 		}
 		,'is allowed': function(topic){
-			assert.equal( vash.compile(topic)({name: 'what'}), '<1>This is content</1>' );
+			assert.equal( vash.compile(topic, { useWith: true })({name: 'what'}), '<1>This is content</1>' );
 		}
 	}
 	,'email address': {
@@ -759,7 +766,7 @@ vows.describe('vash templating library').addBatch({
 	,'explicit expression': {
 		topic: function(){
 			var str = '<span>ISBN@(isbnNumber)</span>';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'does not trip e-mail escape': function(topic){
 			assert.equal( topic({isbnNumber: 10101}), '<span>ISBN10101</span>' )
@@ -780,7 +787,7 @@ vows.describe('vash templating library').addBatch({
 			return str;
 		}
 		,'renders': function(topic){
-			assert.equal(vash.compile(topic)({ a: 'xxx' }), '<span>oxx</span>');
+			assert.equal(vash.compile(topic, { useWith: true })({ a: 'xxx' }), '<span>oxx</span>');
 		}
 	}
 
@@ -789,7 +796,7 @@ vows.describe('vash templating library').addBatch({
 		'simple expression': {
 			topic: '<span>@a.replace(/a/gi, "o")</span>'
 			,'replaces': function( topic ){
-				var tpl = vash.compile( topic );
+				var tpl = vash.compile( topic, { useWith: true } );
 				assert.equal( tpl({ a: 'a' }), '<span>o</span>');
 			}
 		}
@@ -797,7 +804,7 @@ vows.describe('vash templating library').addBatch({
 		,'period meta character': {
 			topic: '<span>@a.replace(/./gi, "o")</span>'
 			,'replaces': function( topic ){
-				var tpl = vash.compile( topic );
+				var tpl = vash.compile( topic, { useWith: true } );
 				assert.equal( tpl({ a: 'a' }), '<span>o</span>')
 			}
 		}
@@ -867,7 +874,7 @@ vows.describe('vash templating library').addBatch({
 	,'mixing expressions and text': {
 		topic: function(){
 			var str = 'Hello @title. @name.';
-			return vash.compile(str);
+			return vash.compile(str, { useWith: true });
 		}
 		,'outputs text': function(topic){
 			assert.equal( topic({ title: 'Mr', name: 'Doob' }), 'Hello Mr. Doob.');
@@ -1151,7 +1158,7 @@ vows.describe('vash templating library').addBatch({
 
 		'basic': {
 			topic: function(){
-				return vash.compile( '<span>@it</span>' );
+				return vash.compile( '<span>@it</span>', { useWith: true } );
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span>&lt;b&gt;texted&lt;/b&gt;</span>' );
@@ -1160,7 +1167,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'force no escaping': {
 			topic: function(){
-				return vash.compile( '<span>@it</span>', { htmlEscape: false } );
+				return vash.compile( '<span>@it</span>', { htmlEscape: false, useWith: true } );
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
@@ -1169,7 +1176,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'force no escaping per call (html.raw)': {
 			topic: function(){
-				return vash.compile( '<span>@html.raw(it)</span>' );
+				return vash.compile( '<span>@html.raw(it)</span>', { useWith: true } );
 			}
 			,'is escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }), '<span><b>texted</b></span>' );
@@ -1178,7 +1185,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'multiple function calls': {
 			topic: function(){
-				return vash.compile( '@function f(i){ <b>@i</b> }<span>@f(it)</span>@f(it)' );
+				return vash.compile( '@function f(i){ <b>@i</b> }<span>@f(it)</span>@f(it)', { useWith: true } );
 			}
 			,'are escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }),
@@ -1347,7 +1354,6 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
-				//var tpl = vash.compile(topic, { useWith: false, debug: false });
 				assert.equal(tpl(), topic)
 			}
 		}
@@ -1357,7 +1363,6 @@ vows.describe('vash templating library').addBatch({
 			}
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
-				//var tpl = vash.compile(topic, { useWith: false, debug: false });
 				assert.equal(tpl(), topic)
 			}
 		}
@@ -1415,433 +1420,6 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
-	}
-
-	,'default helpers': {
-
-		'highlight': {
-			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
-			,'wraps with <pre><code>': function( topic ){
-				var tpl = vash.compile( topic );
-				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
-			}
-		}
-	}
-
-	,'layout helpers': {
-
-		topic: function(){
-
-			this.opts = function(model){
-				return vash.vQuery.extend( model || {}, {
-					// mock up express settings
-					settings: {
-						views: __dirname + '/fixtures/views',
-						'view engine': 'vash'
-					}
-					,onRenderEnd: function(err, ctx){
-						ctx.finishLayout();
-					}
-				});
-			}
-
-			// and this is how you mock the template cache...
-			this.installTplAt = function( filename, str ){
-				var opts = this.opts( { cache: true } )
-					,base = opts.settings.views
-					,p = path.join( base, filename )
-
-				vash.helpers.tplcache[ p ] = vash.compile( str );
-				return p;
-			}
-
-			this.uninstallTplAt = function( filename ){
-				return delete vash.helpers.tplcache[ filename ];
-			}
-
-			return this.opts;
-		}
-
-		,'p': {
-			topic: function(opts){
-				vash.loadFile( 'p', opts(), this.callback );
-			}
-
-			,'renders': function( err, tpl ){
-				assert.equal( tpl( this.opts({ a: 'a' }) ), '<p>a</p>' )
-			}
-		}
-
-		,'includes': {
-
-			topic: function(opts){
-				vash.loadFile( 'list', opts(), this.callback );
-			}
-
-			,'renders': function( err, tpl ){
-				var actual = tpl( this.opts({ count: 2 }) );
-
-				assert.equal( actual, '<ul><li>a</li><li>a</li></ul>' )
-			}
-
-			,'containing redefining block redefines': function( err, tpl ){
-
-				var  parentPath = this.installTplAt( 'parent.vash', '@html.block("c", function(){<p></p>})@html.include("included")' )
-					,includedPath = this.installTplAt( 'included.vash', '@html.block("c", function(){<span></span>})' )
-
-					,parent = vash.helpers.tplcache[ parentPath ]
-
-				var actual = parent( this.opts({ cache: true }) );
-
-				assert.equal( actual, '<span></span>' )
-
-				this.uninstallTplAt( parentPath )
-				this.uninstallTplAt( includedPath )
-			}
-
-			,'given unique model renders': function( err, tpl ){
-
-				var  t = this.installTplAt( 'something/t.vash', '@html.include("something/i.vash", { u: "u" })' )
-					,i = this.installTplAt( 'something/i.vash', '<p>@model.u</p>' )
-
-					,opts = this.opts({ cache: true })
-
-				assert.equal( vash.helpers.tplcache[ t ]( opts ), '<p>u</p>' )
-			}
-		}
-
-		,'block': {
-
-			topic: function(opts){
-				return function(before, inner, after){
-					before = before || '';
-					after = after || '';
-					return vash.compile(
-						before
-						+ '@html.block("main"' + ( inner ? ', function(model){' + inner + '}' : '' ) + ')'
-						+ after
-					)
-				}
-			}
-
-			,'renders blank': function( maker ){
-				assert.equal( maker()( this.opts() ), '' );
-			}
-
-			,'renders replace': function( maker ){
-				var ctn = '<p></p>'
-					,before = '@html.block("main", function(){' + ctn + '})'
-
-					,actual = maker(before, '', '')( this.opts());
-
-				assert.equal( actual, ctn );
-			}
-
-			,'subsequent blocks redefine': function( maker ){
-				var ctnA = '<p></p>'
-					,ctnB = '<a></a>'
-					,before = '@html.block("main", function(){' + ctnA + '})'
-						+ '@html.block("main", function(){' + ctnB + '})'
-
-					,actual = maker(before, '', '')( this.opts() );
-
-				assert.equal( actual, ctnB );
-			}
-
-			,'renders default content': function( maker ){
-				var ctn = '<p></p>'
-
-					,actual = maker('', ctn, '')( this.opts() );
-
-				assert.equal( actual, ctn );
-			}
-		}
-
-		,'extend': {
-
-			topic: function(opts){
-				return function(inner){
-					return vash.compile('@html.extend("layout", function(){' + inner + '})');
-				}
-			}
-
-			,'renders blank': function( maker ){
-				assert.equal( maker('')( this.opts() ), '' )
-			}
-
-			,'renders expression': function( maker ){
-				var actual = maker('')( this.opts({ title: 'is title' }) )
-				//console.log('actual', actual)
-				assert.equal( actual, 'is title' )
-			}
-
-			,'renders content block': function( maker ){
-				var block = '@html.block("content", function(model){<p>@model.a</p>})'
-				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p>' )
-			}
-
-			,'renders content block with include': function( maker ){
-				var block = '@html.block("content", function(model){@html.include("p")<p>@model.a</p>})'
-				assert.equal( maker(block)( this.opts({ a: 'a' }) ), '<p>a</p><p>a</p>' )
-			}
-
-			,'renders content block with multiple include': function( maker ){
-				var  incp = '@html.include("p")'
-					,mb = '<p>@model.b</p>'
-					,block = '@html.block("content", function(model){' + incp + mb + incp + mb + '})'
-
-					,actual = maker(block)( this.opts({ a: 'a', b: 'b' }) )
-
-				//console.log( 'actual', actual )
-				assert.equal( actual , '<p>a</p><p>b</p><p>a</p><p>b</p>' );
-			}
-
-			,'renders include that appends to content block': function( maker ){
-				var footer = '@html.block("footer", function(){ <footer></footer> })'
-					,include = '@html.include("footerappend")'
-					,block = '@html.block("content", function(){ ' + include + ' })'
-
-					,actual = maker( footer + block )( this.opts() )
-
-				assert.equal( actual, '<footer></footer><footer2></footer2>' )
-			}
-
-			,'renders appended content block': function( maker ){
-				var  incp = '@html.include("p")'
-					,appf = '@html.append("footer", function(){<footer></footer>})'
-					,block = '@html.block("content", function(model){' + incp + appf + incp + '})'
-
-					,outp = '<p>a</p>'
-
-					,opts = this.opts({ a: 'a' })
-
-
-				var actual = maker(block)( opts )
-
-				//console.log( 'actual', actual )
-				assert.equal( actual, outp + outp + '<footer></footer>' );
-			}
-
-			,'renders prepended/appended content block': function( maker ){
-				var  incp = '@html.include("p")'
-					,appf = '@html.append("footer", function(){<app></app>})'
-					,pref = '@html.prepend("footer", function(){<pre></pre>})'
-					,block = '@html.block("content", function(model){' + incp + appf + pref + incp + '})'
-
-					,outp = '<p>a</p>'
-
-					,actual = maker(block)( this.opts({ a: 'a' }) )
-
-				//console.log( 'actual', actual )
-				assert.equal( actual, outp + outp + '<pre></pre><app></app>' );
-			}
-
-			,'subsequent blocks redefine': function( maker ){
-				var  ctnA = '<p></p>'
-					,ctnB = '<a></a>'
-					,block = '@html.block("content", function(){' + ctnA + '})'
-						+ '@html.block("content", function(){' + ctnB + '})'
-
-					,actual = maker(block)( this.opts() )
-
-				assert.equal( actual, ctnB );
-			}
-
-			,'deep': {
-
-				topic: function(maker){
-					var self = this;
-
-					this.layoutPath = this.installTplAt( 'l.vash',
-						"<article>@html.block('content')</article>"
-						+ "@html.block('footer', function(){<footer></footer>})" )
-
-					this.extendingPath = this.installTplAt( 'extending.vash',
-						"@html.extend('l', function(){"
-							+ "<div>"
-								+ "@html.block('content', function(){"
-									+ "<block></block>"
-								+ "})"
-							+ "</div>"
-						+ "})" )
-
-					return function(before, inner, after){
-						before = before || '';
-						after = after || '';
-						inner = inner || '';
-						return vash.compile(
-							before
-							+ '@html.extend("extending", function(model){' + inner + '})'
-							+ after
-						)
-					}
-				}
-
-				,teardown: function(){
-					delete vash.helpers.tplcache[ this.layoutPath ];
-					delete vash.helpers.tplcache[ this.extendingPath ];
-				}
-
-				,'only works on highest block': function( maker ){
-
-					var actual = maker()( this.opts({ cache: true }) );
-
-					assert.equal( actual, '<article><block></block></article><footer></footer>' )
-				}
-
-				,'inner wrapped by article': function( maker ){
-					var inner = '<inner></inner>'
-						,block = '@html.block("content", function(){' + inner + '})'
-						,opts = this.opts({ cache: true })
-						,actual
-
-					actual = maker( '', block)( opts )
-
-					assert.equal( actual, '<article>' + inner + '</article><footer></footer>' )
-				}
-
-				,'blocks only defined in child are ignored': function( maker ){
-
-					var inner = '<inner></inner>'
-						,block = '@html.block("inner", function(){' + inner + '})'
-						,opts = this.opts({ cache: true })
-						,actual
-
-					actual = maker( '', block)( opts )
-
-					assert.equal( actual, '<article><block></block></article><footer></footer>' )
-				}
-
-				,'includes can define new blocks if called within a block': function( maker ){
-
-					var name = this.installTplAt( 'i.vash',
-						"@html.block('included', function(){<inc></inc>})" );
-
-					var inner = '@html.block("content", function(){@html.include("i")})'
-						,tpl = maker( '', inner )
-
-						,actual = tpl( this.opts({cache: true}) )
-
-					assert.equal( actual, '<article><inc></inc></article><footer></footer>')
-
-					delete vash.helpers.tplcache[name];
-				}
-
-				,'includes can redefine a block': function( maker ){
-
-					var includedPath = this.installTplAt( 'i.vash', '@html.block("content", function(){ <p></p> })')
-						,tpl = vash.compile( '@html.extend("layout",function(){ @html.append("footer", function(){ @html.include("i") }) })' )
-
-					debugger;
-					var actual = tpl( this.opts({ cache: true }) )
-
-					assert.equal( actual, '<p></p>' );
-
-					this.uninstallTplAt( includedPath )
-				}
-			}
-		}
-
-	}
-
-	,'layout engine view lookups': {
-
-		topic: function(){
-
-			this.opts = function( viewpath ){
-				return {
-					settings: {
-						views: viewpath,
-						'view engine': 'vash'
-					}
-				}
-			}
-
-			return true; // to avoid weird vows async stuff
-		}
-
-		,'with extension and engine': function(){
-			var path = __dirname + '/fixtures/views/'
-				,opts = this.opts( path )
-
-			vash.loadFile( 'p.vash', opts, function(err, tpl){
-				assert.ifError( err );
-				assert.equal( tpl(), '<p></p>' )
-			})
-		}
-
-		,'with extension and not engine': function(){
-			var path = __dirname + '/fixtures/views/'
-				,opts = this.opts( path )
-
-			delete opts.settings['view engine'];
-
-			vash.loadFile( 'p.vash', opts, function(err, tpl){
-				assert.ifError( err );
-				assert.equal( tpl(), '<p></p>' )
-			})
-		}
-
-		,'without extension and with engine': function(){
-			var path = __dirname + '/fixtures/views/'
-				,opts = this.opts( path )
-
-			vash.loadFile( 'p', opts, function(err, tpl){
-				assert.ifError( err );
-				assert.equal( tpl(), '<p></p>' )
-			})
-		}
-
-		,'with forward slashes': function( ){
-			var path = __dirname + '/fixtures/views/'
-
-			vash.loadFile( 'p', this.opts( path ), function(err, tpl){
-				assert.ifError( err );
-				assert.equal( tpl(), '<p></p>' )
-			})
-		}
-
-		,'with back slashes': function( ){
-
-			// the `path` module normalizes separators based on platform
-			// so it's basically impossible to test on non-windows
-			if( process.platform === 'win32' ){
-				var path = __dirname + '\\fixtures\\views\\'
-
-				vash.loadFile( 'p', this.opts( path ), function(err, tpl){
-					assert.ifError( err );
-					assert.equal( tpl(), '<p></p>' )
-				})
-			}
-		}
-	}
-
-	,'decompilation': {
-
-		topic: function(){
-			var str = '<p></p>';
-			return vash.compile( str, { debug: false, useWith: false } );
-		}
-
-		,'of a linked function returns the generated function': function( tpl ){
-
-			var result = tpl.toString().match(/^function anonymous\(model,html,__vopts\)/g);
-			assert.equal( ( result || [''] )[0], 'function anonymous(model,html,__vopts)' )
-		}
-
-		,'using .toClientString returns vash.link': function( tpl ){
-
-			var result = tpl.toClientString().match(/^vash\.link\(/g);
-			assert.equal( ( result || [''] )[0], 'vash.link(' )
-		}
-
-		,'followed by relinking renders': function( tpl ){
-
-			var  client = tpl.toClientString() + '()'
-				,actual = vm.runInNewContext( client, { vash: vash } );
-
-			assert.equal( actual.toString(), tpl().toString() );
-		}
 	}
 
 	,'keywords': {

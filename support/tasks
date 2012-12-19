@@ -240,10 +240,11 @@ function build(){
 function test(options){
 
 	var  vows = path.join( __dirname, '../node_modules/vows/bin/vows' )
-		,args = [
-			path.join( __dirname, '../test/vash.test.js' )
-			,'--spec'
-		]
+		,testPath = path.join( __dirname, '../test/vows/' )
+		,files = fs.readdirSync( testPath ).map(function(f){ return path.join(testPath, f) })
+		,args = files.concat([
+			'--spec'
+		])
 		,opts = {
 			stdio: 'inherit'
 		}
