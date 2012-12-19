@@ -375,7 +375,9 @@ The original name of this syntax is Razor, implying that it is as stripped down 
 
 # TODO
 
-* refactor tests to take advantage of Vows' awesomeness
+* `vash.install` to allow a file full of templates to "export" them, instead of using separate files
+* Rework build system to either use a Makefile or something like Grunt
+* Rewrite documentation to be more comprehensive, with syntax examples
 
 # License
 
