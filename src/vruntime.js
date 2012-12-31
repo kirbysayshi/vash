@@ -93,83 +93,83 @@
 	// output in a sane manner.
 
 	Buffer = function() {
-		var __vo = this._vo = [];
+		this._vo = [];
+	}
 
-		this.mark = function( debugName ) {
-			var mark = new Mark( this, debugName );
-			mark.markedIndex = __vo.length;
-			__vo.push( mark.uid );
-			return mark;
-		};
+	Buffer.prototype.mark = function( debugName ) {
+		var mark = new Mark( this, debugName );
+		mark.markedIndex = this._vo.length;
+		this._vo.push( mark.uid );
+		return mark;
+	};
 
-		this.fromMark = function( mark ) {
-			var found = mark.findInBuffer();
+	Buffer.prototype.fromMark = function( mark ) {
+		var found = mark.findInBuffer();
 
-			if( found > -1 ){
-				// automatically destroy the mark from the buffer
-				mark.destroy();
-				// `found` will still be valid for a manual splice
-				return __vo.splice( found, __vo.length );
-			}
-
-			return [];
-		};
-
-		this.spliceMark = function( mark, numToRemove, add ){
-			var found = mark.findInBuffer();
-
-			if( found > -1 ){
-				mark.destroy();
-				arguments[0] = found;
-				return __vo.splice.apply( __vo, arguments );
-			}
-
-			return [];
-		};
-
-		this.empty = function() {
-			return __vo.splice( 0, __vo.length );
-		};
-
-		this.push = function( buffer ) {
-			if( buffer instanceof Array ) {
-				__vo.push.apply( __vo, buffer );
-			} else if ( arguments.length > 1 ) {
-				__vo.push.apply( __vo, Array.prototype.slice.call( arguments ));
-			} else {
-				__vo.push( buffer );
-			}
-		};
-
-		this.indexOf = function( str ){
-
-			for( var i = 0; i < __vo.length; i++ ){
-				if( __vo[i] == str ){
-						return i;
-				}
-			}
-
-			return -1;
+		if( found > -1 ){
+			// automatically destroy the mark from the buffer
+			mark.destroy();
+			// `found` will still be valid for a manual splice
+			return this._vo.splice( found, this._vo.length );
 		}
 
-		this.splice = function(){
-			return __vo.splice.apply( __vo, arguments );
+		return [];
+	};
+
+	Buffer.prototype.spliceMark = function( mark, numToRemove, add ){
+		var found = mark.findInBuffer();
+
+		if( found > -1 ){
+			mark.destroy();
+			arguments[0] = found;
+			return this._vo.splice.apply( this._vo, arguments );
 		}
 
-		this.index = function( idx ){
-			return __vo[ idx ];
-		}
+		return [];
+	};
 
-		this.flush = function() {
-			return this.empty().join( "" );
-		};
+	Buffer.prototype.empty = function() {
+		return this._vo.splice( 0, this._vo.length );
+	};
 
-		this.toString = this.toHtmlString = function(){
-			// not using flush because then console.log( tpl() ) would artificially
-			// affect the output
-			return __vo.join( "" );
+	Buffer.prototype.push = function( buffer ) {
+		if( buffer instanceof Array ) {
+			this._vo.push.apply( this._vo, buffer );
+		} else if ( arguments.length > 1 ) {
+			this._vo.push.apply( this._vo, Array.prototype.slice.call( arguments ));
+		} else {
+			this._vo.push( buffer );
 		}
 	};
+
+	Buffer.prototype.indexOf = function( str ){
+
+		for( var i = 0; i < this._vo.length; i++ ){
+			if( this._vo[i] == str ){
+					return i;
+			}
+		}
+
+		return -1;
+	}
+
+	Buffer.prototype.splice = function(){
+		return this._vo.splice.apply( this._vo, arguments );
+	}
+
+	Buffer.prototype.index = function( idx ){
+		return this._vo[ idx ];
+	}
+
+	Buffer.prototype.flush = function() {
+		return this.empty().join( "" );
+	};
+
+	Buffer.prototype.toString = Buffer.prototype.toHtmlString = function(){
+		// not using flush because then console.log( tpl() ) would artificially
+		// affect the output
+		return this._vo.join( "" );
+	}
 
 	// BUFFER MANIPULATION
 	///////////////////////////////////////////////////////////////////////////
