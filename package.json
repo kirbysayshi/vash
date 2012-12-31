@@ -1,8 +1,9 @@
 {
 	"name": "vash",
 	"description": "Razor syntax for JS templating",
-	"version": "0.5.13-1800",
+	"version": "0.5.13-1803",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
+	"homepage": "https://github.com/kirbysayshi/vash",
 	"bin": {
 		"vash": "./bin/vash"
 	},
@@ -12,7 +13,10 @@
 		"template",
 		"express"
 	],
-	"repository": "git://github.com/kirbysayshi/vash",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/kirbysayshi/vash"
+	},
 	"main": "build/vash",
 	"engines": {
 		"node": ">= 0.6"
