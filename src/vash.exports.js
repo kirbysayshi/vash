@@ -33,15 +33,6 @@
 		,"saveAT": false
 	};
 
-	/************** Begin injected code from build script */
-	/*?CODE?*/
-	/************** End injected code from build script */
-
-	exports["VLexer"] = VLexer;
-	exports["VParser"] = VParser;
-	exports["VCompiler"] = VCompiler;
-	exports["vQuery"] = vQuery;
-
 	exports["compile"] = function compile(markup, options){
 
 		if(markup === '' || typeof markup !== 'string') {
@@ -71,6 +62,15 @@
 		cmp = c.assemble( cmp );
 		return cmp;
 	};
+
+	/************** Begin injected code from build script */
+	/*?CODE?*/
+	/************** End injected code from build script */
+
+	exports["VLexer"] = VLexer;
+	exports["VParser"] = VParser;
+	exports["VCompiler"] = VCompiler;
+	exports["vQuery"] = vQuery;
 
 	return exports;
 }({}));
