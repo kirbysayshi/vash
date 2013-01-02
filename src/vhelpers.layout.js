@@ -15,8 +15,6 @@
 	// TRUE implies that all TPLS are loaded and waiting in cache
 	helpers.config.browser = false;
 
-	helpers.tplcache = {};
-
 	vash.loadFile = function(filepath, options, cb){
 
 		// options are passed in via Express
@@ -52,7 +50,6 @@
 			if( filepath.indexOf( path.normalize( options.settings.views ) ) === -1 ){
 				// not an absolute path
 				filepath = path.join( options.settings.views, filepath );
-
 			}
 
 			if( !path.extname( filepath ) ){
@@ -61,7 +58,6 @@
 		}
 
 		try {
-
 			// if browser, tpl must exist in tpl cache
 			tpl = options.cache || browser
 				? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )

@@ -27,7 +27,7 @@
 		vash['helpers']
 			= helpers
 			= Helpers.prototype
-			= { constructor: Helpers, config: {}};
+			= { constructor: Helpers, config: {}, tplcache: {} };
 	}
 
 	// this allows a template to return the context, and coercion
