@@ -125,10 +125,7 @@ VCP.replaceDevTokens = function( str ){
 		.replace( this.reModelName, this.options.modelName );
 }
 
-VCP.generate = function(){
-
-	// clear whatever's in the current buffer
-	this.buffer.length = 0;
+VCP.wrapBody = function(body){
 
 	var options = this.options;
 
@@ -152,6 +149,15 @@ VCP.generate = function(){
 	foot = this.replaceDevTokens( foot )
 		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
 
+	return head + body + foot;
+}
+
+VCP.generate = function(){
+	var options = this.options;
+
+	// clear whatever's in the current buffer
+	this.buffer.length = 0;
+
 	this.visitNode(this.ast);
 
 	// coalesce markup
@@ -161,7 +167,7 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = head + joined + foot;
+	joined = this.wrapBody( joined );
 
 	if(options.debugCompiler){
 		console.log(joined);
