@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.13-1803
+ * Vash - JavaScript Template Parser, v0.5.15-1896
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.13-1803";
+	exports["version"] = "0.5.15-1896";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -42,38 +42,95 @@
 		,"saveAT": false
 	};
 
+	exports["compile"] = function compile(markup, options){
+
+		if(markup === '' || typeof markup !== 'string') {
+			throw new Error('Empty or non-string cannot be compiled');
+		}
+
+		var  l
+			,tok
+			,tokens = []
+			,p
+			,c
+			,cmp
+			,i;
+
+		options = vQuery.extend( {}, exports.config, options || {} );
+
+		l = new VLexer(markup);
+		while(tok = l.advance()) { tokens.push(tok); }
+		tokens.reverse(); // parser needs in reverse order for faster popping vs shift
+
+		p = new VParser(tokens, options);
+		p.parse();
+
+		c = new VCompiler(p.ast, markup, options);
+
+		cmp = c.generate();
+		return cmp;
+	};
+
+	exports['batch'] = function batch(path, cb){
+
+		var caller = batch.caller;
+
+		function _batch(path, cb){
+
+			var  reFuncHead = /^function\s*\([^)]*?\)\s*{/
+				,reFuncTail = /\}$/
+
+				,str = cb.toString()
+					.replace(reFuncHead, '')
+					.replace(reFuncTail, '')
+
+				,callOpts = caller.options
+
+			var cmp = new VCompiler([], '', callOpts);
+
+			str = cmp.wrapBody( str );
+			vash.install( path, vash.link( str, callOpts.modelName, callOpts.helpersName ) );
+		}
+
+		if( vash.compile ) {
+			exports['batch'] = _batch;
+			return exports['batch'](path, cb);
+		} else {
+			throw new Error('vash.batch is not available in the standalone runtime.');
+		}
+	};
+
 	/************** Begin injected code from build script */
 	/*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
 	vash = typeof vash === 'undefined' ? {} : vash;
 
-	if(!vash.compile && typeof define === 'function' && define['amd']){
-		define(function(){ return vash }); // AMD
-	} else if(!vash.compile && typeof module === 'object' && module['exports']){
-		module['exports'] = vash; // NODEJS
-	} else if(!vash.compile){
-		window['vash'] = vash; // BROWSER
+	// only fully define if this is standalone
+	if(!vash.compile){
+		if(typeof define === 'function' && define['amd']){
+			define(function(){ return vash }); // AMD
+		} else if(typeof module === 'object' && module['exports']){
+			module['exports'] = vash; // NODEJS
+		} else {
+			window['vash'] = vash; // BROWSER
+		}
 	}
 
-	var helpers = vash['helpers']
-		,Helpers
-		,Buffer;
+	var helpers = vash['helpers'];
 
-	if ( !helpers ) {
-		Helpers = function ( model ) {
-			this.buffer = new Buffer();
-			this.model  = model;
+	var Helpers = function ( model ) {
+		this.buffer = new Buffer();
+		this.model  = model;
 
-			this.vl = 0;
-			this.vc = 0;
-		};
+		this.vl = 0;
+		this.vc = 0;
+	};
 
-		vash['helpers']
-			= helpers
-			= Helpers.prototype
-			= { constructor: Helpers, config: {}};
-	}
+	vash['helpers']
+		= helpers
+		= Helpers.prototype
+		= { constructor: Helpers, config: {}, tplcache: {} };
 
 	// this allows a template to return the context, and coercion
 	// will handle it
@@ -94,9 +151,6 @@
 			,"'": "&#x27;"
 			,"`": "&#x60;"
 		};
-
-
-	// raw: explicitly prevent an expression or value from being HTML escaped.
 
 	helpers.raw = function( val ) {
 		var func = function() { return val; };
@@ -137,7 +191,7 @@
 	// These are to be used from within helpers, to allow for manipulation of
 	// output in a sane manner.
 
-	Buffer = function() {
+	var Buffer = function() {
 		this._vo = [];
 	}
 
@@ -191,7 +245,7 @@
 
 		for( var i = 0; i < this._vo.length; i++ ){
 			if( this._vo[i] == str ){
-					return i;
+				return i;
 			}
 		}
 
@@ -270,48 +324,6 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// VASH.LINK
-	// Reconstitute precompiled functions
-
-	vash['link'] = function( cmpFunc, Helpers ){
-		Helpers = Helpers || vash.helpers.constructor;
-
-		var linked = function( model, opts ){
-
-			// allow for signature: model, callback
-			if( typeof opts === 'function' ) {
-				opts = { onRenderEnd: opts };
-			}
-
-			opts = opts || {};
-
-			// allow for passing in onRenderEnd via model
-			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
-				opts.onRenderEnd = model.onRenderEnd;
-			}
-
-			if( model && model.onRenderEnd ){
-				delete model.onRenderEnd;
-			}
-
-			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
-		}
-
-		linked.toString = function(){
-			return cmpFunc.toString();
-		}
-
-		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + ' )';
-		}
-
-		return linked;
-	}
-
-	// VASH.LINK
-	///////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////
 	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
@@ -345,6 +357,98 @@
 	helpers.reportError = function() {
 		this.constructor.reportError.apply( this, arguments );
 	};
+
+	// ERROR REPORTING
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.LINK
+	// Reconstitute precompiled functions
+
+	vash['link'] = function( cmpFunc, modelName, helpersName ){
+
+		var joined;
+
+		if( typeof cmpFunc === 'string' ){
+			joined = cmpFunc;
+			try {
+				cmpFunc = new Function(modelName, helpersName, '__vopts', 'vash', joined);
+			} catch(e){
+				helpers.reportError(e, 0, 0, joined, /\n/);
+			}
+		}
+
+		// need this to enable `vash.batch` to reconstitute
+		cmpFunc.options = { modelName: modelName, helpersName: helpersName };
+
+		var linked = function( model, opts ){
+
+			// allow for signature: model, callback
+			if( typeof opts === 'function' ) {
+				opts = { onRenderEnd: opts };
+			}
+
+			opts = opts || {};
+
+			// allow for passing in onRenderEnd via model
+			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			if( model && model.onRenderEnd ){
+				delete model.onRenderEnd;
+			}
+
+			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
+		};
+
+		linked.toString = function(){
+			return cmpFunc.toString();
+		};
+
+		linked.toClientString = function(){
+			return 'vash.link( ' + cmpFunc.toString() + ', "' + modelName + '", "' + helpersName + '" )';
+		};
+
+		return linked;
+	};
+
+	// VASH.LINK
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// TPL CACHE
+
+	vash.lookup = function( path, model ){
+		var tpl = vash.helpers.tplcache[path];
+		if( !tpl ){ throw new Error('Could not find template: ' + path); }
+		if( model ){ return tpl(model); }
+		else return tpl;
+	};
+
+	vash.install = function( path, tpl ){
+		var cache = vash.helpers.tplcache;
+		if( typeof tpl === 'string' ){
+			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
+			tpl = vash.compile(tpl);
+		}
+		return cache[path] = tpl;
+	};
+
+	vash.uninstall = function( path ){
+		var  cache = vash.helpers.tplcache
+			,deleted = false;
+
+		if( typeof path === 'string' ){
+			return delete cache[path];
+		} else {
+			Object.keys(cache).forEach(function(key){
+				if( cache[key] === path ){ deleted = delete cache[key]; }
+			})
+			return deleted;
+		}
+	};
+
 }());
 
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
@@ -408,8 +512,6 @@
 	// TRUE implies that all TPLS are loaded and waiting in cache
 	helpers.config.browser = false;
 
-	helpers.tplcache = {};
-
 	vash.loadFile = function(filepath, options, cb){
 
 		// options are passed in via Express
@@ -445,7 +547,6 @@
 			if( filepath.indexOf( path.normalize( options.settings.views ) ) === -1 ){
 				// not an absolute path
 				filepath = path.join( options.settings.views, filepath );
-
 			}
 
 			if( !path.extname( filepath ) ){
@@ -454,7 +555,6 @@
 		}
 
 		try {
-
 			// if browser, tpl must exist in tpl cache
 			tpl = options.cache || browser
 				? helpers.tplcache[filepath] || ( helpers.tplcache[filepath] = vash.compile(fs.readFileSync(filepath, 'utf8')) )
@@ -1634,10 +1734,9 @@ VParser.prototype = {
 
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VCompiler(ast, originalMarkup, Helpers, options){
+function VCompiler(ast, originalMarkup, options){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
-	this.Helpers = Helpers || vash.helpers.constructor;
 	this.options = options || {};
 
 	this.reQuote = /(["'])/gi
@@ -1759,10 +1858,7 @@ VCP.replaceDevTokens = function( str ){
 		.replace( this.reModelName, this.options.modelName );
 }
 
-VCP.generate = function(){
-
-	// clear whatever's in the current buffer
-	this.buffer.length = 0;
+VCP.wrapBody = function(body){
 
 	var options = this.options;
 
@@ -1786,6 +1882,15 @@ VCP.generate = function(){
 	foot = this.replaceDevTokens( foot )
 		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
 
+	return head + body + foot;
+}
+
+VCP.generate = function(){
+	var options = this.options;
+
+	// clear whatever's in the current buffer
+	this.buffer.length = 0;
+
 	this.visitNode(this.ast);
 
 	// coalesce markup
@@ -1795,23 +1900,14 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = head + joined + foot;
+	joined = this.wrapBody( joined );
 
 	if(options.debugCompiler){
 		console.log(joined);
 	}
 
-	try {
-		this.cmpFunc = new Function(options.modelName, options.helpersName, '__vopts', joined);
-	} catch(e){
-		this.Helpers.reportError(e, 0, 0, joined, /\n/)
-	}
-
-	return this.compiledFunc;
-}
-
-VCP.assemble = function( cmpFunc ){
-	return vash.link( cmpFunc || this.cmpFunc, this.Helpers );
+	this.cmpFunc = vash.link( joined, options.modelName, options.helpersName );
+	return this.cmpFunc;
 }
 
 VCompiler.noop = function(){}
@@ -1835,36 +1931,6 @@ VCompiler.findNonExp = function(node){
 	exports["VParser"] = VParser;
 	exports["VCompiler"] = VCompiler;
 	exports["vQuery"] = vQuery;
-
-	exports["compile"] = function compile(markup, options){
-
-		if(markup === '' || typeof markup !== 'string') {
-			throw new Error('Empty or non-string cannot be compiled');
-		}
-
-		var  l
-			,tok
-			,tokens = []
-			,p
-			,c
-			,cmp
-			,i;
-
-		options = vQuery.extend( {}, exports.config, options || {} );
-
-		l = new VLexer(markup);
-		while(tok = l.advance()) { tokens.push(tok); }
-		tokens.reverse(); // parser needs in reverse order for faster popping vs shift
-
-		p = new VParser(tokens, options);
-		p.parse();
-
-		c = new VCompiler(p.ast, markup, exports.helpers.constructor, options);
-
-		cmp = c.generate();
-		cmp = c.assemble( cmp );
-		return cmp;
-	};
 
 	return exports;
 }({}));
