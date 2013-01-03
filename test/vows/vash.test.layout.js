@@ -323,7 +323,6 @@ vows.describe('vash templating library layout').addBatch({
 					var includedPath = this.installTplAt( 'i.vash', '@html.block("content", function(){ <p></p> })')
 						,tpl = vash.compile( '@html.extend("layout",function(){ @html.append("footer", function(){ @html.include("i") }) })' )
 
-					debugger;
 					var actual = tpl( this.opts({ cache: true }) )
 
 					assert.equal( actual, '<p></p>' );

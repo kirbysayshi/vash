@@ -221,48 +221,6 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// VASH.LINK
-	// Reconstitute precompiled functions
-
-	vash['link'] = function( cmpFunc, Helpers ){
-		Helpers = Helpers || vash.helpers.constructor;
-
-		var linked = function( model, opts ){
-
-			// allow for signature: model, callback
-			if( typeof opts === 'function' ) {
-				opts = { onRenderEnd: opts };
-			}
-
-			opts = opts || {};
-
-			// allow for passing in onRenderEnd via model
-			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
-				opts.onRenderEnd = model.onRenderEnd;
-			}
-
-			if( model && model.onRenderEnd ){
-				delete model.onRenderEnd;
-			}
-
-			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts );
-		}
-
-		linked.toString = function(){
-			return cmpFunc.toString();
-		}
-
-		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + ' )';
-		}
-
-		return linked;
-	}
-
-	// VASH.LINK
-	///////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////
 	// ERROR REPORTING
 
 	// Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
@@ -296,4 +254,96 @@
 	helpers.reportError = function() {
 		this.constructor.reportError.apply( this, arguments );
 	};
+
+	// ERROR REPORTING
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.LINK
+	// Reconstitute precompiled functions
+
+	vash['link'] = function( cmpFunc, modelName, helpersName ){
+
+		var joined;
+
+		if( typeof cmpFunc === 'string' ){
+			joined = cmpFunc;
+			try {
+				cmpFunc = new Function(modelName, helpersName, '__vopts', 'vash', joined);
+			} catch(e){
+				helpers.reportError(e, 0, 0, joined, /\n/);
+			}
+		}
+
+		// need this to enable `vash.batch` to reconstitute
+		cmpFunc.options = { modelName: modelName, helpersName: helpersName };
+
+		var linked = function( model, opts ){
+
+			// allow for signature: model, callback
+			if( typeof opts === 'function' ) {
+				opts = { onRenderEnd: opts };
+			}
+
+			opts = opts || {};
+
+			// allow for passing in onRenderEnd via model
+			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			if( model && model.onRenderEnd ){
+				delete model.onRenderEnd;
+			}
+
+			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
+		};
+
+		linked.toString = function(){
+			return cmpFunc.toString();
+		};
+
+		linked.toClientString = function(){
+			return 'vash.link( ' + cmpFunc.toString() + ', "' + modelName + '", "' + helpersName + '" )';
+		};
+
+		return linked;
+	};
+
+	// VASH.LINK
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// TPL CACHE
+
+	vash.lookup = function( path, model ){
+		var tpl = vash.helpers.tplcache[path];
+		if( !tpl ){ throw new Error('Could not find template: ' + path); }
+		if( model ){ return tpl(model); }
+		else return tpl;
+	};
+
+	vash.install = function( path, tpl ){
+		var cache = vash.helpers.tplcache;
+		if( typeof tpl === 'string' ){
+			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
+			tpl = vash.compile(tpl);
+		}
+		return cache[path] = tpl;
+	};
+
+	vash.uninstall = function( path ){
+		var  cache = vash.helpers.tplcache
+			,deleted = false;
+
+		if( typeof path === 'string' ){
+			return delete cache[path];
+		} else {
+			Object.keys(cache).forEach(function(key){
+				if( cache[key] === path ){ deleted = delete cache[key]; }
+			})
+			return deleted;
+		}
+	};
+
 }());

@@ -5,7 +5,7 @@ var vows = require('vows')
 	,vm = require('vm')
 
 	,program = require('commander')
-	,vash = require('../../build/vash')
+	,vash = require( path.join(__dirname, '..', '..', 'build', 'vash') )
 	,vruntime
 
 program
@@ -39,8 +39,9 @@ vows.describe('vash templating library runtime').addBatch({
 
 		,'of a linked function returns the generated function': function( tpl ){
 
-			var result = tpl.toString().match(/^function anonymous\(model,html,__vopts\)/g);
-			assert.equal( ( result || [''] )[0], 'function anonymous(model,html,__vopts)' )
+			var  test = 'function anonymous(model,html,__vopts,vash)'
+				,result = tpl.toString().indexOf(test);
+			assert.strictEqual( result, 0, test )
 		}
 
 		,'using .toClientString returns vash.link': function( tpl ){
@@ -55,6 +56,75 @@ vows.describe('vash templating library runtime').addBatch({
 				,actual = vm.runInNewContext( client, { vash: vruntime } );
 
 			assert.equal( actual.toString(), tpl().toString() );
+		}
+
+		,'.toClientString, vash.link loop disobeys thermodynamics': function( tpl ){
+			var  client = tpl.toClientString() + '.toClientString()'
+				,actual = vm.runInNewContext( client, { vash: vruntime } );
+
+			assert.equal( actual, tpl.toClientString() );
+		}
+	}
+
+	,'installation': {
+
+		topic: ''
+
+		,'batched': function(){
+			var str =
+				 '@vash.batch("div", function(){<div>@model</div>})'
+				+'@vash.batch("a", function(){<a>@model</a>})'
+
+			var  tpl = vash.compile(str)
+				,model = 'm';
+
+			assert.equal( tpl(), '' );
+			assert.equal( vash.lookup('div')(model), '<div>m</div>' );
+			assert.equal( vash.lookup('a')(model), '<a>m</a>' );
+		}
+
+		,'vash.batch throws in standalone runtime': function(){
+
+			assert.throws(function(){
+				vm.runInNewContext( 'vash.batch()', { vash: vruntime } );
+			}, (/has no method ['"]batch['"]/g));
+		}
+
+		,'uninstalling removes': function(){
+			var  str = '<p></p>'
+				,tpl = vash.compile(str);
+
+			vash.install('testpath', tpl);
+
+			assert.equal( vash.lookup('testpath')(), str );
+			vash.uninstall('testpath');
+			assert.throws( function(){
+				vash.lookup('testpath');
+			}, (/Could not find template: testpath/))
+		}
+
+		,'installing with string auto-compiles': function(){
+			var  str = '<p></p>'
+				,tpl = vash.install('testpath', str);
+
+			assert.equal( tpl(), str );
+		}
+
+		,'installing with string throws if only runtime': function(){
+			var str = 'vash.install("testpath", "<p></p>")'
+
+			assert.throws(function(){
+				vm.runInNewContext( str, { vash: vruntime } );
+			}, (/not available/g));
+		}
+
+		,'lookup can execute with model': function(){
+			var  str = '<p>@model.what</p>'
+				,tpl = vash.compile(str);
+
+			vash.install('testpath', tpl);
+			assert.equal( vash.lookup('testpath', { what: 'how' }), '<p>how</p>' );
+			vash.uninstall('testpath');
 		}
 	}
 

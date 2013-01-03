@@ -56,11 +56,39 @@
 		p = new VParser(tokens, options);
 		p.parse();
 
-		c = new VCompiler(p.ast, markup, exports.helpers.constructor, options);
+		c = new VCompiler(p.ast, markup, options);
 
 		cmp = c.generate();
-		cmp = c.assemble( cmp );
 		return cmp;
+	};
+
+	exports['batch'] = function batch(path, cb){
+
+		var caller = batch.caller;
+
+		function _batch(path, cb){
+
+			var  reFuncHead = /^function\s*\([^)]*?\)\s*{/
+				,reFuncTail = /\}$/
+
+				,str = cb.toString()
+					.replace(reFuncHead, '')
+					.replace(reFuncTail, '')
+
+				,callOpts = caller.options
+
+			var cmp = new VCompiler([], '', callOpts);
+
+			str = cmp.wrapBody( str );
+			vash.install( path, vash.link( str, callOpts.modelName, callOpts.helpersName ) );
+		}
+
+		if( vash.compile ) {
+			exports['batch'] = _batch;
+			return exports['batch'](path, cb);
+		} else {
+			throw new Error('vash.batch is not available in the standalone runtime.');
+		}
 	};
 
 	/************** Begin injected code from build script */

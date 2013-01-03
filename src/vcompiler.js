@@ -1,9 +1,8 @@
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
-function VCompiler(ast, originalMarkup, Helpers, options){
+function VCompiler(ast, originalMarkup, options){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
-	this.Helpers = Helpers || vash.helpers.constructor;
 	this.options = options || {};
 
 	this.reQuote = /(["'])/gi
@@ -173,17 +172,8 @@ VCP.generate = function(){
 		console.log(joined);
 	}
 
-	try {
-		this.cmpFunc = new Function(options.modelName, options.helpersName, '__vopts', joined);
-	} catch(e){
-		this.Helpers.reportError(e, 0, 0, joined, /\n/)
-	}
-
-	return this.compiledFunc;
-}
-
-VCP.assemble = function( cmpFunc ){
-	return vash.link( cmpFunc || this.cmpFunc, this.Helpers );
+	this.cmpFunc = vash.link( joined, options.modelName, options.helpersName );
+	return this.cmpFunc;
 }
 
 VCompiler.noop = function(){}
