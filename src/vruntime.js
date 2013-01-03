@@ -3,32 +3,31 @@
 
 	vash = typeof vash === 'undefined' ? {} : vash;
 
-	if(!vash.compile && typeof define === 'function' && define['amd']){
-		define(function(){ return vash }); // AMD
-	} else if(!vash.compile && typeof module === 'object' && module['exports']){
-		module['exports'] = vash; // NODEJS
-	} else if(!vash.compile){
-		window['vash'] = vash; // BROWSER
+	// only fully define if this is standalone
+	if(!vash.compile){
+		if(typeof define === 'function' && define['amd']){
+			define(function(){ return vash }); // AMD
+		} else if(typeof module === 'object' && module['exports']){
+			module['exports'] = vash; // NODEJS
+		} else {
+			window['vash'] = vash; // BROWSER
+		}
 	}
 
-	var helpers = vash['helpers']
-		,Helpers
-		,Buffer;
+	var helpers = vash['helpers'];
 
-	if ( !helpers ) {
-		Helpers = function ( model ) {
-			this.buffer = new Buffer();
-			this.model  = model;
+	var Helpers = function ( model ) {
+		this.buffer = new Buffer();
+		this.model  = model;
 
-			this.vl = 0;
-			this.vc = 0;
-		};
+		this.vl = 0;
+		this.vc = 0;
+	};
 
-		vash['helpers']
-			= helpers
-			= Helpers.prototype
-			= { constructor: Helpers, config: {}, tplcache: {} };
-	}
+	vash['helpers']
+		= helpers
+		= Helpers.prototype
+		= { constructor: Helpers, config: {}, tplcache: {} };
 
 	// this allows a template to return the context, and coercion
 	// will handle it
@@ -49,9 +48,6 @@
 			,"'": "&#x27;"
 			,"`": "&#x60;"
 		};
-
-
-	// raw: explicitly prevent an expression or value from being HTML escaped.
 
 	helpers.raw = function( val ) {
 		var func = function() { return val; };
@@ -92,7 +88,7 @@
 	// These are to be used from within helpers, to allow for manipulation of
 	// output in a sane manner.
 
-	Buffer = function() {
+	var Buffer = function() {
 		this._vo = [];
 	}
 
@@ -146,7 +142,7 @@
 
 		for( var i = 0; i < this._vo.length; i++ ){
 			if( this._vo[i] == str ){
-					return i;
+				return i;
 			}
 		}
 
