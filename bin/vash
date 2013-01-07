@@ -47,13 +47,13 @@ function ugly(tplStr, options){
 	return tplStr;
 }
 
-function execute(tpl, options){
+function render(tpl, options){
 	var model = {};
 
-	if( options.execute ){
+	if( options.render ){
 
-		if( options.execute !== true ){
-			model = JSON.parse( options.execute );
+		if( options.render !== true ){
+			model = JSON.parse( options.render );
 		}
 
 		return tpl(model);
@@ -74,8 +74,8 @@ function stdin(options){
 	process.stdin.on('end', function(){
 		var tpl = vash.compile(buffer, options.vopts);
 
-		if( options.execute ){
-			tpl = execute(tpl, options);
+		if( options.render ){
+			tpl = render(tpl, options);
 		} else {
 			tpl = prefix( options.autolink
 				? tpl.toClientString()
@@ -98,8 +98,8 @@ function file(filepath, options){
 			).replace(/\/|\\/g, options.separator)
 		)
 
-	if( options.execute ){
-		tpl = execute(tpl, options);
+	if( options.render ){
+		tpl = render(tpl, options);
 	} else {
 		tpl = prefix( options.autolink
 			? tpl.toClientString()
