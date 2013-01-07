@@ -113,14 +113,14 @@
 			// mark current point in buffer in prep to grab rendered content
 			m = this.buffer.mark();
 
-			prepends && prepends.forEach(function(p){ self.buffer.push( p ); });
+			prepends && prepends.forEach(function(p){ self.buffer.pushConcat( p ); });
 
 			// a block might never have a callback defined, e.g. is optional
 			// with no default content
 			block = blocks.pop();
-			block && this.buffer.push( block );
+			block && this.buffer.pushConcat( block );
 
-			appends && appends.forEach(function(a){ self.buffer.push( a ); });
+			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
 			// grab rendered content
 			content = this.buffer.fromMark( m );
