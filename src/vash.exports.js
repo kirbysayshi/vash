@@ -68,7 +68,7 @@
 
 		function _batch(path, cb){
 
-			var  reFuncHead = /^function\s*\([^)]*?\)\s*{/
+			var  reFuncHead = /^function[^(]*?\([^)]*?\)\s*{/
 				,reFuncTail = /\}$/
 
 				,str = cb.toString()
