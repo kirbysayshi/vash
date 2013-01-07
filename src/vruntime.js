@@ -269,9 +269,12 @@
 	// VASH.LINK
 	// Reconstitute precompiled functions
 
-	vash['link'] = function( cmpFunc, modelName, helpersName ){
+	vash['link'] = function( cmpFunc, options ){
 
-		var joined;
+		var joined
+			,modelName = options.modelName
+			,helpersName = options.helpersName
+			,simple = options.simple;
 
 		if( typeof cmpFunc === 'string' ){
 			joined = cmpFunc;
@@ -283,9 +286,17 @@
 		}
 
 		// need this to enable `vash.batch` to reconstitute
-		cmpFunc.options = { modelName: modelName, helpersName: helpersName };
+		cmpFunc.options = { simple: simple, modelName: modelName, helpersName: helpersName };
 
 		var linked = function( model, opts ){
+			if( simple ){
+				var ctx = {
+					 buffer: []
+					,escape: Helpers.prototype.escape
+					,raw: Helpers.prototype.raw
+				}
+				return cmpFunc( model, ctx, opts, vash );
+			}
 
 			// allow for signature: model, callback
 			if( typeof opts === 'function' ) {
@@ -311,7 +322,7 @@
 		};
 
 		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + ', "' + modelName + '", "' + helpersName + '" )';
+			return 'vash.link( ' + cmpFunc.toString() + JSON.stringify( cmpFunc.options ) + ' )';
 		};
 
 		return linked;

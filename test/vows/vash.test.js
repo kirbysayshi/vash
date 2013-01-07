@@ -1496,6 +1496,37 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'simple': {
+
+		topic: function(){
+			return '<p>@model</p>'
+		}
+
+		,'renders': function( topic ){
+			var tpl = vash.compile(topic, { simple: true });
+			console.log( tpl.toString() );
+			assert.equal( tpl('YES'), '<p>YES</p>' );
+		}
+
+		,'html escaping': {
+			topic: ''
+
+			,'is ignored via `raw`': function(){
+				var str = '<p>@html.raw(model)</p>'
+					,tpl = vash.compile( str, { simple: true, htmlEscape: true } )
+
+				assert.equal( tpl('<br />'), '<p><br /></p>');
+			}
+
+			,'works': function(){
+				var str = '<p>@model</p>'
+					,tpl = vash.compile( str, { simple: true, htmlEscape: true } )
+
+				assert.equal( tpl('<br />'), '<p>&lt;br /&gt;</p>');
+			}
+		}
+	}
+
 	/*,'implicit compilation': {
 
 		'is valid': {

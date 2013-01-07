@@ -135,14 +135,16 @@ VCP.wrapBody = function(body){
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
 	var foot = ''
-		+ '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
-		+ 'return (__vopts && __vopts.asContext) \n'
-		+ '  ? HELPERSNAME \n'
-		+ '  : HELPERSNAME.toString(); \n'
+		+ (options.simple
+			? 'return HELPERSNAME.buffer.join(""); \n'
+			: '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
+				+ 'return (__vopts && __vopts.asContext) \n'
+				+ '  ? HELPERSNAME \n'
+				+ '  : HELPERSNAME.toString(); \n' )
+		+ (options.useWith ? '} \n' : '')
 		+ (options.debug ? '} catch( e ){ \n'
 			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
-			+ '} \n' : '')
-		+ (options.useWith ? '} \n' : '');
+			+ '} \n' : '');
 
 	head = this.replaceDevTokens( head );
 	foot = this.replaceDevTokens( foot )
@@ -172,7 +174,7 @@ VCP.generate = function(){
 		console.log(joined);
 	}
 
-	this.cmpFunc = vash.link( joined, options.modelName, options.helpersName );
+	this.cmpFunc = vash.link( joined, options );
 	return this.cmpFunc;
 }
 

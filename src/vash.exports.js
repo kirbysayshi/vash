@@ -26,6 +26,7 @@
 		,"debug": true
 		,"debugParser": false
 		,"debugCompiler": false
+		,"simple": false
 
 		,"favorText": false
 
