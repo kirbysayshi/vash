@@ -32,7 +32,8 @@
 	// this allows a template to return the context, and coercion
 	// will handle it
 	helpers.toString = helpers.toHtmlString = function(){
-		return this.buffer.toString();
+		// not calling buffer.toString() results in 2x speedup
+		return this.buffer._vo.join('');//.toString();
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -291,14 +292,14 @@
 				opts = { onRenderEnd: opts };
 			}
 
-			opts = opts || {};
-
 			// allow for passing in onRenderEnd via model
-			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
-				opts.onRenderEnd = model.onRenderEnd;
-			}
-
 			if( model && model.onRenderEnd ){
+				opts = opts || {};
+
+				if( !opts.onRenderEnd ){
+					opts.onRenderEnd = model.onRenderEnd;
+				}
+
 				delete model.onRenderEnd;
 			}
 
