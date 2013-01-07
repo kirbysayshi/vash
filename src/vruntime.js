@@ -129,6 +129,10 @@
 	};
 
 	Buffer.prototype.push = function( buffer ) {
+		return this._vo.push( buffer );
+	};
+
+	Buffer.prototype.pushConcat = function( buffer ){
 		if( buffer instanceof Array ) {
 			this._vo.push.apply( this._vo, buffer );
 		} else if ( arguments.length > 1 ) {
@@ -136,7 +140,9 @@
 		} else {
 			this._vo.push( buffer );
 		}
-	};
+
+		return this.__vo;
+	}
 
 	Buffer.prototype.indexOf = function( str ){
 
