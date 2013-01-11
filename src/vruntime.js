@@ -338,15 +338,7 @@
 		// need this to enable `vash.batch` to reconstitute
 		cmpFunc.options = { simple: simple, modelName: modelName, helpersName: helpersName };
 
-		var linked = function( model, opts ){
-			if( simple ){
-				var ctx = {
-					 buffer: []
-					,escape: Helpers.prototype.escape
-					,raw: Helpers.prototype.raw
-				}
-				return cmpFunc( model, ctx, opts, vash );
-			}
+		function divineTplOptions( model, opts ){
 
 			// allow for signature: model, callback
 			if( typeof opts === 'function' ) {
@@ -364,6 +356,20 @@
 				delete model.onRenderEnd;
 			}
 
+			return opts;
+		}
+
+		var linked = function( model, opts ){
+			if( simple ){
+				var ctx = {
+					 buffer: []
+					,escape: Helpers.prototype.escape
+					,raw: Helpers.prototype.raw
+				}
+				return cmpFunc( model, ctx, opts, vash );
+			}
+
+			opts = divineTplOptions( model, opts );
 			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
 		};
 
