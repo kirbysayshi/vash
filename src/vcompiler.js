@@ -182,7 +182,7 @@ VCP.generate = function(){
 		console.log(joined);
 	}
 
-	this.cmpFunc = vash.link( joined, options );
+	this.cmpFunc = vash.link( undefined, joined, options );
 	return this.cmpFunc;
 }
 

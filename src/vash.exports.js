@@ -82,7 +82,7 @@
 
 			str = cmp.addHead( str );
 			str = cmp.addFoot( str );
-			vash.install( path, vash.link( str, callOpts ) );
+			vash.install( path, vash.link( undefined, str, callOpts ) );
 		}
 
 		if( vash.compile ) {

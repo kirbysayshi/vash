@@ -289,27 +289,10 @@
 			+ 'var ' + callOpts.helpersName + ' = this; \n'
 		body = head + body;
 
-		args.push(body);
-		var cmpFunc = Function.apply(null, args);
+		args.push( body );
+		var cmpFunc = Function.apply( null, args );
 
-		helpers.link(name, cmpFunc, callOpts);
-	}
-
-	helpers.link = function(name, func, opts){
-
-		var linked = function(){
-			var args = [vash].concat(slice.call(arguments));
-			return func.apply(this, args);
-		}
-
-		linked.toString = function(){ return func.toString(); }
-		linked._toString = function(){ return Function.prototype.toString.call(linked) }
-		linked.options = opts;
-		helpers[name] = linked;
-
-		linked.toClientString = function(){
-			return 'vash.helpers.link("' + name + '",' + func.toString() + ',' + JSON.stringify(opts) + '); \n';
-		}
+		vash.link( name, cmpFunc, callOpts );
 	}
 
 	// HELPER INSTALLATION
@@ -319,70 +302,114 @@
 	// VASH.LINK
 	// Reconstitute precompiled functions
 
-	vash['link'] = function( cmpFunc, options ){
+	// given a model and options, allow for various tpl signatures and options:
+	// ( model, {} )
+	// ( model, function onRenderEnd(){} )
+	// ( model )
+	// and model.onRenderEnd
+	function divineTplOptions( model, opts ){
 
-		var joined
-			,modelName = options.modelName
-			,helpersName = options.helpersName
-			,simple = options.simple;
+		// allow for signature: model, callback
+		if( typeof opts === 'function' ) {
+			opts = { onRenderEnd: opts };
+		}
+
+		// allow for passing in onRenderEnd via model
+		if( model && model.onRenderEnd ){
+			opts = opts || {};
+
+			if( !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			delete model.onRenderEnd;
+		}
+
+		return opts;
+	}
+
+	// if name is defined, the target is assumed to be a helper, and is
+	// "installed" at vash.helpers[name]. If falsy, the target is
+	// assumed to be a typical template and is just returned
+	vash.link = function( name, cmpFunc, options ){
+
+		var  originalFunc
+			,cmpOpts;
+
+		if( name && options.args ){
+			// if it's a helper, `vash` is always first argument, followed by
+			// user-defined arguments
+			options.args.unshift( 'vash' );
+		}
+
+		if( !options.args ){
+			// every template has these arguments
+			options.args = [options.modelName, options.helpersName, '__vopts', 'vash'];
+		}
 
 		if( typeof cmpFunc === 'string' ){
-			joined = cmpFunc;
+			originalFunc = cmpFunc;
+
 			try {
-				cmpFunc = new Function(modelName, helpersName, '__vopts', 'vash', joined);
-			} catch(e){
-				helpers.reportError(e, 0, 0, joined, /\n/);
+				// do not pollute the args array for later attachment to the compiled
+				// function for later decompilation/linking
+				cmpOpts = options.args.slice();
+				cmpOpts.push(cmpFunc);
+				cmpFunc = Function.apply(null, cmpOpts);
+			} catch(e) {
+				// TODO: add flag to reportError to know if it's at compile time or runtime
+				helpers.reportError(e, 0, 0, originalFunc, /\n/);
 			}
 		}
 
-		// need this to enable `vash.batch` to reconstitute
-		cmpFunc.options = { simple: simple, modelName: modelName, helpersName: helpersName };
-
-		function divineTplOptions( model, opts ){
-
-			// allow for signature: model, callback
-			if( typeof opts === 'function' ) {
-				opts = { onRenderEnd: opts };
-			}
-
-			// allow for passing in onRenderEnd via model
-			if( model && model.onRenderEnd ){
-				opts = opts || {};
-
-				if( !opts.onRenderEnd ){
-					opts.onRenderEnd = model.onRenderEnd;
-				}
-
-				delete model.onRenderEnd;
-			}
-
-			return opts;
+		// need this to enable decompilation / relinking
+		cmpFunc.options = {
+			 simple: options.simple
+			,modelName: options.modelName
+			,helpersName: options.helpersName
 		}
 
-		var linked = function( model, opts ){
-			if( simple ){
-				var ctx = {
-					 buffer: []
-					,escape: Helpers.prototype.escape
-					,raw: Helpers.prototype.raw
-				}
-				return cmpFunc( model, ctx, opts, vash );
+		var linked;
+
+		if( name ){
+
+			linked = function(){
+				// `vash` is always first arg of helper
+				var args = [vash].concat(slice.call(arguments));
+				return cmpFunc.apply(this, args);
 			}
 
-			opts = divineTplOptions( model, opts );
-			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
-		};
+			helpers[name] = linked;
 
-		linked.toString = function(){
-			return cmpFunc.toString();
-		};
+		} else {
+
+			linked = function( model, opts ){
+				if( options.simple ){
+					var ctx = {
+						 buffer: []
+						,escape: Helpers.prototype.escape
+						,raw: Helpers.prototype.raw
+					}
+					return cmpFunc( model, ctx, opts, vash );
+				}
+
+				opts = divineTplOptions( model, opts );
+				return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
+			}
+		}
+
+		linked.toString = function(){ return cmpFunc.toString(); }
+		linked._toString = function(){ return Function.prototype.toString.call(linked) }
 
 		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + ', ' + JSON.stringify( cmpFunc.options ) + ' )';
-		};
+			return 'vash.link( '
+				+ (name ? '"' + name + '"' : '0') + ', '
+				+ cmpFunc.toString() + ', '
+				+ JSON.stringify( cmpFunc.options ) + ' )';
+		}
 
 		return linked;
-	};
+	}
 
 	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////
