@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.15-1896
+ * Vash - JavaScript Template Parser, v0.5.15-2033
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.15-1896";
+	exports["version"] = "0.5.15-2033";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -35,6 +35,7 @@
 		,"debug": true
 		,"debugParser": false
 		,"debugCompiler": false
+		,"simple": false
 
 		,"favorText": false
 
@@ -77,7 +78,7 @@
 
 		function _batch(path, cb){
 
-			var  reFuncHead = /^function\s*\([^)]*?\)\s*{/
+			var  reFuncHead = /^function[^(]*?\([^)]*?\)\s*{/
 				,reFuncTail = /\}$/
 
 				,str = cb.toString()
@@ -88,8 +89,9 @@
 
 			var cmp = new VCompiler([], '', callOpts);
 
-			str = cmp.wrapBody( str );
-			vash.install( path, vash.link( str, callOpts.modelName, callOpts.helpersName ) );
+			str = cmp.addHead( str );
+			str = cmp.addFoot( str );
+			vash.install( path, vash.link( undefined, str, callOpts ) );
 		}
 
 		if( vash.compile ) {
@@ -135,7 +137,8 @@
 	// this allows a template to return the context, and coercion
 	// will handle it
 	helpers.toString = helpers.toHtmlString = function(){
-		return this.buffer.toString();
+		// not calling buffer.toString() results in 2x speedup
+		return this.buffer._vo.join('');//.toString();
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -152,7 +155,7 @@
 			,"`": "&#x60;"
 		};
 
-	helpers.raw = function( val ) {
+	helpers['raw'] = function( val ) {
 		var func = function() { return val; };
 
 		val = val != null ? val : "";
@@ -163,7 +166,7 @@
 		};
 	};
 
-	helpers.escape = function( val ) {
+	helpers['escape'] = function( val ) {
 		var	func = function() { return val; };
 
 		val = val != null ? val : "";
@@ -232,6 +235,10 @@
 	};
 
 	Buffer.prototype.push = function( buffer ) {
+		return this._vo.push( buffer );
+	};
+
+	Buffer.prototype.pushConcat = function( buffer ){
 		if( buffer instanceof Array ) {
 			this._vo.push.apply( this._vo, buffer );
 		} else if ( arguments.length > 1 ) {
@@ -239,7 +246,9 @@
 		} else {
 			this._vo.push( buffer );
 		}
-	};
+
+		return this.__vo;
+	}
 
 	Buffer.prototype.indexOf = function( str ){
 
@@ -354,7 +363,7 @@
 		throw e;
 	};
 
-	helpers.reportError = function() {
+	helpers['reportError'] = function() {
 		this.constructor.reportError.apply( this, arguments );
 	};
 
@@ -362,56 +371,150 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
+	// HELPER INSTALLATION
+
+	var  slice = Array.prototype.slice
+		,reFuncHead = /^function([^(]*?)\(([^)]*?)\)\s*{/
+		,reFuncTail = /\}$/
+
+	helpers['register'] = function reg( name, func ){
+		var fstr = func.toString()
+			,callOpts = reg.caller.options;
+
+		var  def = fstr.match(reFuncHead)
+			,args = def[2].split(',').map(function(arg){ return arg.replace(' ', '') })
+			,body = fstr
+				.replace( reFuncHead, '' )
+				.replace( reFuncTail, '' )
+
+		args.unshift( 'vash' );
+
+		var head = 'var __vbuffer = this.buffer; \n'
+			+ 'var ' + callOpts.modelName + ' = this.model; \n'
+			+ 'var ' + callOpts.helpersName + ' = this; \n'
+		body = head + body;
+
+		args.push( body );
+		var cmpFunc = Function.apply( null, args );
+
+		vash.link( name, cmpFunc, callOpts );
+	}
+
+	// HELPER INSTALLATION
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
 	// VASH.LINK
 	// Reconstitute precompiled functions
 
-	vash['link'] = function( cmpFunc, modelName, helpersName ){
+	// given a model and options, allow for various tpl signatures and options:
+	// ( model, {} )
+	// ( model, function onRenderEnd(){} )
+	// ( model )
+	// and model.onRenderEnd
+	function divineRuntimeTplOptions( model, opts ){
 
-		var joined;
-
-		if( typeof cmpFunc === 'string' ){
-			joined = cmpFunc;
-			try {
-				cmpFunc = new Function(modelName, helpersName, '__vopts', 'vash', joined);
-			} catch(e){
-				helpers.reportError(e, 0, 0, joined, /\n/);
-			}
+		// allow for signature: model, callback
+		if( typeof opts === 'function' ) {
+			opts = { onRenderEnd: opts };
 		}
 
-		// need this to enable `vash.batch` to reconstitute
-		cmpFunc.options = { modelName: modelName, helpersName: helpersName };
-
-		var linked = function( model, opts ){
-
-			// allow for signature: model, callback
-			if( typeof opts === 'function' ) {
-				opts = { onRenderEnd: opts };
-			}
-
+		// allow for passing in onRenderEnd via model
+		if( model && model.onRenderEnd ){
 			opts = opts || {};
 
-			// allow for passing in onRenderEnd via model
-			if( model && model.onRenderEnd && opts && !opts.onRenderEnd ){
+			if( !opts.onRenderEnd ){
 				opts.onRenderEnd = model.onRenderEnd;
 			}
 
-			if( model && model.onRenderEnd ){
-				delete model.onRenderEnd;
+			delete model.onRenderEnd;
+		}
+
+		return opts;
+	}
+
+	// if name is defined, the target is assumed to be a helper, and is
+	// "installed" at vash.helpers[name]. If falsy, the target is
+	// assumed to be a typical template and is just returned
+	vash['link'] = function( name, cmpFunc, options ){
+
+		var  originalFunc
+			,cmpOpts;
+
+		if( name && options.args ){
+			// if it's a helper, `vash` is always first argument, followed by
+			// user-defined arguments
+			options.args.unshift( 'vash' );
+		}
+
+		if( !options.args ){
+			// every template has these arguments
+			options.args = [options.modelName, options.helpersName, '__vopts', 'vash'];
+		}
+
+		if( typeof cmpFunc === 'string' ){
+			originalFunc = cmpFunc;
+
+			try {
+				// do not pollute the args array for later attachment to the compiled
+				// function for later decompilation/linking
+				cmpOpts = options.args.slice();
+				cmpOpts.push(cmpFunc);
+				cmpFunc = Function.apply(null, cmpOpts);
+			} catch(e) {
+				// TODO: add flag to reportError to know if it's at compile time or runtime
+				helpers.reportError(e, 0, 0, originalFunc, /\n/);
+			}
+		}
+
+		// need this to enable decompilation / relinking
+		cmpFunc.options = {
+			 simple: options.simple
+			,modelName: options.modelName
+			,helpersName: options.helpersName
+		}
+
+		var linked;
+
+		if( name ){
+
+			linked = function(){
+				// `vash` is always first arg of helper
+				var args = [vash].concat(slice.call(arguments));
+				return cmpFunc.apply(this, args);
 			}
 
-			return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
-		};
+			helpers[name] = linked;
 
-		linked.toString = function(){
-			return cmpFunc.toString();
-		};
+		} else {
 
-		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + ', "' + modelName + '", "' + helpersName + '" )';
-		};
+			linked = function( model, opts ){
+				if( options.simple ){
+					var ctx = {
+						 buffer: []
+						,escape: Helpers.prototype.escape
+						,raw: Helpers.prototype.raw
+					}
+					return cmpFunc( model, ctx, opts, vash );
+				}
+
+				opts = divineRuntimeTplOptions( model, opts );
+				return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
+			}
+		}
+
+		linked['toString'] = function(){ return cmpFunc.toString(); }
+		linked['_toString'] = function(){ return Function.prototype.toString.call(linked) }
+
+		linked['toClientString'] = function(){
+			return 'vash.link( '
+				+ (name ? '"' + name + '"' : '0') + ', '
+				+ cmpFunc.toString() + ', '
+				+ JSON.stringify( cmpFunc.options ) + ' )';
+		}
 
 		return linked;
-	};
+	}
 
 	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////
@@ -419,14 +522,14 @@
 	///////////////////////////////////////////////////////////////////////////
 	// TPL CACHE
 
-	vash.lookup = function( path, model ){
+	vash['lookup'] = function( path, model ){
 		var tpl = vash.helpers.tplcache[path];
 		if( !tpl ){ throw new Error('Could not find template: ' + path); }
 		if( model ){ return tpl(model); }
 		else return tpl;
 	};
 
-	vash.install = function( path, tpl ){
+	vash['install'] = function( path, tpl ){
 		var cache = vash.helpers.tplcache;
 		if( typeof tpl === 'string' ){
 			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
@@ -435,7 +538,7 @@
 		return cache[path] = tpl;
 	};
 
-	vash.uninstall = function( path ){
+	vash['uninstall'] = function( path ){
 		var  cache = vash.helpers.tplcache
 			,deleted = false;
 
@@ -610,14 +713,14 @@
 			// mark current point in buffer in prep to grab rendered content
 			m = this.buffer.mark();
 
-			prepends && prepends.forEach(function(p){ self.buffer.push( p ); });
+			prepends && prepends.forEach(function(p){ self.buffer.pushConcat( p ); });
 
 			// a block might never have a callback defined, e.g. is optional
 			// with no default content
 			block = blocks.pop();
-			block && this.buffer.push( block );
+			block && this.buffer.pushConcat( block );
 
-			appends && appends.forEach(function(a){ self.buffer.push( a ); });
+			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
 			// grab rendered content
 			content = this.buffer.fromMark( m );
@@ -1858,7 +1961,7 @@ VCP.replaceDevTokens = function( str ){
 		.replace( this.reModelName, this.options.modelName );
 }
 
-VCP.wrapBody = function(body){
+VCP.addHead = function(body){
 
 	var options = this.options;
 
@@ -1868,21 +1971,30 @@ VCP.wrapBody = function(body){
 		+ 'MODELNAME = MODELNAME || {}; \n'
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
+	head = this.replaceDevTokens( head );
+	return head + body;
+}
+
+VCP.addFoot = function(body){
+
+	var options = this.options;
+
 	var foot = ''
-		+ '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
-		+ 'return (__vopts && __vopts.asContext) \n'
-		+ '  ? HELPERSNAME \n'
-		+ '  : HELPERSNAME.toString(); \n'
+		+ (options.simple
+			? 'return HELPERSNAME.buffer.join(""); \n'
+			: '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
+				+ 'return (__vopts && __vopts.asContext) \n'
+				+ '  ? HELPERSNAME \n'
+				+ '  : HELPERSNAME.toString(); \n' )
+		+ (options.useWith ? '} \n' : '')
 		+ (options.debug ? '} catch( e ){ \n'
 			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
-			+ '} \n' : '')
-		+ (options.useWith ? '} \n' : '');
+			+ '} \n' : '');
 
-	head = this.replaceDevTokens( head );
 	foot = this.replaceDevTokens( foot )
 		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
 
-	return head + body + foot;
+	return body + foot;
 }
 
 VCP.generate = function(){
@@ -1900,13 +2012,14 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = this.wrapBody( joined );
+	joined = this.addHead( joined );
+	joined = this.addFoot( joined );
 
 	if(options.debugCompiler){
 		console.log(joined);
 	}
 
-	this.cmpFunc = vash.link( joined, options.modelName, options.helpersName );
+	this.cmpFunc = vash.link( undefined, joined, options );
 	return this.cmpFunc;
 }
 
