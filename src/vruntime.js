@@ -307,7 +307,7 @@
 	// ( model, function onRenderEnd(){} )
 	// ( model )
 	// and model.onRenderEnd
-	function divineTplOptions( model, opts ){
+	function divineRuntimeTplOptions( model, opts ){
 
 		// allow for signature: model, callback
 		if( typeof opts === 'function' ) {
@@ -393,7 +393,7 @@
 					return cmpFunc( model, ctx, opts, vash );
 				}
 
-				opts = divineTplOptions( model, opts );
+				opts = divineRuntimeTplOptions( model, opts );
 				return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
 			}
 		}
