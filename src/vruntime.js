@@ -50,7 +50,7 @@
 			,"`": "&#x60;"
 		};
 
-	helpers.raw = function( val ) {
+	helpers['raw'] = function( val ) {
 		var func = function() { return val; };
 
 		val = val != null ? val : "";
@@ -61,7 +61,7 @@
 		};
 	};
 
-	helpers.escape = function( val ) {
+	helpers['escape'] = function( val ) {
 		var	func = function() { return val; };
 
 		val = val != null ? val : "";
@@ -258,7 +258,7 @@
 		throw e;
 	};
 
-	helpers.reportError = function() {
+	helpers['reportError'] = function() {
 		this.constructor.reportError.apply( this, arguments );
 	};
 
@@ -272,7 +272,7 @@
 		,reFuncHead = /^function([^(]*?)\(([^)]*?)\)\s*{/
 		,reFuncTail = /\}$/
 
-	helpers.register = function reg( name, func ){
+	helpers['register'] = function reg( name, func ){
 		var fstr = func.toString()
 			,callOpts = reg.caller.options;
 
@@ -331,7 +331,7 @@
 	// if name is defined, the target is assumed to be a helper, and is
 	// "installed" at vash.helpers[name]. If falsy, the target is
 	// assumed to be a typical template and is just returned
-	vash.link = function( name, cmpFunc, options ){
+	vash['link'] = function( name, cmpFunc, options ){
 
 		var  originalFunc
 			,cmpOpts;
@@ -398,10 +398,10 @@
 			}
 		}
 
-		linked.toString = function(){ return cmpFunc.toString(); }
-		linked._toString = function(){ return Function.prototype.toString.call(linked) }
+		linked['toString'] = function(){ return cmpFunc.toString(); }
+		linked['_toString'] = function(){ return Function.prototype.toString.call(linked) }
 
-		linked.toClientString = function(){
+		linked['toClientString'] = function(){
 			return 'vash.link( '
 				+ (name ? '"' + name + '"' : '0') + ', '
 				+ cmpFunc.toString() + ', '
@@ -417,14 +417,14 @@
 	///////////////////////////////////////////////////////////////////////////
 	// TPL CACHE
 
-	vash.lookup = function( path, model ){
+	vash['lookup'] = function( path, model ){
 		var tpl = vash.helpers.tplcache[path];
 		if( !tpl ){ throw new Error('Could not find template: ' + path); }
 		if( model ){ return tpl(model); }
 		else return tpl;
 	};
 
-	vash.install = function( path, tpl ){
+	vash['install'] = function( path, tpl ){
 		var cache = vash.helpers.tplcache;
 		if( typeof tpl === 'string' ){
 			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
@@ -433,7 +433,7 @@
 		return cache[path] = tpl;
 	};
 
-	vash.uninstall = function( path ){
+	vash['uninstall'] = function( path ){
 		var  cache = vash.helpers.tplcache
 			,deleted = false;
 
