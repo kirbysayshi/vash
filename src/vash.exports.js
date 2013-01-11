@@ -80,8 +80,9 @@
 
 			var cmp = new VCompiler([], '', callOpts);
 
-			str = cmp.wrapBody( str );
-			vash.install( path, vash.link( str, callOpts.modelName, callOpts.helpersName ) );
+			str = cmp.addHead( str );
+			str = cmp.addFoot( str );
+			vash.install( path, vash.link( str, callOpts ) );
 		}
 
 		if( vash.compile ) {
