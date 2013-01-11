@@ -124,7 +124,7 @@ VCP.replaceDevTokens = function( str ){
 		.replace( this.reModelName, this.options.modelName );
 }
 
-VCP.wrapBody = function(body){
+VCP.addHead = function(body){
 
 	var options = this.options;
 
@@ -133,6 +133,14 @@ VCP.wrapBody = function(body){
 		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
 		+ 'MODELNAME = MODELNAME || {}; \n'
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
+
+	head = this.replaceDevTokens( head );
+	return head + body;
+}
+
+VCP.addFoot = function(body){
+
+	var options = this.options;
 
 	var foot = ''
 		+ (options.simple
@@ -146,11 +154,10 @@ VCP.wrapBody = function(body){
 			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '');
 
-	head = this.replaceDevTokens( head );
 	foot = this.replaceDevTokens( foot )
 		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
 
-	return head + body + foot;
+	return body + foot;
 }
 
 VCP.generate = function(){
@@ -168,7 +175,8 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = this.wrapBody( joined );
+	joined = this.addHead( joined );
+	joined = this.addFoot( joined );
 
 	if(options.debugCompiler){
 		console.log(joined);
