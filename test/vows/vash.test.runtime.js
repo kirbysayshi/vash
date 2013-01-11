@@ -30,6 +30,54 @@ vows.describe('vash templating library runtime').addBatch({
 		}
 	}
 
+	,'helpers': {
+
+		topic: '@html.register("fn", function(id){'
+			+ '@{ this.fnCounter = this.fnCounter || 0; }'
+			+ '@{ this.fnIds = this.fnIds || {}; }'
+			+ '@{ this.fnIds[id] = ++this.fnCounter; }'
+			+ '<sup id="fnref:@this.fnCounter"><a rel="footnote" href="#fn:@this.fnCounter">@this.fnCounter</a></sup>'
+			+ '})'
+
+		,'can be defined at runtime': function(topic){
+
+			var helpers = vash.compile(topic);
+			helpers();
+
+			assert.ok( vash.helpers.fn );
+
+			var str = '@html.fn("one") @html.fn("two")'
+				,tpl = vash.compile(str);
+
+			var  ctx = tpl({}, { asContext: true })
+				,rendered = ctx.toString();
+
+			assert.equal( ctx.fnCounter, 2 );
+			assert.equal( ctx.fnIds.one, 1 );
+			assert.equal( ctx.fnIds.two, 2 );
+			assert.ok( rendered.indexOf('fnref:1') > -1, 'expect indexOf fnref:1 to be > -1' );
+			assert.ok( rendered.indexOf('fnref:2') > -1, 'expect indexOf fnref:2 to be > -1' );
+			delete vash.helpers.fn;
+		}
+
+		,'can be decompiled and relinked': function(topic){
+
+			var helpers = vash.compile(topic);
+			helpers();
+
+			assert.ok( vash.helpers.fn );
+
+			var  str = vash.compile('@html.fn("one") @html.fn("two")').toClientString() + '()'
+				,client = vash.helpers.fn.toClientString() + '; \n' + str
+
+			var actual = vm.runInNewContext( client, { vash: vruntime } );
+
+			assert.ok( actual.indexOf('fnref:1') > -1, 'expect indexOf fnref:1 to be > -1' );
+			assert.ok( actual.indexOf('fnref:2') > -1, 'expect indexOf fnref:2 to be > -1' );
+		}
+
+	}
+
 	,'decompilation': {
 
 		topic: function(){
@@ -54,6 +102,7 @@ vows.describe('vash templating library runtime').addBatch({
 
 			var  client = tpl.toClientString() + '()'
 				,actual = vm.runInNewContext( client, { vash: vruntime } );
+
 
 			assert.equal( actual.toString(), tpl().toString() );
 		}

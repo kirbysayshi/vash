@@ -266,6 +266,56 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
+	// HELPER INSTALLATION
+
+	var  slice = Array.prototype.slice
+		,reFuncHead = /^function([^(]*?)\(([^)]*?)\)\s*{/
+		,reFuncTail = /\}$/
+
+	helpers.register = function reg( name, func ){
+		var fstr = func.toString()
+			,callOpts = reg.caller.options;
+
+		var  def = fstr.match(reFuncHead)
+			,args = def[2].split(',').map(function(arg){ return arg.replace(' ', '') })
+			,body = fstr
+				.replace( reFuncHead, '' )
+				.replace( reFuncTail, '' )
+
+		args.unshift( 'vash' );
+
+		var head = 'var __vbuffer = this.buffer; \n'
+			+ 'var ' + callOpts.modelName + ' = this.model; \n'
+			+ 'var ' + callOpts.helpersName + ' = this; \n'
+		body = head + body;
+
+		args.push(body);
+		var cmpFunc = Function.apply(null, args);
+
+		helpers.link(name, cmpFunc, callOpts);
+	}
+
+	helpers.link = function(name, func, opts){
+
+		var linked = function(){
+			var args = [vash].concat(slice.call(arguments));
+			return func.apply(this, args);
+		}
+
+		linked.toString = function(){ return func.toString(); }
+		linked._toString = function(){ return Function.prototype.toString.call(linked) }
+		linked.options = opts;
+		helpers[name] = linked;
+
+		linked.toClientString = function(){
+			return 'vash.helpers.link("' + name + '",' + func.toString() + ',' + JSON.stringify(opts) + '); \n';
+		}
+	}
+
+	// HELPER INSTALLATION
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
 	// VASH.LINK
 	// Reconstitute precompiled functions
 
@@ -322,7 +372,7 @@
 		};
 
 		linked.toClientString = function(){
-			return 'vash.link( ' + cmpFunc.toString() + JSON.stringify( cmpFunc.options ) + ' )';
+			return 'vash.link( ' + cmpFunc.toString() + ', ' + JSON.stringify( cmpFunc.options ) + ' )';
 		};
 
 		return linked;
