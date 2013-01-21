@@ -429,6 +429,12 @@
 		if( typeof tpl === 'string' ){
 			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
 			tpl = vash.compile(tpl);
+		} else if( typeof path === 'object' ){
+			tpl = path;
+			Object.keys(tpl).forEach(function(path){
+				cache[path] = tpl[path];
+			});
+			return cache;
 		}
 		return cache[path] = tpl;
 	};
