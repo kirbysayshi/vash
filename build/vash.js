@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.15-2033
+ * Vash - JavaScript Template Parser, v0.5.16-2083
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.15-2033";
+	exports["version"] = "0.5.16-2083";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -72,35 +72,106 @@
 		return cmp;
 	};
 
-	exports['batch'] = function batch(path, cb){
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.BATCH
+	//
+	// Allow multiple templates to be contained within the same string.
+	// Templates are separated via a sourceURL-esque string:
+	//
+	// //@batch = tplname/or/path
+	//
+	// The separator is forgiving in terms of whitespace:
+	//
+	// // @      batch=tplname/or/path
+	//
+	// Is just as valid.
+	//
+	// Returns the compiled templates as named properties of an object.
 
-		var caller = batch.caller;
+	exports['batch'] = function(markup, options){
 
-		function _batch(path, cb){
+		var tpls = splitByNamedTpl(markup).batch;
 
-			var  reFuncHead = /^function[^(]*?\([^)]*?\)\s*{/
-				,reFuncTail = /\}$/
-
-				,str = cb.toString()
-					.replace(reFuncHead, '')
-					.replace(reFuncTail, '')
-
-				,callOpts = caller.options
-
-			var cmp = new VCompiler([], '', callOpts);
-
-			str = cmp.addHead( str );
-			str = cmp.addFoot( str );
-			vash.install( path, vash.link( undefined, str, callOpts ) );
+		if(tpls){
+			Object.keys(tpls).forEach(function(path){
+				tpls[path] = vash.compile(tpls[path], options);
+			});
 		}
 
-		if( vash.compile ) {
-			exports['batch'] = _batch;
-			return exports['batch'](path, cb);
-		} else {
-			throw new Error('vash.batch is not available in the standalone runtime.');
-		}
-	};
+		return tpls;
+	}
+
+	// do the actual work of splitting the string via the batch separator
+	var splitByNamedTpl = function(markup){
+
+		var  reSourceMap = /^\/\/\s*@\s*(batch|helper)\s*=\s*(.*?)$/
+			,lines = markup.split(/[\n\r]/g)
+			,tpls = {
+				 batch: {}
+				,helper: {}
+			}
+			,paths = []
+			,currentPath = ''
+			,typePointer = tpls.batch;
+
+		lines.forEach(function(line, idx, arr){
+			var  pathResult = reSourceMap.exec(line)
+				,atEnd = idx === arr.length - 1;
+
+			if(!pathResult || atEnd){
+				tpls[typePointer][currentPath].push(line);
+			}
+
+			if((pathResult || atEnd) && currentPath){
+				tpls[typePointer][currentPath] = tpls[typePointer][currentPath].join('\n');
+			}
+
+			if(pathResult){
+				typePointer = pathResult[1];
+				currentPath = pathResult[2].replace(/^\s+|\s+$/, '');
+				tpls[typePointer][currentPath] = [];
+			}
+		});
+
+		return tpls;
+	}
+
+	// VASH.BATCH
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// HELPER INSTALLATION
+
+	var  slice = Array.prototype.slice
+		,reFuncHead = /^vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
+		,reFuncTail = /\}$/
+
+	exports['compileHelper'] = function reg(str, options){
+
+		options = options || {};
+
+			// replace leading/trailing spaces, and parse the function head
+		var  def = str.replace(/^\s+|\s+$/, '').match(reFuncHead)
+			// split the function arguments, kill all whitespace
+			,args = def[3].split(',').map(function(arg){ return arg.replace(' ', '') })
+			,name = def[1]
+			,body = str
+				.replace( reFuncHead, '' )
+				.replace( reFuncTail, '' )
+
+		// wrap body in @{} to simulate it actually being inside a function definition.
+		// without this, expressions such as `this.what = "what"` will be
+		// interpreted as markup.
+		body = '@{' + body + '}';
+
+		// `args` and `asHelper` inform `vash.compile/link` that this is a helper
+		options.args = args;
+		options.asHelper = name;
+		vash.compile(body, options);
+	}
+
+	// HELPER INSTALLATION
+	///////////////////////////////////////////////////////////////////////////
 
 	/************** Begin injected code from build script */
 	/*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
@@ -371,81 +442,21 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// HELPER INSTALLATION
-
-	var  slice = Array.prototype.slice
-		,reFuncHead = /^function([^(]*?)\(([^)]*?)\)\s*{/
-		,reFuncTail = /\}$/
-
-	helpers['register'] = function reg( name, func ){
-		var fstr = func.toString()
-			,callOpts = reg.caller.options;
-
-		var  def = fstr.match(reFuncHead)
-			,args = def[2].split(',').map(function(arg){ return arg.replace(' ', '') })
-			,body = fstr
-				.replace( reFuncHead, '' )
-				.replace( reFuncTail, '' )
-
-		args.unshift( 'vash' );
-
-		var head = 'var __vbuffer = this.buffer; \n'
-			+ 'var ' + callOpts.modelName + ' = this.model; \n'
-			+ 'var ' + callOpts.helpersName + ' = this; \n'
-		body = head + body;
-
-		args.push( body );
-		var cmpFunc = Function.apply( null, args );
-
-		vash.link( name, cmpFunc, callOpts );
-	}
-
-	// HELPER INSTALLATION
-	///////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////
 	// VASH.LINK
-	// Reconstitute precompiled functions
+	// Take a compiled string or function and "link" it to the current vash
+	// runtime. This is necessary to allow instantiation of `Helpers` and
+	// proper decompilation via `toClientString`.
+	//
+	// If `options.asHelper` and `options.args` are defined, the `cmpFunc` is
+	// interpreted as a compiled helper, and is attached to `vash.helpers` at
+	// a property name equal to `options.asHelper`.
 
-	// given a model and options, allow for various tpl signatures and options:
-	// ( model, {} )
-	// ( model, function onRenderEnd(){} )
-	// ( model )
-	// and model.onRenderEnd
-	function divineRuntimeTplOptions( model, opts ){
+	vash['link'] = function( cmpFunc, options ){
 
-		// allow for signature: model, callback
-		if( typeof opts === 'function' ) {
-			opts = { onRenderEnd: opts };
-		}
-
-		// allow for passing in onRenderEnd via model
-		if( model && model.onRenderEnd ){
-			opts = opts || {};
-
-			if( !opts.onRenderEnd ){
-				opts.onRenderEnd = model.onRenderEnd;
-			}
-
-			delete model.onRenderEnd;
-		}
-
-		return opts;
-	}
-
-	// if name is defined, the target is assumed to be a helper, and is
-	// "installed" at vash.helpers[name]. If falsy, the target is
-	// assumed to be a typical template and is just returned
-	vash['link'] = function( name, cmpFunc, options ){
+		// TODO: allow options.filename to be used as sourceUrl?
 
 		var  originalFunc
 			,cmpOpts;
-
-		if( name && options.args ){
-			// if it's a helper, `vash` is always first argument, followed by
-			// user-defined arguments
-			options.args.unshift( 'vash' );
-		}
 
 		if( !options.args ){
 			// every template has these arguments
@@ -476,15 +487,16 @@
 
 		var linked;
 
-		if( name ){
+		if( options.asHelper ){
+
+			cmpFunc.options.args = options.args;
+			cmpFunc.options.asHelper = options.asHelper;
 
 			linked = function(){
-				// `vash` is always first arg of helper
-				var args = [vash].concat(slice.call(arguments));
-				return cmpFunc.apply(this, args);
+				return cmpFunc.apply(this, slice.call(arguments));
 			}
 
-			helpers[name] = linked;
+			helpers[options.asHelper] = linked;
 
 		} else {
 
@@ -503,18 +515,49 @@
 			}
 		}
 
+		// show the template-specific code, instead of the generic linked function
 		linked['toString'] = function(){ return cmpFunc.toString(); }
+
+		// shortcut to show the actual linked function
 		linked['_toString'] = function(){ return Function.prototype.toString.call(linked) }
 
 		linked['toClientString'] = function(){
 			return 'vash.link( '
-				+ (name ? '"' + name + '"' : '0') + ', '
 				+ cmpFunc.toString() + ', '
 				+ JSON.stringify( cmpFunc.options ) + ' )';
 		}
 
 		return linked;
 	}
+
+	// given a model and options, allow for various tpl signatures and options:
+	// ( model, {} )
+	// ( model, function onRenderEnd(){} )
+	// ( model )
+	// and model.onRenderEnd
+	function divineRuntimeTplOptions( model, opts ){
+
+		// allow for signature: model, callback
+		if( typeof opts === 'function' ) {
+			opts = { onRenderEnd: opts };
+		}
+
+		// allow for passing in onRenderEnd via model
+		if( model && model.onRenderEnd ){
+			opts = opts || {};
+
+			if( !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			delete model.onRenderEnd;
+		}
+
+		return opts;
+	}
+
+	// shortcut for compiled helpers
+	var slice = Array.prototype.slice;
 
 	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////
@@ -534,6 +577,12 @@
 		if( typeof tpl === 'string' ){
 			if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
 			tpl = vash.compile(tpl);
+		} else if( typeof path === 'object' ){
+			tpl = path;
+			Object.keys(tpl).forEach(function(path){
+				cache[path] = tpl[path];
+			});
+			return cache;
 		}
 		return cache[path] = tpl;
 	};
@@ -1975,6 +2024,20 @@ VCP.addHead = function(body){
 	return head + body;
 }
 
+VCP.addHelperHead = function(body){
+
+	var options = this.options;
+
+	var head = ''
+		+ (options.debug ? 'try { \n' : '')
+		+ 'var __vbuffer = this.buffer; \n'
+		+ 'var MODELNAME = this.model; \n'
+		+ 'var HELPERSNAME = this; \n';
+
+	head = this.replaceDevTokens( head );
+	return head + body;
+}
+
 VCP.addFoot = function(body){
 
 	var options = this.options;
@@ -1987,6 +2050,21 @@ VCP.addFoot = function(body){
 				+ '  ? HELPERSNAME \n'
 				+ '  : HELPERSNAME.toString(); \n' )
 		+ (options.useWith ? '} \n' : '')
+		+ (options.debug ? '} catch( e ){ \n'
+			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+			+ '} \n' : '');
+
+	foot = this.replaceDevTokens( foot )
+		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
+
+	return body + foot;
+}
+
+VCP.addHelperFoot = function(body){
+
+	var options = this.options;
+
+	var foot = ''
 		+ (options.debug ? '} catch( e ){ \n'
 			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '');
@@ -2012,14 +2090,20 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = this.addHead( joined );
-	joined = this.addFoot( joined );
+	if(!options.asHelper){
+		joined = this.addHead( joined );
+		joined = this.addFoot( joined );
+	} else {
+		joined = this.addHelperHead( joined );
+		joined = this.addHelperFoot( joined );
+	}
 
 	if(options.debugCompiler){
 		console.log(joined);
+		console.log(options);
 	}
 
-	this.cmpFunc = vash.link( undefined, joined, options );
+	this.cmpFunc = vash.link( joined, options );
 	return this.cmpFunc;
 }
 
