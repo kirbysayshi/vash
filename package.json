@@ -26,11 +26,7 @@
 		"uglify-js": "1.0.6"
 	},
 	"devDependencies": {
-		"benchmark": ">=0.2.2",
-		"dot": ">=0.1.7",
-		"express": "3.0.0rc4",
 		"vows": "~0.6.4",
-		"jshtml": ">=0.2.2",
 		"semver": ">=1.0.0",
 		"underscore": ">=v1.3.3",
 		"request": "2.9",
