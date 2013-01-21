@@ -948,6 +948,12 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)(), '<img src="" />' );
 		}
 	}
+	,'self closing html tag with expression': {
+		topic: '<img src="@model.a" />'
+		,'allows expression': function(topic){
+			assert.equal( vash.compile(topic)({ a: 'a' }), '<img src="a" />' );
+		}
+	}
 	,'nested self closing html tag inside block': {
 		topic: function(){
 			var str = '@if(true) { <li><img src="" /></li> \n}';
@@ -1504,7 +1510,6 @@ vows.describe('vash templating library').addBatch({
 
 		,'renders': function( topic ){
 			var tpl = vash.compile(topic, { simple: true });
-			console.log( tpl.toString() );
 			assert.equal( tpl('YES'), '<p>YES</p>' );
 		}
 
@@ -1524,6 +1529,64 @@ vows.describe('vash templating library').addBatch({
 
 				assert.equal( tpl('<br />'), '<p>&lt;br /&gt;</p>');
 			}
+		}
+	}
+
+	,'batched': {
+
+		topic: '//@batch = div \n<div>@model</div>\n'
+			+'// @batch = a \n<a>@model</a>'
+
+		,'installs each tpl': function(topic){
+			var  tpls = vash.batch(topic)
+				,model = 'm';
+
+			vash.install(tpls);
+
+			assert.equal( vash.lookup('div')(model), '<div>m</div>' );
+			assert.equal( vash.lookup('a')(model), '<a>m</a>' );
+
+			vash.uninstall('div');
+			vash.uninstall('a');
+		}
+	}
+
+	,'compiled helpers': {
+
+		topic: 'vash.helpers.fn = function(id, ctn){'
+			+ 'this.fnCounter = this.fnCounter || 0;'
+			+ 'this.fnIds = this.fnIds || {};'
+			+ 'this.fnCtn = this.fnCtn || {};'
+			+ '  if(ctn){'
+			+ '    <li id="fn:@id">'
+			+ '      @ctn()'
+			+ '      <a rev="footnote" href="#fnref:@id">↩</a>'
+			+ '  	</li>'
+			+ '  } else {'
+			+ '    this.fnIds[id] = ++this.fnCounter;'
+			+ '    <sup id="fnref:@id">'
+			+ '    <a rel="footnote" href="#fn:@id">@html.raw(this.fnCounter)</a>'
+			+ '    </sup>'
+			+ '  }'
+			+ '}'
+
+		,'can be defined': function(topic){
+
+			vash.compileHelper(topic);
+			assert.ok( vash.helpers.fn );
+
+			var str = '@html.fn("one") @html.fn("two")'
+				,tpl = vash.compile(str);
+
+			var  ctx = tpl({}, { asContext: true })
+				,rendered = ctx.toString();
+
+			assert.equal( ctx.fnCounter, 2 );
+			assert.equal( ctx.fnIds.one, 1 );
+			assert.equal( ctx.fnIds.two, 2 );
+			assert.ok( rendered.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
+			assert.ok( rendered.indexOf('fnref:two') > -1, 'expect indexOf fnref:two to be > -1' );
+			delete vash.helpers.fn;
 		}
 	}
 

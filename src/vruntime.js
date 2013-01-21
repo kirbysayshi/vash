@@ -266,81 +266,21 @@
 	///////////////////////////////////////////////////////////////////////////
 
 	///////////////////////////////////////////////////////////////////////////
-	// HELPER INSTALLATION
-
-	var  slice = Array.prototype.slice
-		,reFuncHead = /^function([^(]*?)\(([^)]*?)\)\s*{/
-		,reFuncTail = /\}$/
-
-	helpers['register'] = function reg( name, func ){
-		var fstr = func.toString()
-			,callOpts = reg.caller.options;
-
-		var  def = fstr.match(reFuncHead)
-			,args = def[2].split(',').map(function(arg){ return arg.replace(' ', '') })
-			,body = fstr
-				.replace( reFuncHead, '' )
-				.replace( reFuncTail, '' )
-
-		args.unshift( 'vash' );
-
-		var head = 'var __vbuffer = this.buffer; \n'
-			+ 'var ' + callOpts.modelName + ' = this.model; \n'
-			+ 'var ' + callOpts.helpersName + ' = this; \n'
-		body = head + body;
-
-		args.push( body );
-		var cmpFunc = Function.apply( null, args );
-
-		vash.link( name, cmpFunc, callOpts );
-	}
-
-	// HELPER INSTALLATION
-	///////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////
 	// VASH.LINK
-	// Reconstitute precompiled functions
+	// Take a compiled string or function and "link" it to the current vash
+	// runtime. This is necessary to allow instantiation of `Helpers` and
+	// proper decompilation via `toClientString`.
+	//
+	// If `options.asHelper` and `options.args` are defined, the `cmpFunc` is
+	// interpreted as a compiled helper, and is attached to `vash.helpers` at
+	// a property name equal to `options.asHelper`.
 
-	// given a model and options, allow for various tpl signatures and options:
-	// ( model, {} )
-	// ( model, function onRenderEnd(){} )
-	// ( model )
-	// and model.onRenderEnd
-	function divineRuntimeTplOptions( model, opts ){
+	vash['link'] = function( cmpFunc, options ){
 
-		// allow for signature: model, callback
-		if( typeof opts === 'function' ) {
-			opts = { onRenderEnd: opts };
-		}
-
-		// allow for passing in onRenderEnd via model
-		if( model && model.onRenderEnd ){
-			opts = opts || {};
-
-			if( !opts.onRenderEnd ){
-				opts.onRenderEnd = model.onRenderEnd;
-			}
-
-			delete model.onRenderEnd;
-		}
-
-		return opts;
-	}
-
-	// if name is defined, the target is assumed to be a helper, and is
-	// "installed" at vash.helpers[name]. If falsy, the target is
-	// assumed to be a typical template and is just returned
-	vash['link'] = function( name, cmpFunc, options ){
+		// TODO: allow options.filename to be used as sourceUrl?
 
 		var  originalFunc
 			,cmpOpts;
-
-		if( name && options.args ){
-			// if it's a helper, `vash` is always first argument, followed by
-			// user-defined arguments
-			options.args.unshift( 'vash' );
-		}
 
 		if( !options.args ){
 			// every template has these arguments
@@ -371,15 +311,16 @@
 
 		var linked;
 
-		if( name ){
+		if( options.asHelper ){
+
+			cmpFunc.options.args = options.args;
+			cmpFunc.options.asHelper = options.asHelper;
 
 			linked = function(){
-				// `vash` is always first arg of helper
-				var args = [vash].concat(slice.call(arguments));
-				return cmpFunc.apply(this, args);
+				return cmpFunc.apply(this, slice.call(arguments));
 			}
 
-			helpers[name] = linked;
+			helpers[options.asHelper] = linked;
 
 		} else {
 
@@ -398,18 +339,49 @@
 			}
 		}
 
+		// show the template-specific code, instead of the generic linked function
 		linked['toString'] = function(){ return cmpFunc.toString(); }
+
+		// shortcut to show the actual linked function
 		linked['_toString'] = function(){ return Function.prototype.toString.call(linked) }
 
 		linked['toClientString'] = function(){
 			return 'vash.link( '
-				+ (name ? '"' + name + '"' : '0') + ', '
 				+ cmpFunc.toString() + ', '
 				+ JSON.stringify( cmpFunc.options ) + ' )';
 		}
 
 		return linked;
 	}
+
+	// given a model and options, allow for various tpl signatures and options:
+	// ( model, {} )
+	// ( model, function onRenderEnd(){} )
+	// ( model )
+	// and model.onRenderEnd
+	function divineRuntimeTplOptions( model, opts ){
+
+		// allow for signature: model, callback
+		if( typeof opts === 'function' ) {
+			opts = { onRenderEnd: opts };
+		}
+
+		// allow for passing in onRenderEnd via model
+		if( model && model.onRenderEnd ){
+			opts = opts || {};
+
+			if( !opts.onRenderEnd ){
+				opts.onRenderEnd = model.onRenderEnd;
+			}
+
+			delete model.onRenderEnd;
+		}
+
+		return opts;
+	}
+
+	// shortcut for compiled helpers
+	var slice = Array.prototype.slice;
 
 	// VASH.LINK
 	///////////////////////////////////////////////////////////////////////////

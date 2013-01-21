@@ -138,6 +138,20 @@ VCP.addHead = function(body){
 	return head + body;
 }
 
+VCP.addHelperHead = function(body){
+
+	var options = this.options;
+
+	var head = ''
+		+ (options.debug ? 'try { \n' : '')
+		+ 'var __vbuffer = this.buffer; \n'
+		+ 'var MODELNAME = this.model; \n'
+		+ 'var HELPERSNAME = this; \n';
+
+	head = this.replaceDevTokens( head );
+	return head + body;
+}
+
 VCP.addFoot = function(body){
 
 	var options = this.options;
@@ -150,6 +164,21 @@ VCP.addFoot = function(body){
 				+ '  ? HELPERSNAME \n'
 				+ '  : HELPERSNAME.toString(); \n' )
 		+ (options.useWith ? '} \n' : '')
+		+ (options.debug ? '} catch( e ){ \n'
+			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+			+ '} \n' : '');
+
+	foot = this.replaceDevTokens( foot )
+		.replace( this.reOriginalMarkup, this.escapeForDebug( this.originalMarkup ) );
+
+	return body + foot;
+}
+
+VCP.addHelperFoot = function(body){
+
+	var options = this.options;
+
+	var foot = ''
 		+ (options.debug ? '} catch( e ){ \n'
 			+ '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
 			+ '} \n' : '');
@@ -175,14 +204,20 @@ VCP.generate = function(){
 		.split("MKP(").join( "__vbuffer.push(")
 		.split(")MKP").join("); \n");
 
-	joined = this.addHead( joined );
-	joined = this.addFoot( joined );
+	if(!options.asHelper){
+		joined = this.addHead( joined );
+		joined = this.addFoot( joined );
+	} else {
+		joined = this.addHelperHead( joined );
+		joined = this.addHelperFoot( joined );
+	}
 
 	if(options.debugCompiler){
 		console.log(joined);
+		console.log(options);
 	}
 
-	this.cmpFunc = vash.link( undefined, joined, options );
+	this.cmpFunc = vash.link( joined, options );
 	return this.cmpFunc;
 }
 

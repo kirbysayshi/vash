@@ -19,7 +19,7 @@ vash.config.debug = false;
 
 vows.describe('vash templating library runtime').addBatch({
 
-	'default helpers': {
+	'default runtime helpers': {
 
 		'highlight': {
 			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
@@ -28,54 +28,6 @@ vows.describe('vash templating library runtime').addBatch({
 				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
 			}
 		}
-	}
-
-	,'helpers': {
-
-		topic: '@html.register("fn", function(id){'
-			+ '@{ this.fnCounter = this.fnCounter || 0; }'
-			+ '@{ this.fnIds = this.fnIds || {}; }'
-			+ '@{ this.fnIds[id] = ++this.fnCounter; }'
-			+ '<sup id="fnref:@this.fnCounter"><a rel="footnote" href="#fn:@this.fnCounter">@this.fnCounter</a></sup>'
-			+ '})'
-
-		,'can be defined at runtime': function(topic){
-
-			var helpers = vash.compile(topic);
-			helpers();
-
-			assert.ok( vash.helpers.fn );
-
-			var str = '@html.fn("one") @html.fn("two")'
-				,tpl = vash.compile(str);
-
-			var  ctx = tpl({}, { asContext: true })
-				,rendered = ctx.toString();
-
-			assert.equal( ctx.fnCounter, 2 );
-			assert.equal( ctx.fnIds.one, 1 );
-			assert.equal( ctx.fnIds.two, 2 );
-			assert.ok( rendered.indexOf('fnref:1') > -1, 'expect indexOf fnref:1 to be > -1' );
-			assert.ok( rendered.indexOf('fnref:2') > -1, 'expect indexOf fnref:2 to be > -1' );
-			delete vash.helpers.fn;
-		}
-
-		,'can be decompiled and relinked': function(topic){
-
-			var helpers = vash.compile(topic);
-			helpers();
-
-			assert.ok( vash.helpers.fn );
-
-			var  str = vash.compile('@html.fn("one") @html.fn("two")').toClientString() + '()'
-				,client = vash.helpers.fn.toClientString() + '; \n' + str
-
-			var actual = vm.runInNewContext( client, { vash: vruntime } );
-
-			assert.ok( actual.indexOf('fnref:1') > -1, 'expect indexOf fnref:1 to be > -1' );
-			assert.ok( actual.indexOf('fnref:2') > -1, 'expect indexOf fnref:2 to be > -1' );
-		}
-
 	}
 
 	,'decompilation': {
@@ -103,7 +55,6 @@ vows.describe('vash templating library runtime').addBatch({
 			var  client = tpl.toClientString() + '()'
 				,actual = vm.runInNewContext( client, { vash: vruntime } );
 
-
 			assert.equal( actual.toString(), tpl().toString() );
 		}
 
@@ -118,26 +69,6 @@ vows.describe('vash templating library runtime').addBatch({
 	,'installation': {
 
 		topic: ''
-
-		,'batched': function(){
-			var str =
-				 '@vash.batch("div", function(){<div>@model</div>})'
-				+'@vash.batch("a", function(){<a>@model</a>})'
-
-			var  tpl = vash.compile(str)
-				,model = 'm';
-
-			assert.equal( tpl(), '' );
-			assert.equal( vash.lookup('div')(model), '<div>m</div>' );
-			assert.equal( vash.lookup('a')(model), '<a>m</a>' );
-		}
-
-		,'vash.batch throws in standalone runtime': function(){
-
-			assert.throws(function(){
-				vm.runInNewContext( 'vash.batch()', { vash: vruntime } );
-			}, (/has no method ['"]batch['"]/g));
-		}
 
 		,'uninstalling removes': function(){
 			var  str = '<p></p>'
@@ -159,6 +90,22 @@ vows.describe('vash templating library runtime').addBatch({
 			assert.equal( tpl(), str );
 		}
 
+		,'installing with object installs each separately': function(){
+			var  p = '<p></p>'
+				,li = '<li></li>'
+				,obj = {
+					 p: vash.compile(p)
+					,li: vash.compile(li)
+				}
+				,tpl = vash.install(obj);
+
+			assert.equal( vash.lookup('p')(), p );
+			assert.equal( vash.lookup('li')(), li );
+
+			vash.uninstall('p');
+			vash.uninstall('li');
+		}
+
 		,'installing with string throws if only runtime': function(){
 			var str = 'vash.install("testpath", "<p></p>")'
 
@@ -174,6 +121,40 @@ vows.describe('vash templating library runtime').addBatch({
 			vash.install('testpath', tpl);
 			assert.equal( vash.lookup('testpath', { what: 'how' }), '<p>how</p>' );
 			vash.uninstall('testpath');
+		}
+	}
+
+	,'compiled helpers': {
+
+		topic: 'vash.helpers.fn = function(id, ctn){'
+			+ 'this.fnCounter = this.fnCounter || 0;'
+			+ 'this.fnIds = this.fnIds || {};'
+			+ 'this.fnCtn = this.fnCtn || {};'
+			+ '  if(ctn){'
+			+ '    <li id="fn:@id">'
+			+ '      @ctn()'
+			+ '      <a rev="footnote" href="#fnref:@id">↩</a>'
+			+ '  	</li>'
+			+ '  } else {'
+			+ '    this.fnIds[id] = ++this.fnCounter;'
+			+ '    <sup id="fnref:@id">'
+			+ '    <a rel="footnote" href="#fn:@id">@html.raw(this.fnCounter)</a>'
+			+ '    </sup>'
+			+ '  }'
+			+ '}'
+
+		,'can be decompiled and relinked': function(topic){
+
+			vash.compileHelper(topic);
+			assert.ok( vash.helpers.fn );
+
+			var  str = vash.compile('@html.fn("one") @html.fn("two")').toClientString() + '()'
+				,client = vash.helpers.fn.toClientString() + '; \n' + str
+
+			var actual = vm.runInNewContext( client, { vash: vruntime } );
+
+			assert.ok( actual.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
+			assert.ok( actual.indexOf('fnref:two') > -1, 'expect indexOf fnref:two to be > -1' );
 		}
 	}
 

@@ -63,35 +63,107 @@
 		return cmp;
 	};
 
-	exports['batch'] = function batch(path, cb){
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.BATCH
+	//
+	// Allow multiple templates to be contained within the same string.
+	// Templates are separated via a sourceURL-esque string:
+	//
+	// //@batch = tplname/or/path
+	//
+	// The separator is forgiving in terms of whitespace:
+	//
+	// // @      batch=tplname/or/path
+	//
+	// Is just as valid.
+	//
+	// Returns the compiled templates as named properties of an object.
 
-		var caller = batch.caller;
+	exports['batch'] = function(markup, options){
 
-		function _batch(path, cb){
+		var tpls = splitByNamedTpl(markup).batch;
 
-			var  reFuncHead = /^function[^(]*?\([^)]*?\)\s*{/
-				,reFuncTail = /\}$/
-
-				,str = cb.toString()
-					.replace(reFuncHead, '')
-					.replace(reFuncTail, '')
-
-				,callOpts = caller.options
-
-			var cmp = new VCompiler([], '', callOpts);
-
-			str = cmp.addHead( str );
-			str = cmp.addFoot( str );
-			vash.install( path, vash.link( undefined, str, callOpts ) );
+		if(tpls){
+			Object.keys(tpls).forEach(function(path){
+				tpls[path] = vash.compile(tpls[path], options);
+			});
 		}
 
-		if( vash.compile ) {
-			exports['batch'] = _batch;
-			return exports['batch'](path, cb);
-		} else {
-			throw new Error('vash.batch is not available in the standalone runtime.');
-		}
-	};
+		return tpls;
+	}
+
+	// do the actual work of splitting the string via the batch separator
+	var splitByNamedTpl = function(markup){
+
+		var  reSourceMap = /^\/\/\s*@\s*(batch|helper)\s*=\s*(.*?)$/
+			,lines = markup.split(/[\n\r]/g)
+			,tpls = {
+				 batch: {}
+				,helper: {}
+			}
+			,paths = []
+			,currentPath = ''
+			,typePointer = tpls.batch;
+
+		lines.forEach(function(line, idx, arr){
+			var  pathResult = reSourceMap.exec(line)
+				,atEnd = idx === arr.length - 1;
+
+			if(!pathResult || atEnd){
+				tpls[typePointer][currentPath].push(line);
+			}
+
+			if((pathResult || atEnd) && currentPath){
+				tpls[typePointer][currentPath] = tpls[typePointer][currentPath].join('\n');
+			}
+
+			if(pathResult){
+				typePointer = pathResult[1];
+				currentPath = pathResult[2].replace(/^\s+|\s+$/, '');
+				tpls[typePointer][currentPath] = [];
+			}
+		});
+
+		return tpls;
+	}
+
+	// VASH.BATCH
+	///////////////////////////////////////////////////////////////////////////
+
+	///////////////////////////////////////////////////////////////////////////
+	// HELPER INSTALLATION
+
+	var  slice = Array.prototype.slice
+		,reFuncHead = /^vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
+		,reFuncTail = /\}$/
+
+	exports['compileHelper'] = function reg(str, options){
+
+		options = options || {};
+
+			// replace leading/trailing spaces, and parse the function head
+		var  def = str.replace(/^\s+|\s+$/, '').match(reFuncHead)
+			// split the function arguments, kill all whitespace
+			,args = def[3].split(',').map(function(arg){ return arg.replace(' ', '') })
+			,name = def[1]
+			,body = str
+				.replace( reFuncHead, '' )
+				.replace( reFuncTail, '' )
+
+		// Wrap body in @{} to simulate it actually being inside a function
+		// definition, since we manually stripped it. Without this, statements
+		// such as `this.what = "what";` that are at the beginning of the body
+		// will be interpreted as markup.
+		body = '@{' + body + '}';
+
+		// `args` and `asHelper` inform `vash.compile/link` that this is a helper
+		options.args = args;
+		options.asHelper = name;
+		vash.compile(body, options);
+	}
+
+	// HELPER INSTALLATION
+	///////////////////////////////////////////////////////////////////////////
 
 	/************** Begin injected code from build script */
 	/*?CODE?*/
