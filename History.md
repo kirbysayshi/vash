@@ -1,0 +1,218 @@
+
+v0.5.16-2084 / 01-22-2013
+========================
+
+* `Buffer#push` no longer auto-concats for the sake of speed
+* vash(1) `--render` was misnamed
+* `vash.config.simple` allows for optimization of simple templates
+* `vash.batch` is now handled at compile time
+* `vash.compileHelper` allows for compiled helpers
+* `vash.install` can also accept object of key->tpl pairs
+* History.md
+
+v0.5.15-1896 / 01-02-2013
+=========================
+
+* Perf tests removed, see vash-benchgraph
+* `vash.batch` (not documented), `vash.install`, `vash.uninstall`, `vash.lookup`
+* Tpl cache is defined in runtime, not layout helpers
+
+v0.5.14-1803 / 12-31-2012
+=========================
+
+* Internal `Buffer` now uses prototypes. ~6x faster!
+
+v0.5.13-1800 / 12-18-2012
+=========================
+
+* Better AMD guard for runtime and vash.exports. #18
+* Runtime is tested separately now. test/vows/*
+* No reason to exclude CONTRIBUTING,src,etc from npm
+
+v0.5.12-1773 / 12-17-2012
+=========================
+
+* `vash.link` must exist in the runtime, not exports. #18
+* Fix CJS guard, #18
+
+v0.5.11-1767 / 12-04-2012
+=========================
+
+* Layouts only require 'views' in settings, path.join  #17
+
+v0.5.10-1739 / 12-01-2012
+=========================
+
+* Fix "race condition" for deleting blockmarks, #16
+
+v0.5.9-1729 / 11-30-2012
+========================
+
+* Layouts use `extend` instead of ES3-reserved word `extends` (#9)
+* `vash.helpers` is now a prototype of class `vash.helpers.constructor`
+* Internal `Buffer` class
+* `vash.link`
+* vash(1) `--no-autolink`
+* `vash.Mark` class and API
+* tpl( model, fn|opts ) signature
+* Tpl runtime `option.context`
+* `onRenderEnd` callback
+* Layout helpers render immediately to "spider"
+
+v0.5.6-1545 / 11-09-2012
+========================
+
+* A period does not exit expression mode from within an expression. Fixes #10.
+* Mention playground in README
+* Layout blocks only allow for one definition callback
+* Compiler does string replacement instead of concatenation
+* Operators were being mistaken for HTML tags
+* Initial layout helpers tests
+* `vQuery` is exposed as `vash.vQuery`
+
+v0.5.4-1385 / 11-04-2012
+========================
+
+* `reportError` formatting fix for line numbers < 10
+* Email addresses are allowed within HTML attributes
+* `AT` and `AT_COLON` are no longer discarded by parser
+
+v0.5.4-1294 / 09-20-2012
+========================
+
+* Use path module for x-platform. v0.5.3-1294. Addresses #6
+* `build.js` is now `tasks` and drives tests
+* Test for file extension before appending. Addresses #6
+
+v0.5.3-1272 / 09-19-2012
+========================
+
+* Proper tests for `vash.config.favorText`
+
+v0.5.3-1255 / 09-19-2012
+========================
+
+* `@:` opens a markup block that is closed by `NEWLINE`
+* Parser now takes special care of delimiters when subparsing
+* Parser pays no special attention to {} in markup mode
+* `vash.helpers.reportError` is used within the compiler
+
+v0.5.2-1239 / 09-18-2012
+========================
+
+* CONTRIBUTING.md
+* vQuery.maxCheck dumps parse tree if infinite loop detected
+* `vash.config.debug` now defaults to `true`
+* `vash.config.client` is removed
+* vash(1) gets `--render` to immediately render the input template
+
+v0.5.2-1235 / 09-16-2012
+========================
+
+* View engine works in browser
+
+v0.5.2-1232 / 09-16-2012
+========================
+
+* Fixed quote escaping
+* Ship vash(1) via npm
+* Error reporting is moved to runtime
+
+v0.5.2-1182 / 09-14-2012
+========================
+
+* Jade-like extends/block/append/prepend/include layouts
+* `vash.config.favorText` documented
+* `vash.config.client` documented
+* vash(1) documented
+* @* should work in blocks too
+
+v0.5.1-1109 / 09-11-2012
+========================
+
+* Express 3 support
+* vash(1) command line utility
+* `vash.config.client` returns the unlinked compiled function
+* Empty brackets (`[]`) following an expression is markup
+* jshint headers
+
+v0.5.0-998 / 08-24-2012
+=======================
+
+* `favorText` is a compiler-only option and will favor interpreting input as markup instead of code
+* Standalone runtime
+* New build system: `vash-runtime-all.js` and `vash-runtime.js`
+* vQuery can flatten/reconstitute tokens
+* `vash.saveAT`, `vash.saveTextTag`
+
+v0.4.5-967 / 08-02-2012
+=======================
+
+* Addition of AUTHORS file
+* Initial helpers API (`vash.helpers` is accessible via `html` within template)
+* `vash.config.helpersName`
+* `vash.config.htmlEscape` allows escaping to be turned off, defaults to true
+* `vash.raw` becomes `html.raw` and is now performed at runtime.
+* `html.escape`
+* Compiled functions are now "linked" to create a local reference to Helpers
+
+v0.4.4-926 / 04-24-2012
+=======================
+
+* Explicit expression implicitly closes afterwards
+
+v0.4.3-915 / 04-23-2012
+=======================
+
+* Lexer tokens are freely defined within main vash closure
+* Greatly simplified lexer
+* Removed lots of extranous `vQuery` code
+* Explicit expressions can be indexed into: `@('what')[0]`
+* Whitespace ends a non-explicit expression
+
+v0.4.2-856 / 04-19-2012
+=======================
+
+* fix bug where ellipses caused infinite loops
+* max depth check on vQuery to prevent lockup during infinite loops
+
+v0.4.1-826 / 04-17-2012
+=======================
+
+* HTML escaping / `vash.raw`
+* `vash.config.debug`
+* `vash.vQuery` replaces VAST
+* `vash.config.debugParser`
+* `vash.config.debugCompiler`
+* Improved runtime error reporting (003bfcd)
+* Improved compile-time error reporting (5edfcfa)
+* Initial AMD Support
+
+v0.3.1-327 / 03-16-2012
+=======================
+
+* keywords can follow a closing brace
+
+v0.3.0-291 / 02-24-2012
+=======================
+
+* Anonymous functions
+* @()IDENTIFIER consumes IDENTIFIER as markup
+
+v0.2.2 / 08-16-2011
+===================
+
+* `vash.tpl` is now `vash.compile` as defacto standard
+* Rewrite of parser
+
+v0.2.1-241 / 08-16-2011
+=======================
+
+* Initial npm release
+* `useWith` defaults to false
+* Basic express2 support
+
+v0.0.1 / 07-03-2011
+===================
+
+* Project start
