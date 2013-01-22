@@ -4,6 +4,8 @@
 .gitattributes
 .gitignore
 .npmignore
+.travis.yml
 Icon?
 docs
 node_modules
+experiments
