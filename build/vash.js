@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.5.16-2083
+ * Vash - JavaScript Template Parser, v0.6.0-2085
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.5.16-2083";
+	exports["version"] = "0.6.0-2085";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -159,9 +159,10 @@
 				.replace( reFuncHead, '' )
 				.replace( reFuncTail, '' )
 
-		// wrap body in @{} to simulate it actually being inside a function definition.
-		// without this, expressions such as `this.what = "what"` will be
-		// interpreted as markup.
+		// Wrap body in @{} to simulate it actually being inside a function
+		// definition, since we manually stripped it. Without this, statements
+		// such as `this.what = "what";` that are at the beginning of the body
+		// will be interpreted as markup.
 		body = '@{' + body + '}';
 
 		// `args` and `asHelper` inform `vash.compile/link` that this is a helper

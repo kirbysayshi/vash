@@ -1,7 +1,8 @@
 
-v0.5.16-2084 / 01-22-2013
+v0.6.0-2085 / 01-22-2013
 ========================
 
+* Commitment to proper semver
 * `Buffer#push` no longer auto-concats for the sake of speed
 * vash(1) `--render` was misnamed
 * `vash.config.simple` allows for optimization of simple templates
