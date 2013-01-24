@@ -31,7 +31,8 @@ var  AT = 'AT'
 	,SINGLE_QUOTE = 'SINGLE_QUOTE'
 	,TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE'
 	,TEXT_TAG_OPEN = 'TEXT_TAG_OPEN'
-	,WHITESPACE = 'WHITESPACE';
+	,WHITESPACE = 'WHITESPACE'
+	,COMMENT_LINE = 'COMMENT_LINE';
 
 var PAIRS = {};
 
@@ -43,6 +44,7 @@ PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
 PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 PAIRS[AT_COLON] = NEWLINE;
+PAIRS[COMMENT_LINE] = NEWLINE;
 
 
 
@@ -68,6 +70,14 @@ var TESTS = [
 	//
 	// However, this is "Good Enough"© :).
 	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
+
+	,COMMENT_LINE, function(){
+		var tok = this.scan(/^(\/\/.*?)(?:\n|$)/, COMMENT_LINE);
+		if(tok){
+			tok.val = tok.val.replace(/^\/\//, '/*') + ' */'
+			return tok;
+		}
+	}
 
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
