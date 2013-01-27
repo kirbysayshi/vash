@@ -492,6 +492,22 @@ vows.describe('vash templating library').addBatch({
 			}
 
 		}
+
+		,'can be escaped': {
+			topic: '@("<text>")More@("</text>")'
+			,'with html escaping': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '&lt;text&gt;More&ls;/text&gt;' );
+			}
+		}
+
+		,'can be escaped': {
+			topic: '@html.raw("<text>")More@html.raw("</text>")'
+			,'without html escaping': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<text>More</text>' );
+			}
+		}
 	}
 
 	,'@: escape': {
