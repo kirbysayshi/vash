@@ -533,6 +533,15 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl(), 'Plain Text\n' );
 			}
 		}
+
+		,'can be escaped': {
+			topic: '<p>@@:</p>'
+
+			,'and is': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<p>@:</p>' );
+			}
+		}
 	}
 
 	,'markup within a code block': {

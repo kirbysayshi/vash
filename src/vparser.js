@@ -215,6 +215,7 @@ VParser.prototype = {
 							break;
 
 						case AT:
+						case AT_COLON:
 
 							// we want to keep the token, but remove its
 							// "special" meaning because during compilation
