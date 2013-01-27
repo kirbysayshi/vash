@@ -5,7 +5,7 @@ function VCompiler(ast, originalMarkup, options){
 	this.originalMarkup = originalMarkup || '';
 	this.options = options || {};
 
-	this.reQuote = /(["'])/gi
+	this.reQuote = /(['"])/gi
 	this.reEscapedQuote = /\\+(["'])/gi
 	this.reLineBreak = /[\n\r]/gi
 	this.reHelpersName = /HELPERSNAME/g
@@ -31,10 +31,11 @@ VCP.visitMarkupTok = function(tok, parentNode, index){
 
 	this.insertDebugVars(tok);
 	this.buffer.push(
-		"MKP('" + tok.val
+		"MKP(" + tok.val
+			.replace(this.reEscapedQuote, '\\\\$1')
 			.replace(this.reQuote, '\\$1')
 			.replace(this.reLineBreak, '\\n')
-		+ "')MKP" );
+		+ ")MKP" );
 }
 
 VCP.visitBlockTok = function(tok, parentNode, index){
@@ -200,9 +201,9 @@ VCP.generate = function(){
 	// coalesce markup
 	var joined = this.buffer
 		.join("")
-		.split("')MKPMKP('").join('')
-		.split("MKP(").join( "__vbuffer.push(")
-		.split(")MKP").join("); \n");
+		.split(")MKPMKP(").join('')
+		.split("MKP(").join( "__vbuffer.push('")
+		.split(")MKP").join("'); \n");
 
 	if(!options.asHelper){
 		joined = this.addHead( joined );

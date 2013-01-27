@@ -12,6 +12,7 @@ var  AT = 'AT'
 	,CONTENT = 'CONTENT'
 	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
 	,EMAIL = 'EMAIL'
+	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
 	,FAT_ARROW = 'FAT_ARROW'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
@@ -143,6 +144,7 @@ var TESTS = [
 	,LOGICAL, (/^(&&|\|\||&|\||\^)/)
 
 
+	,ESCAPED_QUOTE, (/^(\\+['"])/)
 	,BACKSLASH, (/^(\\)/)
 	,DOUBLE_QUOTE, (/^(\")/)
 	,SINGLE_QUOTE, (/^(\')/)

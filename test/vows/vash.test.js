@@ -1245,11 +1245,11 @@ vows.describe('vash templating library').addBatch({
 
 		,"escaped single quotes come out": {
 			topic: function(){
-				return '<text>It\'s followed by primary content.</text>'
+				return "<text>'It\\'s followed by primary content.'</text>"
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
-				assert.equal(tpl(), "It's followed by primary content.")
+				assert.equal(tpl(), "'It\\'s followed by primary content.'")
 			}
 		}
 
