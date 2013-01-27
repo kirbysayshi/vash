@@ -1590,36 +1590,6 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
-	,'single line comments': {
-
-		'near markup': {
-			topic: ' // this is a comment\n'
-				+ '<p></p>'
-
-			// For some bizarre reason, /* does not display in vows. Not sure why.
-			,'are transformed to \/\* comments': function(topic){
-				var  tpl = vash.compile(topic)
-					,actual = tpl()
-					,expected = ' /* this is a comment */\n<p></p>'
-
-				assert.equal( actual, expected );
-			}
-		}
-
-		,'within code': {
-			topic: '@{ // this is a comment\n }'
-
-			,'are not output': function(topic){
-				var  tpl = vash.compile(topic)
-					,actual = tpl()
-					,expected = ''
-
-				assert.equal( actual, expected );
-			}
-
-		}
-	}
-
 	/*,'implicit compilation': {
 
 		'is valid': {
