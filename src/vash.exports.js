@@ -202,7 +202,7 @@
 	exports['compileHelper'] = compileBatchOrHelper.bind(null, 'helper');
 
 	///////////////////////////////////////////////////////////////////////////
-	// VASH.BATCH
+	// VASH.COMPILEBATCH
 	//
 	// Allow multiple templates to be contained within the same string.
 	// Templates are separated via a sourceURL-esque string:
@@ -216,7 +216,7 @@
 	// Is just as valid.
 	//
 	// Returns the compiled templates as named properties of an object.
-	exports['batch'] = compileBatchOrHelper.bind(null, 'batch');
+	exports['compileBatch'] = exports['batch'] = compileBatchOrHelper.bind(null, 'batch');
 
 	// HELPER AND BATCH COMPILATION
 	///////////////////////////////////////////////////////////////////////////

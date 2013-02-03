@@ -1581,7 +1581,7 @@ vows.describe('vash templating library').addBatch({
 			+'// @batch = a \n<a>@model</a>'
 
 		,'installs each tpl': function(topic){
-			var  tpls = vash.batch(topic)
+			var  tpls = vash.compileBatch(topic)
 				,model = 'm';
 
 			vash.install(tpls);
