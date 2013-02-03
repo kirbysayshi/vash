@@ -72,7 +72,7 @@ function stdin(options){
 	})
 
 	process.stdin.on('end', function(){
-		var tpl = vash.compile(buffer, options.vopts);
+		var tpl = vash[options.helper ? 'compileHelper' : 'compile'](buffer, options.vopts);
 
 		if( options.render ){
 			tpl = render(tpl, options);
@@ -89,7 +89,7 @@ function stdin(options){
 
 function file(filepath, options){
 	var contents = fs.readFileSync( filepath, 'utf8' )
-		,tpl = vash.compile(contents, options.vopts)
+		,tpl = vash[options.helper ? 'compileHelper' : 'compile'](contents, options.vopts)
 		,outpath = path.join(
 			options.out
 			,path.join(
@@ -145,6 +145,7 @@ cli
 	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
 	.option('-r, --render [json]', 'Render the template using <json> as the model')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
+	.option('-e, --helper', 'Assume the input is a to-be-compiled helper')
 	.parse(process.argv)
 
 if( cli.json ){
@@ -159,3 +160,4 @@ if(cli.file){
 	// assume stdin
 	stdin( cli );
 }
+
