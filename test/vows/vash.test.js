@@ -1687,6 +1687,16 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( actual, expected );
 			}
 		}
+
+		,'and urls': {
+			topic: '@{ var href = "http://google.com"; <p>@href</p> }'
+			,'are not confused': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl()
+					,expected = '<p>http://google.com</p>'
+				assert.equal( actual, expected );
+			}
+		}
 	}
 
 	,'ast': {

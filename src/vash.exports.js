@@ -91,7 +91,7 @@
 	//			tpl1: 'what what\nand more\n',
 	//			tpl2: 'what what again'
 	//		}
-	var splitByNamedTpl = function(reSeparator, markup, resultHandler){
+	var splitByNamedTpl = function(reSeparator, markup, resultHandler, keepSeparator){
 
 		var  lines = markup.split(/[\n\r]/g)
 			,tpls = {}
@@ -108,7 +108,9 @@
 				tpls[currentPath] = [];
 			}
 
-			tpls[currentPath].push(line);
+			if(!handlerResult || keepSeparator){
+				tpls[currentPath].push(line);
+			}
 		});
 
 		Object.keys(tpls).forEach(function(key){
@@ -131,7 +133,7 @@
 
 		var tpls = splitByNamedTpl(separator, str, function(ma, name){
 			return name.replace(/^\s+|\s+$/, '');
-		});
+		}, type === 'helper' ? true : false);
 
 		if(tpls){
 			Object.keys(tpls).forEach(function(path){
