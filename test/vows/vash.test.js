@@ -1039,17 +1039,6 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)(), '}');
 		}
 	}
-	,'content \ in expression': {
-		topic: function(){
-			var str = '@( false || "\\ " )';
-			return str;
-		}
-		,'is not forgotten': function(topic){
-			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
-			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
-			assert.equal( vash.compile(topic)(), '\ ');
-		}
-	}
 	,'markup followed by for loop': {
 		topic: function(){
 			var str = '<div class="how"> @for(var i = 0; i < 1; i++){ <div class="item-@i">I be an item!</div> } </div>';
@@ -1489,6 +1478,30 @@ vows.describe('vash templating library').addBatch({
 			var tpl = vash.compile( topic );
 			assert.equal( tpl(1), '<p></p>' );
 			assert.equal( tpl(2), '<b></b>' );
+		}
+	}
+
+	,'backslashes': {
+
+		'in markup': {
+			topic: '<p>Literal \\</p>'
+
+			,'are literal': function(topic){
+				var tpl = vash.compile(topic, {debugCompiler: true, debugParser: true})
+					,expected = topic
+					,actual = tpl();
+
+				console.log(actual, expected);
+				assert.equal( actual, expected );
+			}
+		}
+
+		,'in expression': {
+			topic: '@( false || "\\ " )'
+
+			,'are literal': function(topic){
+				assert.equal( vash.compile(topic)(), '\\ ');
+			}
 		}
 	}
 

@@ -136,7 +136,13 @@ var TESTS = [
 
 
 	,ESCAPED_QUOTE, (/^(\\+['"])/)
-	,BACKSLASH, (/^(\\)/)
+	,BACKSLASH, function(){
+		var tok = this.scan(/^(\\)/, BACKSLASH);
+		if(tok){
+			tok.val += '\\';
+		}
+		return tok;
+	}
 	,DOUBLE_QUOTE, (/^(\")/)
 	,SINGLE_QUOTE, (/^(\')/)
 
