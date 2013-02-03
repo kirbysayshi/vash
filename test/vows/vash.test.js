@@ -714,6 +714,24 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(vash.compile(topic)(), '<p>This is content that is <strong>important</strong> but outside.</p>');
 		}
 	}
+	,'self-closing tag within tag within BLK': {
+
+		topic: '@if(true){ <p>Hello<br />world</p> }'
+
+		,'does not prematurely exit MKP': function(topic){
+			var  tpl = vash.compile(topic)
+				,expected = '<p>Hello<br />world</p>';
+
+			assert.equal(tpl(), expected);
+		}
+
+		,'does not prematurely exit MKP, even without closing /': function(topic){
+			var  tpl = vash.compile(topic.replace('<br />', '<br>'))
+				,expected = '<p>Hello<br>world</p>';
+
+			assert.equal(tpl(), expected);
+		}
+	}
 	,'markup with numbers': {
 		topic: function(){
 			var str = "<div>"
@@ -1667,6 +1685,53 @@ vows.describe('vash templating library').addBatch({
 					,actual = tpl()
 					,expected = ''
 				assert.equal( actual, expected );
+			}
+		}
+	}
+
+	,'ast': {
+
+		topic: function(){
+			this.lex = function(input){
+				var  l = new vash.VLexer(input)
+					,tokens = []
+					,tok;
+
+				while(tok = l.advance()) tokens.push(tok);
+				return tokens.reverse();
+			}
+
+			this.parse = function(tokens, opts){
+				opts = vash.vQuery.extend( opts || {}, vash.config );
+
+				var p = new vash.VParser(tokens, opts);
+				p.parse();
+				return p;
+			}
+
+			return '';
+		}
+
+		,'self-closing tag within tag': {
+
+			topic: '@if(true){ <a><br /></a> }'
+
+			,'does not close parent tag': function(topic){
+				var p = this.parse(this.lex(topic));
+
+				var flattened = p.ast.flatten()
+					// this is like "indexOf" for a complex object
+					,openIdx = flattened.reduce(function(prev, curr, i){
+						return prev !== undefined
+							? prev
+							: curr.type === 'HTML_TAG_OPEN' && curr.val === '<a>'
+								? i
+								: undefined;
+					}, undefined);
+
+				assert.equal( flattened[openIdx].type, 'HTML_TAG_OPEN' );
+				assert.equal( flattened[openIdx+1].type, 'HTML_TAG_SELFCLOSE' );
+				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_CLOSE' );
 			}
 		}
 	}

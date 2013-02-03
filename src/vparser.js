@@ -287,9 +287,10 @@ VParser.prototype = {
 
 				this.ast.push(curr);
 
-				// close this ast if parent is BLK. if another tag follows, BLK will
-				// flip over to MKP
-				if( this.ast.parent && this.ast.parent.mode === BLK ){
+				// close this ast if parent is BLK and current has no tagName.
+				// if current has a tagname, it means a self-closing was within
+				// another tag that is still open
+				if( !this.ast.tagName && this.ast.parent && this.ast.parent.mode === BLK ){
 					this.ast = this.ast.parent;
 				}
 
