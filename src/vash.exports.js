@@ -81,48 +81,55 @@
 
 	exports['batch'] = function(markup, options){
 
-		var tpls = splitByNamedTpl(markup).batch;
+		var  separator = /^\/\/\s*@\s*batch\s*=\s*(.*?)$/
+			,tpls = splitByNamedTpl(separator, markup, function(ma, name){
+				return name.replace(/^\s+|\s+$/, '');
+			}, true);
 
 		if(tpls){
 			Object.keys(tpls).forEach(function(path){
-				tpls[path] = vash.compile(tpls[path], options);
+				tpls[path] = vash.compile('@{' + tpls[path] + '}', options);
 			});
+
+			tpls.toClientString = function(){
+				return Object.keys(tpls).reduce(function(prev, curr){
+					if(curr === 'toClientString'){
+						return prev;
+					}
+					return prev + tpls[curr].toClientString() + '\n';
+				}, '')
+			}
 		}
 
 		return tpls;
 	}
 
 	// do the actual work of splitting the string via the batch separator
-	var splitByNamedTpl = function(markup){
+	var splitByNamedTpl = function(reSeparator, markup, resultHandler, keepMatch){
 
-		var  reSourceMap = /^\/\/\s*@\s*(batch|helper)\s*=\s*(.*?)$/
-			,lines = markup.split(/[\n\r]/g)
-			,tpls = {
-				 batch: {}
-				,helper: {}
-			}
+		var  lines = markup.split(/[\n\r]/g)
+			,tpls = {}
 			,paths = []
 			,currentPath = ''
-			,typePointer = tpls.batch;
 
-		lines.forEach(function(line, idx, arr){
-			var  pathResult = reSourceMap.exec(line)
-				,atEnd = idx === arr.length - 1;
+		lines.forEach(function(line, i){
 
-			if(!pathResult || atEnd){
-				tpls[typePointer][currentPath].push(line);
+			var  pathResult = reSeparator.exec(line)
+				,handlerResult = pathResult ? resultHandler.apply(pathResult, pathResult) : null
+
+			if(handlerResult){
+				currentPath = handlerResult;
+				tpls[currentPath] = [];
 			}
 
-			if((pathResult || atEnd) && currentPath){
-				tpls[typePointer][currentPath] = tpls[typePointer][currentPath].join('\n');
-			}
-
-			if(pathResult){
-				typePointer = pathResult[1];
-				currentPath = pathResult[2].replace(/^\s+|\s+$/, '');
-				tpls[typePointer][currentPath] = [];
+			if(!handlerResult || keepMatch){
+				tpls[currentPath].push(line);
 			}
 		});
+
+		Object.keys(tpls).forEach(function(key){
+			tpls[key] = tpls[key].join('\n');
+		})
 
 		return tpls;
 	}
@@ -134,15 +141,15 @@
 	// HELPER INSTALLATION
 
 	var  slice = Array.prototype.slice
-		,reFuncHead = /^vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
+		,reFuncHead = /vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
 		,reFuncTail = /\}$/
 
-	exports['compileHelper'] = function reg(str, options){
+	var compileSingleHelper = function(str, options){
 
 		options = options || {};
 
 			// replace leading/trailing spaces, and parse the function head
-		var  def = str.replace(/^\s+|\s+$/, '').match(reFuncHead)
+		var  def = str.replace(/^[\s\n\r]+|[\s\n\r]+$/, '').match(reFuncHead)
 			// split the function arguments, kill all whitespace
 			,args = def[3].split(',').map(function(arg){ return arg.replace(' ', '') })
 			,name = def[1]
@@ -159,7 +166,31 @@
 		// `args` and `asHelper` inform `vash.compile/link` that this is a helper
 		options.args = args;
 		options.asHelper = name;
-		vash.compile(body, options);
+		return vash.compile(body, options);
+	}
+
+	exports['compileHelper'] = function reg(str, options){
+
+		var tpls = splitByNamedTpl(reFuncHead, str, function(ma, name){
+			return name.replace(/^\s+|\s+$/, '');
+		}, true);
+
+		if(tpls){
+			Object.keys(tpls).forEach(function(path){
+				tpls[path] = compileSingleHelper(tpls[path], options);
+			});
+
+			tpls.toClientString = function(){
+				return Object.keys(tpls).reduce(function(prev, curr){
+					if(curr === 'toClientString'){
+						return prev;
+					}
+					return prev + tpls[curr].toClientString() + '\n';
+				}, '')
+			}
+		}
+
+		return tpls;
 	}
 
 	// HELPER INSTALLATION

@@ -1578,41 +1578,75 @@ vows.describe('vash templating library').addBatch({
 
 	,'compiled helpers': {
 
-		topic: 'vash.helpers.fn = function(id, ctn){'
-			+ 'this.fnCounter = this.fnCounter || 0;'
-			+ 'this.fnIds = this.fnIds || {};'
-			+ 'this.fnCtn = this.fnCtn || {};'
-			+ '  if(ctn){'
-			+ '    <li id="fn:@id">'
-			+ '      @ctn()'
-			+ '      <a rev="footnote" href="#fnref:@id">↩</a>'
-			+ '  	</li>'
-			+ '  } else {'
-			+ '    this.fnIds[id] = ++this.fnCounter;'
-			+ '    <sup id="fnref:@id">'
-			+ '    <a rel="footnote" href="#fn:@id">@html.raw(this.fnCounter)</a>'
-			+ '    </sup>'
-			+ '  }'
-			+ '}'
+		'can be defined': {
 
-		,'can be defined': function(topic){
+			topic: 'vash.helpers.fn = function(id, ctn){'
+				+ 'this.fnCounter = this.fnCounter || 0;'
+				+ 'this.fnIds = this.fnIds || {};'
+				+ 'this.fnCtn = this.fnCtn || {};'
+				+ '  if(ctn){'
+				+ '    <li id="fn:@id">'
+				+ '      @ctn()'
+				+ '      <a rev="footnote" href="#fnref:@id">↩</a>'
+				+ '  	</li>'
+				+ '  } else {'
+				+ '    this.fnIds[id] = ++this.fnCounter;'
+				+ '    <sup id="fnref:@id">'
+				+ '    <a rel="footnote" href="#fn:@id">@html.raw(this.fnCounter)</a>'
+				+ '    </sup>'
+				+ '  }'
+				+ '}'
 
-			vash.compileHelper(topic);
-			assert.ok( vash.helpers.fn );
+			,'and execute': function(topic){
 
-			var str = '@html.fn("one") @html.fn("two")'
-				,tpl = vash.compile(str);
+				vash.compileHelper(topic);
+				assert.ok( vash.helpers.fn );
 
-			var  ctx = tpl({}, { asContext: true })
-				,rendered = ctx.toString();
+				var str = '@html.fn("one") @html.fn("two")'
+					,tpl = vash.compile(str);
 
-			assert.equal( ctx.fnCounter, 2 );
-			assert.equal( ctx.fnIds.one, 1 );
-			assert.equal( ctx.fnIds.two, 2 );
-			assert.ok( rendered.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
-			assert.ok( rendered.indexOf('fnref:two') > -1, 'expect indexOf fnref:two to be > -1' );
-			delete vash.helpers.fn;
+				var  ctx = tpl({}, { asContext: true })
+					,rendered = ctx.toString();
+
+				assert.equal( ctx.fnCounter, 2 );
+				assert.equal( ctx.fnIds.one, 1 );
+				assert.equal( ctx.fnIds.two, 2 );
+				assert.ok( rendered.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
+				assert.ok( rendered.indexOf('fnref:two') > -1, 'expect indexOf fnref:two to be > -1' );
+				delete vash.helpers.fn;
+			}
 		}
+
+		,'when compiling': {
+
+			topic: ''
+				+ 'vash.helpers.fn1 = function(id){ return id + "1"; }\n'
+				+ 'vash.helpers.fn2 = function(id){ return id + "2"; }'
+
+			,'can batch compile': function(topic){
+				vash.compileHelper(topic);
+				assert.ok( vash.helpers.fn1 );
+				assert.ok( vash.helpers.fn2 );
+
+				var  str = '@html.fn1("a") @html.fn2("b")'
+					,tpl = vash.compile(str);
+
+				var rendered = tpl();
+
+				assert.equal( rendered, 'a1 b2' );
+				delete vash.helpers.fn1;
+				delete vash.helpers.fn2;
+			}
+
+			,'can batch .toClientString': function(topic){
+
+				var tpls = vash.compileHelper(topic)
+					,output = tpls.toClientString()
+
+				assert.ok( output.match(/vash.link/gi).length === 2, 'expect two vash.link' );
+			}
+		}
+
 	}
 
 	,'single line comments': {
