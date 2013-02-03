@@ -1615,6 +1615,27 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'single line comments': {
+		'near markup': {
+			topic: ' // this is a comment\n'
+				+ '<p></p>'
+			,'are output as content': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl()
+					,expected = ' // this is a comment\n<p></p>'
+				assert.equal( actual, expected );
+			}
+		}
+		,'within code': {
+			topic: '@{ // this is a comment\n }'
+			,'are not output': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl()
+					,expected = ''
+				assert.equal( actual, expected );
+			}
+		}
+	}
 	/*,'implicit compilation': {
 
 		'is valid': {
