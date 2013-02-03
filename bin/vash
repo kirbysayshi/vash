@@ -145,11 +145,17 @@ cli
 	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
 	.option('-r, --render [json]', 'Render the template using <json> as the model')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
-	.option('-e, --helper', 'Assume the input is a to-be-compiled helper')
+	.option('--helper', 'Assume the input is a to-be-compiled helper')
+	.option('--helpers <file>', 'Execute these compiled helpers')
 	.parse(process.argv)
 
 if( cli.json ){
 	cli.vopts = JSON.parse(cli.json);
+}
+
+// helpers via .toClientString, therefore vash.link
+if( cli.helpers ){
+	eval(fs.readFileSync(cli.helpers, 'utf8'));
 }
 
 if(cli.file){
