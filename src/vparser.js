@@ -296,6 +296,11 @@ VParser.prototype = {
 
 				break;
 
+			case BACKSLASH:
+				curr.val += '\\';
+				this.ast.push(curr);
+				break;
+
 			default:
 				this.ast.push(curr);
 				break;

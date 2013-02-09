@@ -1487,20 +1487,51 @@ vows.describe('vash templating library').addBatch({
 			topic: '<p>Literal \\</p>'
 
 			,'are literal': function(topic){
-				var tpl = vash.compile(topic, {debugCompiler: true, debugParser: true})
+				var tpl = vash.compile(topic)
 					,expected = topic
 					,actual = tpl();
 
-				console.log(actual, expected);
 				assert.equal( actual, expected );
 			}
 		}
 
 		,'in expression': {
-			topic: '@( false || "\\ " )'
+			topic: '@( false || /\\n/.exec("\\n") && "\\ " + "\\n" )'
 
 			,'are literal': function(topic){
-				assert.equal( vash.compile(topic)(), '\\ ');
+				var tpl = vash.compile(topic)
+					,expected = ' \n'
+					,actual = tpl();
+
+				assert.equal( actual, expected );
+			}
+		}
+
+		,'in block': {
+			topic: '@{ var a = "\\\\ "; var b = /\\n/.exec("\\n"); }@a@b[0]'
+
+			,'are literal': function(topic){
+				var tpl = vash.compile(topic)
+					,expected = '\\ \n'
+					,actual = tpl();
+
+				assert.equal( actual, expected );
+			}
+		}
+
+		,'in a compiled helper': {
+			topic: ''
+				+ 'vash.helpers.bslash = function(assert, str){ \n'
+				+ 'var re = /\\n/ \n'
+				+ 'assert.equal(re.source, "\\\\n"); \n'
+				+ 'assert.ok(re.exec(str), "`str` does not contain newline"); \n'
+				+ 'return re; \n'
+				+ '}'
+
+			,'are not double escaped': function(topic){
+				vash.compileHelper(topic);
+				var re = vash.helpers.bslash(assert, 'this\nhas');
+				assert.equal(re.source, '\\n');
 			}
 		}
 	}
