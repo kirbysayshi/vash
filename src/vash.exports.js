@@ -108,7 +108,7 @@
 				tpls[currentPath] = [];
 			}
 
-			if(!handlerResult || keepSeparator){
+			if((!handlerResult || keepSeparator) && line){
 				tpls[currentPath].push(line);
 			}
 		});

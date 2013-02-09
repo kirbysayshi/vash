@@ -1650,14 +1650,15 @@ vows.describe('vash templating library').addBatch({
 
 		,'when compiling': {
 
-			topic: ''
-				+ 'vash.helpers.fn1 = function(id){ return id + "1"; }\n'
-				+ 'vash.helpers.fn2 = function(id){ return id + "2"; }'
+			topic: '\n'
+				+ 'vash.helpers.fn0 = function(){}\n'
+				+ '           vash.helpers.fn1 = function(id){ return id + "1"; }\n'
+				+ '\t \t\n  vash.helpers.fn2 = function(id){ return id + "2"; }'
 
 			,'can batch compile': function(topic){
 				vash.compileHelper(topic);
-				assert.ok( vash.helpers.fn1 );
-				assert.ok( vash.helpers.fn2 );
+				assert.ok( vash.helpers.fn1, 'expect fn1 to be defined' );
+				assert.ok( vash.helpers.fn2, 'expect fn2 to be defined' );
 
 				var  str = '@html.fn1("a") @html.fn2("b")'
 					,tpl = vash.compile(str);
@@ -1665,6 +1666,7 @@ vows.describe('vash templating library').addBatch({
 				var rendered = tpl();
 
 				assert.equal( rendered, 'a1 b2' );
+				delete vash.helpers.fn0;
 				delete vash.helpers.fn1;
 				delete vash.helpers.fn2;
 			}
@@ -1674,7 +1676,7 @@ vows.describe('vash templating library').addBatch({
 				var tpls = vash.compileHelper(topic)
 					,output = tpls.toClientString()
 
-				assert.ok( output.match(/vash.link/gi).length === 2, 'expect two vash.link' );
+				assert.ok( output.match(/vash.link/gi).length === 3, 'expect three vash.link' );
 			}
 		}
 
