@@ -19,6 +19,7 @@
 	var Helpers = function ( model ) {
 		this.buffer = new Buffer();
 		this.model  = model;
+		this.options = null; // added at render time
 
 		this.vl = 0;
 		this.vc = 0;
@@ -393,6 +394,11 @@
 			}
 
 			delete model.onRenderEnd;
+		}
+
+		// ensure options can be referenced
+		if( !opts ){
+			opts = {};
 		}
 
 		return opts;

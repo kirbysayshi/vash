@@ -132,6 +132,7 @@ VCP.addHead = function(body){
 	var head = ''
 		+ (options.debug ? 'try { \n' : '')
 		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
+		+ 'HELPERSNAME.options = __vopts; \n'
 		+ 'MODELNAME = MODELNAME || {}; \n'
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 

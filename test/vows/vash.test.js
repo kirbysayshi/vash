@@ -1624,6 +1624,21 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( ctx.toString(), 'test<p></p>' )
 			}
 		}
+
+		,'from within a helper': {
+			topic: function(){
+				vash.helpers.opts1 = function(){ return this.options.something; }
+				return vash.compile('<p>@html.opts1()</p>')
+			}
+
+			,'are accessible': function( tpl ){
+				assert.equal( tpl({}, { something: 'what' }), '<p>what</p>' );
+			}
+
+			,teardown: function(){
+				delete vash.helpers.opts1;
+			}
+		}
 	}
 
 	,'simple': {
