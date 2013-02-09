@@ -732,6 +732,43 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(tpl(), expected);
 		}
 	}
+	,'self-closing tag within BLK': {
+
+		topic: '@if(true){ <br /> true; }'
+
+		,'exits MKP': function(topic){
+			var  tpl = vash.compile(topic)
+				,expected = '<br />';
+
+			assert.equal(tpl(), expected);
+		}
+
+		,'exits MKP with expression': function(topic){
+			var  tpl = vash.compile(topic.replace('/>', '@(true)/>'))
+				,expected = '<br true/>';
+
+			assert.equal(tpl(), expected);
+		}
+
+		/*
+		,'exits MKP without closing /': function(topic){
+			var  tpl = vash.compile(topic.replace('/>', '>'))
+				,expected = '<br >';
+
+			assert.equal(tpl(), expected);
+		}*/
+	}
+	,'if statement is not confused': {
+
+		topic: '@{ if(-1 <= 0){ <br /> } }'
+
+		,'with self-closing tag': function(topic){
+			var tpl = vash.compile(topic)
+				,expected = '<br />';
+
+			assert.equal(tpl(), expected);
+		}
+	}
 	,'markup with numbers': {
 		topic: function(){
 			var str = "<div>"
@@ -1786,8 +1823,9 @@ vows.describe('vash templating library').addBatch({
 					}, undefined);
 
 				assert.equal( flattened[openIdx].type, 'HTML_TAG_OPEN' );
-				assert.equal( flattened[openIdx+1].type, 'HTML_TAG_SELFCLOSE' );
-				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_CLOSE' );
+				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_VOID_OPEN' );
+				assert.equal( flattened[openIdx+3].type, 'HTML_TAG_VOID_CLOSE' );
+				assert.equal( flattened[openIdx+5].type, 'HTML_TAG_CLOSE' );
 			}
 		}
 	}

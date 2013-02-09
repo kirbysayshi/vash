@@ -22,6 +22,7 @@ vQuery.fn.length = 0;
 vQuery.fn.parent = null;
 vQuery.fn.mode = null;
 vQuery.fn.tagName = null;
+vQuery.fn.tagVoid = null;
 
 vQuery.fn.beget = function(mode, tagName){
 	var child = vQuery(mode);

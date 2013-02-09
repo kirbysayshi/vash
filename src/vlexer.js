@@ -19,7 +19,8 @@ var  AT = 'AT'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
 	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
 	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_SELFCLOSE = 'HTML_TAG_SELFCLOSE'
+	,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
+	,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
 	,IDENTIFIER = 'IDENTIFIER'
 	,KEYWORD = 'KEYWORD'
 	,LOGICAL = 'LOGICAL'
@@ -98,21 +99,24 @@ var TESTS = [
 	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
-	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
 		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
+			,reSelfClosing = /^(<[a-zA-Z@]+[^>]*?\s*\/\s*>)/
 
-		var tok = this.scan( reHtml, HTML_TAG_OPEN );
+		var tok = this.scan( reSelfClosing, HTML_TAG_VOID_OPEN )
+			|| this.scan( reHtml, HTML_TAG_OPEN );
 
 		if( tok ){
 			this.spewIf( tok, reEmail );
 			this.spewIf( tok, /(@)/ );
+			this.spewIf( tok, /(\/\s*>)/ );
 		}
 
 		return tok;
 	}
 	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
+	,HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
 
 
 	,PERIOD, (/^(\.)/)
