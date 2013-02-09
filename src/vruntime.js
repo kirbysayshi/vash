@@ -148,7 +148,25 @@
 	Buffer.prototype.indexOf = function( str ){
 
 		for( var i = 0; i < this._vo.length; i++ ){
-			if( this._vo[i] == str ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	Buffer.prototype.lastIndexOf = function( str ){
+		var i = this._vo.length;
+
+		while( --i >= 0 ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
 				return i;
 			}
 		}
