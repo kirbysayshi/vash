@@ -1844,6 +1844,11 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 	}
+
+	,'markup within expressions': {
+
+		
+	}
 	/*,'implicit compilation': {
 
 		'is valid': {

@@ -29,13 +29,22 @@ VCP.insertDebugVars = function(tok){
 
 VCP.visitMarkupTok = function(tok, parentNode, index){
 
-	this.insertDebugVars(tok);
-	this.buffer.push(
-		"MKP(" + tok.val
-			.replace(this.reEscapedQuote, '\\\\$1')
-			.replace(this.reQuote, '\\$1')
-			.replace(this.reLineBreak, '\\n')
-		+ ")MKP" );
+	if(parentNode.mode === EXP || (parentNode.parent && parentNode.parent.mode === EXP)){
+		this.buffer.push(
+			"EXPM(" + tok.val
+				.replace(this.reEscapedQuote, '\\\\$1')
+				.replace(this.reQuote, '\\$1')
+				.replace(this.reLineBreak, '\\n')
+			+ ")EXPM" );
+	} else {
+		this.insertDebugVars(tok);
+		this.buffer.push(
+			"MKP(" + tok.val
+				.replace(this.reEscapedQuote, '\\\\$1')
+				.replace(this.reQuote, '\\$1')
+				.replace(this.reLineBreak, '\\n')
+			+ ")MKP" );
+	}
 }
 
 VCP.visitBlockTok = function(tok, parentNode, index){
@@ -203,8 +212,11 @@ VCP.generate = function(){
 	var joined = this.buffer
 		.join("")
 		.split(")MKPMKP(").join('')
-		.split("MKP(").join( "__vbuffer.push('")
-		.split(")MKP").join("'); \n");
+		.split(")EXPMEXPM(").join('')
+		.split("MKP(").join("__vbuffer.push('")
+		.split(")MKP").join("'); \n")
+		.split("EXPM(").join("'")
+		.split(")EXPM").join("'");
 
 	if(!options.asHelper){
 		joined = this.addHead( joined );
