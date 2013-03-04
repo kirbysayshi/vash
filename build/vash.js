@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.0-2085
+ * Vash - JavaScript Template Parser, v0.6.1-2481
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.6.0-2085";
+	exports["version"] = "0.6.1-2481";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -73,7 +73,147 @@
 	};
 
 	///////////////////////////////////////////////////////////////////////////
-	// VASH.BATCH
+	// HELPER AND BATCH COMPILATION
+
+	var  slice = Array.prototype.slice
+
+		,reHelperFuncHead = /vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
+		,reHelperFuncTail = /\}$/
+
+		,reBatchSeparator = /^\/\/\s*@\s*batch\s*=\s*(.*?)$/
+
+	// Given a separator regex and a function to transform the regex result
+	// into a name, take a string, split it, and group the rejoined strings
+	// into an object.
+	// This is useful for taking a string, such as
+	//
+	// 		// tpl1
+	// 		what what
+	// 		and more
+	//
+	// 		// tpl2
+	// 		what what again
+	//
+	// and returning:
+	//
+	//		{
+	//			tpl1: 'what what\nand more\n',
+	//			tpl2: 'what what again'
+	//		}
+	var splitByNamedTpl = function(reSeparator, markup, resultHandler, keepSeparator){
+
+		var  lines = markup.split(/[\n\r]/g)
+			,tpls = {}
+			,paths = []
+			,currentPath = ''
+
+		lines.forEach(function(line, i){
+
+			var  pathResult = reSeparator.exec(line)
+				,handlerResult = pathResult ? resultHandler.apply(pathResult, pathResult) : null
+
+			if(handlerResult){
+				currentPath = handlerResult;
+				tpls[currentPath] = [];
+			}
+
+			if((!handlerResult || keepSeparator) && line){
+				tpls[currentPath].push(line);
+			}
+		});
+
+		Object.keys(tpls).forEach(function(key){
+			tpls[key] = tpls[key].join('\n');
+		})
+
+		return tpls;
+	}
+
+	// The logic for compiling a giant batch of templates or several
+	// helpers is nearly exactly the same. The only difference is the
+	// actual compilation method called, and the regular expression that
+	// determines how the giant string is split into named, uncompiled
+	// template strings.
+	var compileBatchOrHelper = function(type, str, options){
+
+		var separator = type === 'helper'
+			? reHelperFuncHead
+			: reBatchSeparator;
+
+		var tpls = splitByNamedTpl(separator, str, function(ma, name){
+			return name.replace(/^\s+|\s+$/, '');
+		}, type === 'helper' ? true : false);
+
+		if(tpls){
+			Object.keys(tpls).forEach(function(path){
+				tpls[path] = type === 'helper'
+					? compileSingleHelper(tpls[path], options)
+					: vash.compile('@{' + tpls[path] + '}', options);
+			});
+
+			tpls.toClientString = function(){
+				return Object.keys(tpls).reduce(function(prev, curr){
+					if(curr === 'toClientString'){
+						return prev;
+					}
+					return prev + tpls[curr].toClientString() + '\n';
+				}, '')
+			}
+		}
+
+		return tpls;
+	}
+
+	var compileSingleHelper = function(str, options){
+
+		options = options || {};
+
+			// replace leading/trailing spaces, and parse the function head
+		var  def = str.replace(/^[\s\n\r]+|[\s\n\r]+$/, '').match(reHelperFuncHead)
+			// split the function arguments, kill all whitespace
+			,args = def[3].split(',').map(function(arg){ return arg.replace(' ', '') })
+			,name = def[1]
+			,body = str
+				.replace( reHelperFuncHead, '' )
+				.replace( reHelperFuncTail, '' )
+
+		// Wrap body in @{} to simulate it actually being inside a function
+		// definition, since we manually stripped it. Without this, statements
+		// such as `this.what = "what";` that are at the beginning of the body
+		// will be interpreted as markup.
+		body = '@{' + body + '}';
+
+		// `args` and `asHelper` inform `vash.compile/link` that this is a helper
+		options.args = args;
+		options.asHelper = name;
+		return vash.compile(body, options);
+	}
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.COMPILEHELPER
+	//
+	// Allow multiple helpers to be compiled as templates, for helpers that
+	// do a lot of markup output.
+	//
+	// Takes a template such as:
+	//
+	// 		vash.helpers.p = function(text){
+	// 			<p>@text</p>
+	// 		}
+	//
+	// And compiles it. The template is then added to `vash.helpers`.
+	//
+	// Returns the compiled templates as named properties of an object.
+	//
+	// This is string manipulation at its... something. It grabs the arguments
+	// and function name using a regex, not actual parsing. Definitely error-
+	// prone, but good enough. This is meant to facilitate helpers with complex
+	// markup, but if something more advanced needs to happen, a plain helper
+	// can be defined and markup added using the manual Buffer API.
+	exports['compileHelper'] = compileBatchOrHelper.bind(null, 'helper');
+
+	///////////////////////////////////////////////////////////////////////////
+	// VASH.COMPILEBATCH
 	//
 	// Allow multiple templates to be contained within the same string.
 	// Templates are separated via a sourceURL-esque string:
@@ -87,91 +227,9 @@
 	// Is just as valid.
 	//
 	// Returns the compiled templates as named properties of an object.
+	exports['compileBatch'] = exports['batch'] = compileBatchOrHelper.bind(null, 'batch');
 
-	exports['batch'] = function(markup, options){
-
-		var tpls = splitByNamedTpl(markup).batch;
-
-		if(tpls){
-			Object.keys(tpls).forEach(function(path){
-				tpls[path] = vash.compile(tpls[path], options);
-			});
-		}
-
-		return tpls;
-	}
-
-	// do the actual work of splitting the string via the batch separator
-	var splitByNamedTpl = function(markup){
-
-		var  reSourceMap = /^\/\/\s*@\s*(batch|helper)\s*=\s*(.*?)$/
-			,lines = markup.split(/[\n\r]/g)
-			,tpls = {
-				 batch: {}
-				,helper: {}
-			}
-			,paths = []
-			,currentPath = ''
-			,typePointer = tpls.batch;
-
-		lines.forEach(function(line, idx, arr){
-			var  pathResult = reSourceMap.exec(line)
-				,atEnd = idx === arr.length - 1;
-
-			if(!pathResult || atEnd){
-				tpls[typePointer][currentPath].push(line);
-			}
-
-			if((pathResult || atEnd) && currentPath){
-				tpls[typePointer][currentPath] = tpls[typePointer][currentPath].join('\n');
-			}
-
-			if(pathResult){
-				typePointer = pathResult[1];
-				currentPath = pathResult[2].replace(/^\s+|\s+$/, '');
-				tpls[typePointer][currentPath] = [];
-			}
-		});
-
-		return tpls;
-	}
-
-	// VASH.BATCH
-	///////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////
-	// HELPER INSTALLATION
-
-	var  slice = Array.prototype.slice
-		,reFuncHead = /^vash\.helpers\.([^= ]+?)\s*=\s*function([^(]*?)\(([^)]*?)\)\s*{/
-		,reFuncTail = /\}$/
-
-	exports['compileHelper'] = function reg(str, options){
-
-		options = options || {};
-
-			// replace leading/trailing spaces, and parse the function head
-		var  def = str.replace(/^\s+|\s+$/, '').match(reFuncHead)
-			// split the function arguments, kill all whitespace
-			,args = def[3].split(',').map(function(arg){ return arg.replace(' ', '') })
-			,name = def[1]
-			,body = str
-				.replace( reFuncHead, '' )
-				.replace( reFuncTail, '' )
-
-		// Wrap body in @{} to simulate it actually being inside a function
-		// definition, since we manually stripped it. Without this, statements
-		// such as `this.what = "what";` that are at the beginning of the body
-		// will be interpreted as markup.
-		body = '@{' + body + '}';
-
-		// `args` and `asHelper` inform `vash.compile/link` that this is a helper
-		options.args = args;
-		options.asHelper = name;
-		vash.compile(body, options);
-	}
-
-	// HELPER INSTALLATION
+	// HELPER AND BATCH COMPILATION
 	///////////////////////////////////////////////////////////////////////////
 
 	/************** Begin injected code from build script */
@@ -196,6 +254,7 @@
 	var Helpers = function ( model ) {
 		this.buffer = new Buffer();
 		this.model  = model;
+		this.options = null; // added at render time
 
 		this.vl = 0;
 		this.vc = 0;
@@ -325,7 +384,25 @@
 	Buffer.prototype.indexOf = function( str ){
 
 		for( var i = 0; i < this._vo.length; i++ ){
-			if( this._vo[i] == str ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	Buffer.prototype.lastIndexOf = function( str ){
+		var i = this._vo.length;
+
+		while( --i >= 0 ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
 				return i;
 			}
 		}
@@ -554,6 +631,11 @@
 			delete model.onRenderEnd;
 		}
 
+		// ensure options can be referenced
+		if( !opts ){
+			opts = {};
+		}
+
 		return opts;
 	}
 
@@ -608,6 +690,11 @@
 ;(function(){
 
 	var helpers = vash.helpers;
+
+	// Trim whitespace from the start and end of a string
+	helpers.trim = function(val){
+		return val.replace(/^\s*|\s*$/g, '');
+	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// EXAMPLE HELPER: syntax highlighting
@@ -925,13 +1012,15 @@ var  AT = 'AT'
 	,CONTENT = 'CONTENT'
 	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
 	,EMAIL = 'EMAIL'
+	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
 	,FAT_ARROW = 'FAT_ARROW'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
 	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
 	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_SELFCLOSE = 'HTML_TAG_SELFCLOSE'
+	,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
+	,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
 	,IDENTIFIER = 'IDENTIFIER'
 	,KEYWORD = 'KEYWORD'
 	,LOGICAL = 'LOGICAL'
@@ -982,6 +1071,7 @@ var TESTS = [
 	// However, this is "Good Enough"© :).
 	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
 
+
 	,AT_STAR_OPEN, (/^(@\*)/)
 	,AT_STAR_CLOSE, (/^(\*@)/)
 
@@ -1009,21 +1099,24 @@ var TESTS = [
 	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
-	,HTML_TAG_SELFCLOSE, (/^(<[^@>]+?\/>)/)
 	,HTML_TAG_OPEN, function(){
 		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
+			,reSelfClosing = /^(<[a-zA-Z@]+[^>]*?\s*\/\s*>)/
 
-		var tok = this.scan( reHtml, HTML_TAG_OPEN );
+		var tok = this.scan( reSelfClosing, HTML_TAG_VOID_OPEN )
+			|| this.scan( reHtml, HTML_TAG_OPEN );
 
 		if( tok ){
 			this.spewIf( tok, reEmail );
 			this.spewIf( tok, /(@)/ );
+			this.spewIf( tok, /(\/\s*>)/ );
 		}
 
 		return tok;
 	}
 	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
+	,HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
 
 
 	,PERIOD, (/^(\.)/)
@@ -1046,6 +1139,7 @@ var TESTS = [
 	,LOGICAL, (/^(&&|\|\||&|\||\^)/)
 
 
+	,ESCAPED_QUOTE, (/^(\\+['"])/)
 	,BACKSLASH, (/^(\\)/)
 	,DOUBLE_QUOTE, (/^(\")/)
 	,SINGLE_QUOTE, (/^(\')/)
@@ -1157,6 +1251,7 @@ vQuery.fn.length = 0;
 vQuery.fn.parent = null;
 vQuery.fn.mode = null;
 vQuery.fn.tagName = null;
+vQuery.fn.tagVoid = null;
 
 vQuery.fn.beget = function(mode, tagName){
 	var child = vQuery(mode);
@@ -1590,6 +1685,7 @@ VParser.prototype = {
 							break;
 
 						case AT:
+						case AT_COLON:
 
 							// we want to keep the token, but remove its
 							// "special" meaning because during compilation
@@ -1608,6 +1704,7 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
+			case HTML_TAG_VOID_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
 
 				if(tagName === null && next && next.type === AT && ahead){
@@ -1621,7 +1718,17 @@ VParser.prototype = {
 					this.ast.tagName = tagName[1];
 				}
 
-				if(HTML_TAG_OPEN === curr.type || this.options.saveTextTag) {
+				// mark this ast as void, to enable recognition of HTML_TAG_VOID_CLOSE,
+				// which is otherwise generic
+				if(curr.type === HTML_TAG_VOID_OPEN){
+					this.ast.tagVoid = this.ast.tagName;
+				}
+
+				if(
+					HTML_TAG_VOID_OPEN === curr.type
+					|| HTML_TAG_OPEN === curr.type
+					|| this.options.saveTextTag
+				){
 					this.ast.push(curr);
 				}
 
@@ -1657,16 +1764,22 @@ VParser.prototype = {
 
 				break;
 
-			case HTML_TAG_SELFCLOSE:
+			case HTML_TAG_VOID_CLOSE:
 
-				this.ast.push(curr);
-
-				// close this ast if parent is BLK. if another tag follows, BLK will
-				// flip over to MKP
-				if( this.ast.parent && this.ast.parent.mode === BLK ){
+				// this should only be a valid token if tagVoid is defined, meaning
+				// HTML_TAG_VOID_OPEN was previously found within this markup block
+				if(this.ast.tagVoid){
+					this.ast.push(curr);
 					this.ast = this.ast.parent;
+				} else {
+					this.tokens.push(curr); // defer
 				}
 
+				break;
+
+			case BACKSLASH:
+				curr.val += '\\';
+				this.ast.push(curr);
 				break;
 
 			default:
@@ -1706,7 +1819,7 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case TEXT_TAG_CLOSE:
-			case HTML_TAG_SELFCLOSE:
+			case HTML_TAG_VOID_OPEN:
 			case HTML_TAG_OPEN:
 			case HTML_TAG_CLOSE:
 				this.ast = this.ast.beget(MKP);
@@ -1743,11 +1856,6 @@ VParser.prototype = {
 					this.ast.push(subTokens);
 				}
 
-				break;
-
-			case WHITESPACE:
-				this.ast.push(curr);
-				this.advanceUntilNot(WHITESPACE);
 				break;
 
 			default:
@@ -1892,7 +2000,7 @@ function VCompiler(ast, originalMarkup, options){
 	this.originalMarkup = originalMarkup || '';
 	this.options = options || {};
 
-	this.reQuote = /(["'])/gi
+	this.reQuote = /(['"])/gi
 	this.reEscapedQuote = /\\+(["'])/gi
 	this.reLineBreak = /[\n\r]/gi
 	this.reHelpersName = /HELPERSNAME/g
@@ -1918,10 +2026,11 @@ VCP.visitMarkupTok = function(tok, parentNode, index){
 
 	this.insertDebugVars(tok);
 	this.buffer.push(
-		"MKP('" + tok.val
+		"MKP(" + tok.val
+			.replace(this.reEscapedQuote, '\\\\$1')
 			.replace(this.reQuote, '\\$1')
 			.replace(this.reLineBreak, '\\n')
-		+ "')MKP" );
+		+ ")MKP" );
 }
 
 VCP.visitBlockTok = function(tok, parentNode, index){
@@ -2018,6 +2127,7 @@ VCP.addHead = function(body){
 	var head = ''
 		+ (options.debug ? 'try { \n' : '')
 		+ 'var __vbuffer = HELPERSNAME.buffer; \n'
+		+ 'HELPERSNAME.options = __vopts; \n'
 		+ 'MODELNAME = MODELNAME || {}; \n'
 		+ (options.useWith ? 'with( MODELNAME ){ \n' : '');
 
@@ -2087,9 +2197,9 @@ VCP.generate = function(){
 	// coalesce markup
 	var joined = this.buffer
 		.join("")
-		.split("')MKPMKP('").join('')
-		.split("MKP(").join( "__vbuffer.push(")
-		.split(")MKP").join("); \n");
+		.split(")MKPMKP(").join('')
+		.split("MKP(").join( "__vbuffer.push('")
+		.split(")MKP").join("'); \n");
 
 	if(!options.asHelper){
 		joined = this.addHead( joined );

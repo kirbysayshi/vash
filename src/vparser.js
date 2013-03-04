@@ -388,11 +388,6 @@ VParser.prototype = {
 
 				break;
 
-			case WHITESPACE:
-				this.ast.push(curr);
-				this.advanceUntilNot(WHITESPACE);
-				break;
-
 			default:
 				this.ast.push(curr);
 				break;

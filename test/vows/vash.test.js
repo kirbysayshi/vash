@@ -1844,6 +1844,45 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 	}
+
+	,'whitespace': {
+
+		'within block': {
+			topic: '@{ html.buffer.push(Array(5).join("  ")) }'
+
+			,'is preserved': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl();
+
+				console.log(tpl.toString());
+
+				assert.equal( actual.length, 8 );
+			}
+		}
+
+		,'within expression': {
+			topic: '@Array(5).join("  ")'
+
+			,'is preserved': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl();
+
+				assert.equal( actual.length, 8 );
+			}
+		}
+
+		,'within markup': {
+			topic: '        '
+
+			,'is preserved': function(topic){
+				var  tpl = vash.compile(topic)
+					,actual = tpl();
+
+				assert.equal( actual.length, 8 );
+			}
+		}
+	}
+
 	/*,'implicit compilation': {
 
 		'is valid': {

@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.0-2085
+ * Vash - JavaScript Template Parser, v0.6.1-2481
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -28,6 +28,7 @@
 	var Helpers = function ( model ) {
 		this.buffer = new Buffer();
 		this.model  = model;
+		this.options = null; // added at render time
 
 		this.vl = 0;
 		this.vc = 0;
@@ -157,7 +158,25 @@
 	Buffer.prototype.indexOf = function( str ){
 
 		for( var i = 0; i < this._vo.length; i++ ){
-			if( this._vo[i] == str ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	Buffer.prototype.lastIndexOf = function( str ){
+		var i = this._vo.length;
+
+		while( --i >= 0 ){
+			if(
+				( str.test && this._vo[i].search(str) > -1 )
+				|| this._vo[i] == str
+			){
 				return i;
 			}
 		}
@@ -384,6 +403,11 @@
 			}
 
 			delete model.onRenderEnd;
+		}
+
+		// ensure options can be referenced
+		if( !opts ){
+			opts = {};
 		}
 
 		return opts;
