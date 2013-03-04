@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax for JS templating",
-	"version": "0.6.2-2481",
+	"version": "0.6.2-2482",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"homepage": "https://github.com/kirbysayshi/vash",
 	"bin": {
