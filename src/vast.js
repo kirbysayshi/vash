@@ -148,7 +148,7 @@ vQuery.fn.maxCheck = function(last){
 	}
 }
 
-vQuery.maxSize = 1000;
+vQuery.maxSize = 100000;
 
 // takes a full nested set of vqueries (e.g. an AST), and flattens them 
 // into a plain array. Useful for performing queries, or manipulation,

@@ -1,7 +1,7 @@
 {
 	"name": "vash",
 	"description": "Razor syntax for JS templating",
-	"version": "0.6.2-2482",
+	"version": "0.6.3-2484",
 	"author": "Andrew Petersen <senofpeter@gmail.com>",
 	"homepage": "https://github.com/kirbysayshi/vash",
 	"bin": {
@@ -20,6 +20,10 @@
 	"main": "build/vash",
 	"engines": {
 		"node": ">= 0.6"
+	},
+	"scripts": {
+		"test": "support/tasks test",
+		"test-all": "support/tasks test --min"
 	},
 	"dependencies": {
 		"commander": "0.6.1",

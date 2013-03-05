@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.2-2482
+ * Vash - JavaScript Template Parser, v0.6.2-2484
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.6.2-2482";
+	exports["version"] = "0.6.2-2484";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -1377,7 +1377,7 @@ vQuery.fn.maxCheck = function(last){
 	}
 }
 
-vQuery.maxSize = 1000;
+vQuery.maxSize = 100000;
 
 // takes a full nested set of vqueries (e.g. an AST), and flattens them 
 // into a plain array. Useful for performing queries, or manipulation,
