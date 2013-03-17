@@ -141,7 +141,7 @@ cli
 	.option('-j, --json <json>', 'Pass options to the Vash compiler. See docs for valid options.')
 	.option('-o, --out <path>', 'Write template into <path> directory')
 	.option('-u, --uglify', 'Uglify the template, safely')
-	.option('-a, --no-autolink', 'Wrap each template in `vash.link`.')
+	.option('-a, --no-autolink', 'Do not wrap each template in `vash.link`.')
 	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
 	.option('-r, --render [json]', 'Render the template using <json> as the model')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
