@@ -1,3 +1,15 @@
+v0.6.2-2482 / 03-04-2013
+========================
+
+* Improved backslash escaping in content
+* Improved escaped quote handling in content
+* `Buffer#indexOf`, `Buffer#lastIndexOf` can accept a regex
+* `vash.helpers.trim`
+* `html.options` within a template are the same options passed to the compiled template (`tpl(model, opts)`)
+* Improved handling of void/non-void HTML elements containing expressions
+* `vash(1)`: `--helpers` option loads a file of compiled helpers
+* Compiled helpers can begin with a newline
+* `vash.batch` is now `vash.compileBatch`. `batch` is still a valid alias for now.
 
 v0.6.0-2085 / 01-22-2013
 ========================
