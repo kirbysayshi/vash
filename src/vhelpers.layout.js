@@ -57,6 +57,7 @@
 			}
 		}
 
+		// TODO: auto insert 'model' into arguments
 		try {
 			// if browser, tpl must exist in tpl cache
 			tpl = options.cache || browser
@@ -75,7 +76,7 @@
 			// auto setup an `onRenderEnd` callback to seal the layout
 			var prevORE = options.onRenderEnd;
 
-			cb( err, tpl(options, function(err, ctx){
+			cb( err, !err && tpl(options, function(err, ctx){
 				ctx.finishLayout()
 				if( prevORE ) prevORE(err, ctx);
 			}) );
