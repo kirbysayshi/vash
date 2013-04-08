@@ -1,3 +1,14 @@
+v0.6.4-2631 / 04-08-2013
+========================
+
+* Fixed error reporting on windows
+* Better errors when using layouts
+
+v0.6.3-2484 / 03-04-2013
+========================
+
+* vQuery.maxSize defaults to 100000 for large templates
+
 v0.6.2-2482 / 03-04-2013
 ========================
 

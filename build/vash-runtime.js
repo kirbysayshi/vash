@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.2-2484
+ * Vash - JavaScript Template Parser, v0.6.3-2485
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -278,6 +278,8 @@
 				+ line;
 		}).join('\n');
 
+		e.vashlineno = lineno;
+		e.vashcharno = chr;
 		e.message = 'Problem while rendering template at line '
 			+ lineno + ', character ' + chr
 			+ '.\nOriginal message: ' + e.message + '.'

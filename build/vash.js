@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.2-2484
+ * Vash - JavaScript Template Parser, v0.6.3-2485
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.6.2-2484";
+	exports["version"] = "0.6.3-2485";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -504,6 +504,8 @@
 				+ line;
 		}).join('\n');
 
+		e.vashlineno = lineno;
+		e.vashcharno = chr;
 		e.message = 'Problem while rendering template at line '
 			+ lineno + ', character ' + chr
 			+ '.\nOriginal message: ' + e.message + '.'
@@ -794,6 +796,7 @@
 			}
 		}
 
+		// TODO: auto insert 'model' into arguments
 		try {
 			// if browser, tpl must exist in tpl cache
 			tpl = options.cache || browser
@@ -812,7 +815,7 @@
 			// auto setup an `onRenderEnd` callback to seal the layout
 			var prevORE = options.onRenderEnd;
 
-			cb( err, tpl(options, function(err, ctx){
+			cb( err, !err && tpl(options, function(err, ctx){
 				ctx.finishLayout()
 				if( prevORE ) prevORE(err, ctx);
 			}) );
@@ -2002,7 +2005,7 @@ function VCompiler(ast, originalMarkup, options){
 
 	this.reQuote = /(['"])/gi
 	this.reEscapedQuote = /\\+(["'])/gi
-	this.reLineBreak = /[\n\r]/gi
+	this.reLineBreak = /\r?\n/gi
 	this.reHelpersName = /HELPERSNAME/g
 	this.reModelName = /MODELNAME/g
 	this.reOriginalMarkup = /ORIGINALMARKUP/g
