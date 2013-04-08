@@ -158,4 +158,86 @@ vows.describe('vash templating library runtime').addBatch({
 		}
 	}
 
+	,'runtime error reporting': {
+
+		// "marked line" == line with the >
+		// "reported line" == line with code as reported
+		// "actual line" == the true/actual source code index
+
+		// NOTE: lineIndexOf only works assuming that the entire test tpl can
+		// fit in the "context" of the error message. That means the error
+		// must exist within the first 3 lines of the template
+
+		topic: function(){
+			return {
+
+				getError: function(str, model){
+					var tpl = vash.compile(str, { debug: true });
+					try {
+						tpl(model);
+					} catch(e) {
+						return e;
+					}
+				}
+
+				,reMarked: /^\s+>\s+[0-9]+\s\|.*?$/gm
+
+				,lineIndexOf: function(message, text){
+					// slice(4) because first four lines are
+					// err + line + char
+					// original message
+					// context:
+					//  (newline)
+					return message.split('\n').slice(4).reduce(function(prev, curr, i){
+						var result = curr.match(text)
+						//console.log(prev, curr, result)
+						if(result) return i + 1; // 1-based index for "lines"
+						else return prev;
+					}, -1);
+				}
+
+				,assert: function(text, topic, badtext, actualLine){
+					var  e = topic.getError(text)
+						,marked = topic.lineIndexOf(e.message, topic.reMarked)
+						,reported = topic.lineIndexOf(e.message, badtext)
+
+					// when debugging, dumping this is useful to clearly see the mismatch
+					//console.log(e.message);
+
+					assert.equal( e.vashlineno, actualLine, 'expected error line ' + actualLine + ', got ' + e.vashlineno );
+					assert.equal( marked, e.vashlineno, 'expected marked line ' + e.vashlineno + ', got ' + marked );
+					assert.equal( reported, e.vashlineno, 'expected reported line ' + e.vashlineno + ' got ' + reported );
+				}
+			}
+		}
+
+		,'in layout in windows': {
+			'reports proper line number': function(topic){
+				var  str = "@html.extend('layout', function(model){\r\n\r\n<br/>@model.child.xxx\r\n\r\n})"
+				topic.assert(str, topic, '@model', 3);
+			}
+		}
+
+		,'in layout in unix': {
+			'reports proper line number': function(topic){
+				var  str = "@html.extend('layout', function(model){\n\n<br/>@model.child.xxx\n\n})"
+				topic.assert(str, topic, '@model', 3);
+			}
+		}
+
+		,'on windows': {
+			'reports proper line number': function(topic){
+				var str = '\r\n\r\n @who'
+				topic.assert(str, topic, '@who', 3);
+			}
+		}
+
+		,'on unix': {
+			'reports proper line number': function(topic){
+				var str = '\n\n @who'
+				topic.assert(str, topic, '@who', 3);
+			}
+		}
+	}
+
 }).export(module)

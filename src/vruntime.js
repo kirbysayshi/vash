@@ -269,6 +269,8 @@
 				+ line;
 		}).join('\n');
 
+		e.vashlineno = lineno;
+		e.vashcharno = chr;
 		e.message = 'Problem while rendering template at line '
 			+ lineno + ', character ' + chr
 			+ '.\nOriginal message: ' + e.message + '.'

@@ -7,7 +7,7 @@ function VCompiler(ast, originalMarkup, options){
 
 	this.reQuote = /(['"])/gi
 	this.reEscapedQuote = /\\+(["'])/gi
-	this.reLineBreak = /[\n\r]/gi
+	this.reLineBreak = /\r?\n/gi
 	this.reHelpersName = /HELPERSNAME/g
 	this.reModelName = /MODELNAME/g
 	this.reOriginalMarkup = /ORIGINALMARKUP/g
