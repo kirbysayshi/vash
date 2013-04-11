@@ -100,7 +100,7 @@ var TESTS = [
 
 
 	,HTML_TAG_OPEN, function(){
-		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
+		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 			,reSelfClosing = /^(<[a-zA-Z@]+[^>]*?\s*\/\s*>)/
 

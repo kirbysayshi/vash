@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.3-2485
+ * Vash - JavaScript Template Parser, v0.6.5-2648
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -26,7 +26,7 @@
 
 	var vash = exports; // neccessary for nodejs references
 
-	exports["version"] = "0.6.3-2485";
+	exports["version"] = "0.6.5-2648";
 	exports["config"] = {
 		 "useWith": false
 		,"modelName": "model"
@@ -38,6 +38,8 @@
 		,"simple": false
 
 		,"favorText": false
+
+		,"externs": [ 'window', 'document' ]
 
 		,"saveTextTag": false
 		,"saveAT": false
@@ -1103,7 +1105,7 @@ var TESTS = [
 
 
 	,HTML_TAG_OPEN, function(){
-		var  reHtml = /^(<[^\/=+< >]+?[^>]*?>)/
+		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 			,reSelfClosing = /^(<[a-zA-Z@]+[^>]*?\s*\/\s*>)/
 
