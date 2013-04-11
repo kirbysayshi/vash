@@ -3,77 +3,46 @@
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
 		<title>vash</title>
-		
 	</head>
 	<body id="" onload="">
-		
+
+		<script type="text/javascript">
+			// necessary because of loading each component separately
+			var exports = vash = {};
+		</script>
+
 		<script src="../src/vlexer.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vparser.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vast.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vcompiler.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vash.exports.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vruntime.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../src/vhelpers.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../src/vhelpers.layout.js" type="text/javascript" charset="utf-8"></script>
 		<!--<script src="../build/vash.closure.min.js" type="text/javascript" charset="utf-8"></script>-->
-		
-		<script id="test" type="text/razor-js" charset="utf-8">
-		@function dbgOut(){ <text>debug output</text> }
 
-		Put your test template here, watch console for @dbgOut()! 
-
+		<script id="test" type="text/vash" charset="utf-8">
+			@function dbgOut(){ <text>debug output</text> }
+			Put your test template here, watch console for @dbgOut()!
 		</script>
 
 		<script type="text/javascript" charset="utf-8">
 
-			var mkOpts = function(model){
-				return vash.vQuery.extend( model || {}, {
-					// mock up express settings
-					settings: {
-						views: '',
-						'view engine': 'vash'
-					}
-					,onRenderEnd: function(err, ctx){
-						ctx.finishLayout();
-					}
-				});
-			}
-
-			var installTplAt = function( filename, str ){
-				var opts = mkOpts( { cache: true } )
-					,base = opts.settings.views
-					,p = ( base ? base + '/' : '') + filename
-
-				vash.helpers.tplcache[ p ] = vash.compile( str );
-				return p;
-			}
-
-			var uninstallTplAt = function( filename ){
-				return delete vash.helpers.tplcache[ filename ];
-			}
-			
-			var opts = { debugParser: true, debugCompiler: true, debug: true, modelName: 'model' }
+			var opts = { debugParser: true, debugCompiler: true, debug: false, modelName: 'model', helpersName: 'html' }
 
 			var lexerContent = document.querySelectorAll('#test')[0].innerHTML;
 			console.log(lexerContent);
 			var l = new VLexer(lexerContent);
-			
 			var tokens = [], tok;
 			while(tok = l.advance()) tokens.push(tok);
 			tokens.reverse();
-
 			var p = new VParser(tokens, opts);
 			var ast = p.parse();
-
-			var c = new VCompiler(ast, lexerContent);
+			var c = new VCompiler(ast, lexerContent, opts);
 			c.debug = true;
-			
-			vash.helpers.config.browser = true;
+			var tpl = c.generate();
 
-			var includedPath = installTplAt( 'i.vash', '@html.block("content", function(){ <p></p> })')
-				,layoutPath = installTplAt( 'layout.vash', '@html.block("content")@html.block("footer")')
-				,tpl = vash.compile( '@html.extend("layout.vash",function(){ @html.append("footer", function(){ @html.include("i.vash") }) })' )
-
-				tpl( mkOpts({ cache: true }) );
+			//var tpl = vash.compileHelper(lexerContent, opts);
 
 		</script>
 	</body>
