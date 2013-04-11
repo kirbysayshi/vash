@@ -5,14 +5,16 @@ var vows = require('vows')
 	,vm = require('vm')
 
 	,program = require('commander')
-	,vash = require( path.join(__dirname, '..', '..', 'build', 'vash') )
+	,vash
 	,vruntime
 
 program
-	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../../build/vash-runtime-all.js') )
+	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../../build/vash') )
+	.option('-w, --whichr <filename>', 'Use <filename> as the vash runtime', path.join( __dirname, '../../build/vash-runtime-all.js') )
 	.parse( process.argv );
 
-vruntime = require( program.whichv )
+vash = require( program.whichv );
+vruntime = require( program.whichr )
 
 vash.config.useWith = false;
 vash.config.debug = false;
