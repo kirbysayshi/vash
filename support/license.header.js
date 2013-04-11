@@ -3,7 +3,7 @@
  *
  * https://github.com/kirbysayshi/vash
  *
- * Copyright (c) 2012 Andrew Petersen
+ * Copyright (c) 2013 Andrew Petersen
  * MIT License (LICENSE)
  */
  
