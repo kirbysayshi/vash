@@ -50,12 +50,18 @@ build: $(SRC)
 	@node support/version.js
 
 build-min: build
-	@$(UGLIFY) build/vash.js > build/vash.min.js \
-			&& du -h build/vash.js build/vash.min.js
-	@$(UGLIFY) build/vash-runtime.js > build/vash-runtime.min.js \
-			&& du -h build/vash-runtime.js build/vash-runtime.min.js
-	@$(UGLIFY) build/vash-runtime-all.js > build/vash-runtime-all.min.js \
-			&& du -h build/vash-runtime-all.js build/vash-runtime-all.min.js
+	@$(UGLIFY) build/vash.js > build/vash.min.js
+	@$(UGLIFY) build/vash-runtime.js > build/vash-runtime.min.js
+	@$(UGLIFY) build/vash-runtime-all.js > build/vash-runtime-all.min.js
+
+stats: build-min
+	@printf "%16s %s \n" "vash.js" $$(wc -c < build/vash.js | tr -d ' ')k
+	@printf "%16s %s \n" "min" $$(wc -c < build/vash.min.js | tr -d ' ')k
+	@printf "%16s %s \n" "gzipped" $$(gzip -cf < build/vash.min.js | wc -c | tr -d ' ')k
+	@echo --
+	@printf "%16s %s \n" "vash-runtime.js" $$(wc -c < build/vash-runtime.js | tr -d ' ')k
+	@printf "%16s %s \n" "min" $$(wc -c < build/vash-runtime.min.js | tr -d ' ')k
+	@printf "%16s %s \n" "gzipped" $$(gzip -cf < build/vash-runtime.min.js | wc -c | tr -d ' ')k
 
 test: build
 	@$(VOWS) test/vows/* --spec
