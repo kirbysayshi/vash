@@ -1,4 +1,4 @@
-<script type="text">This document was generated from README.vash</script>
+<!-- This document was generated from README.vash -->
 
 
 Vash

@@ -77,7 +77,7 @@ clean:
 
 docs: build
 	@cat \
-		<(echo '<script type="text">This document was generated from README.vash</script>') \
+		<(echo '<!-- This document was generated from README.vash -->') \
 		<(bin/vash <README.vash --render --helpers <(bin/vash <docs/helpers/* --helper)) \
 		> README.md
 
