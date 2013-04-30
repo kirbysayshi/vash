@@ -1,0 +1,135 @@
+vash.helpers.mdA = function(text, id){
+	if(!id) id = vash.helpers.mdHref(text);
+	<a href="@id">@text</a>
+}
+
+vash.helpers.mdFn = function(id, ctn){
+	this.mdFnCounter = this.mdFnCounter || 0;
+	this.mdFnIds = this.mdFnIds || {};
+	this.mdFnCtn = this.mdFnCtn || {};
+	if(ctn){
+		<li id="fn:@id">
+			@ctn() <a rev="footnote" href="#fnref:@id">&#8617;</a>
+		</li>
+	} else {
+		this.mdFnIds[id] = ++this.mdFnCounter;
+		<sup id="fnref:@id">
+			<a rel="footnote" href="#fn:@id">@this.mdFnCounter</a>
+		</sup>
+	}
+}
+
+vash.helpers.mdFnList = function(ctn){
+	<hr />
+	<ol class="footnotes">
+	@ctn()
+	</ol>
+}
+
+vash.helpers.mdToc = function(){
+	this.options = this.options || {};
+	this._mdTocMark = this.buffer.mark('MDTOC');
+
+	// don't overwrite existing onRenderEnd
+	var  _onRenderEnd = this.options && this.options.onRenderEnd
+		,self = this;
+
+	this.options.onRenderEnd = function(err, html){
+
+		// mark where we are in the buffer...
+		var scratch = self.buffer.mark()
+			,indent = 0
+			,entry;
+
+		// start building
+		@{ self._mdTocEntries.reduce(function(lvl, entry, i){
+
+			if(entry){
+
+				indent += entry.lvl > lvl
+					? 1
+					: 0;
+
+				indent -= entry.lvl < lvl
+					? 1
+					: 0;
+
+				// use buffer api here to have fine control over whitespace
+				self.buffer.push( Array(indent + 1).join('  ')
+					+ '- [' + self.trim(entry.text) + '](' + entry.href + ') \n' );
+
+				return entry.lvl;
+			}
+
+			return lvl;
+		}, 1) }
+
+		// grab all the new content
+		var lines = self.buffer.fromMark(scratch);
+
+		// and output it
+		self.buffer.spliceMark(self._mdTocMark, 0, lines.join(''));
+		_onRenderEnd && _onRenderEnd(err, html);
+	}
+}
+
+vash.helpers.mdTocRefs = function(){
+	this._mdTocEntries.map(function(entry, i){
+		@:[@html.trim(entry.text)]: @entry.href
+	}).join('\n');
+}
+
+vash.helpers.mdTocLvlX = function(lvl, id){
+	var  text = this.grabUntilPrevLine().join('')
+		,href = '#' + id
+
+	if(!id){
+		id = this.mdHref(text);
+		href = '#' + id;
+	}
+
+	var match = /^(#*)\s*(.+)$/.exec(text);
+
+	if(match[1] && lvl <= 0){
+		lvl = match[1].length;
+	}
+
+	this._mdTocEntries = this._mdTocEntries || [];
+	this._mdTocEntries.push({ lvl: lvl, href: href, text: text, id: id });
+
+	this.buffer.push(text);
+	<a id="@id"></a>
+}
+
+
+vash.helpers.grabUntilPrevLine = function(){
+	var  reNL = /([^\n]*\n)(.*)$/
+		,entry
+		,entries
+		,match
+
+	var lastNL = this.buffer.lastIndexOf(reNL);
+
+	if(lastNL > -1){
+		entry = this.buffer.index(lastNL);
+		match = reNL.exec(entry);
+		entries = this.buffer.splice(lastNL, this.buffer._vo.length - lastNL);
+
+		if( match && match[1] ){
+			// make the first entry in the returned only contain the text
+			// after the line break if it exists. Also put the preceeding text
+			// back into the primary buffer (split)
+			this.buffer.push( entries[0].replace(match[2], '') );
+			entries[0] = match[2];
+		}
+	}
+
+	return entries;
+}
+
+vash.helpers.mdHref = function(text){
+	return text
+		.toLowerCase()
+		.replace(/[^a-zA-Z0-9-_]+/g, '-')
+		.replace(/^-+|\n|-+$/g, '');
+}

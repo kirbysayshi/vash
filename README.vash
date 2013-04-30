@@ -1,88 +1,25 @@
-<script type="text">This document was generated from README.vash</script>
-
+@{
+	// shortcuts
+	var  fn = html.mdFn.bind(html)
+		,toc = html.mdToc.bind(html)
+		,lvl1 = html.mdTocLvlX.bind(html, 1)
+		,lvl2 = html.mdTocLvlX.bind(html, 2)
+}
 
 Vash
 ====
 
 _"... the 60 billion double-dollar template-maker!"_ ~ The previous README, and no one else, ever.
 
-Vash is a template engine that offers a swift flow between code and content using [Razor Syntax][] <sup id="fnref:razor-ms">
-			<a rel="footnote" href="#fn:razor-ms">1</a>
-		</sup>. This document <sup id="fnref:this-doc">
-			<a rel="footnote" href="#fn:this-doc">2</a>
-		</sup> is intended for users of Vash, and also serves as a reference for Vash's implementation of Razor Syntax.
+Vash is a template engine that offers a swift flow between code and content using [Razor Syntax][] @fn('razor-ms'). This document @fn('this-doc') is intended for users of Vash, and also serves as a reference for Vash's implementation of Razor Syntax.
 
 [Razor Syntax]: http://www.asp.net/web-pages/tutorials/basics/2-introduction-to-asp-net-web-programming-using-the-razor-syntax
 
 [![Build Status](https://secure.travis-ci.org/kirbysayshi/Vash.png?branch=master)](https://travis-ci.org/kirbysayshi/Vash)
 
-- [Features](#features) 
-- [Syntax Example](#syntax-example) 
-- [Quick Start](#quick-start) 
-  - [nodejs](#nodejs) 
-  - [express](#express) 
-  - [Browser - Vanilla](#browser---vanilla) 
-  - [Browser - RequireJS](#browser---requirejs) 
-- [Playground](#playground) 
-- [Syntax](#syntax) 
-  - [The Transition Character: @](#the-transition-character) 
-  - [Expressions](#expressions) 
-  - [Advanced Expressions](#advanced-expressions) 
-  - [Explicit Expressions](#explicit-expressions) 
-  - [Code Blocks](#code-blocks) 
-  - [Keyword Blocks](#keyword-blocks) 
-  - [Comments](#comments) 
-  - [HTML Escaping](#html-escaping) 
-  - [Explicit Markup](#explicit-markup) 
-- [Configuration](#configuration) 
-  - [vash.config.useWith](#vash-config-usewith) 
-  - [vash.config.modelName](#vash-config-modelname) 
-  - [vash.config.helpersName](#vash-config-helpersname) 
-  - [vash.config.htmlEscape](#vash-config-htmlescape) 
-  - [vash.config.debug](#vash-config-debug) 
-  - [vash.config.debugParser](#vash-config-debugparser) 
-  - [vash.config.debugCompiler](#vash-config-debugcompiler) 
-  - [vash.config.simple](#vash-config-simple) 
-  - [vash.config.favorText](#vash-config-favortext) 
-- [Template Options](#template-options) 
-  - [asContext](#ascontext) 
-  - [onRenderEnd](#onrenderend) 
-- [Helper System](#helper-system) 
-- [Built-in Helpers](#built-in-helpers) 
-  - [vash.helpers.raw](#vash-helpers-raw) 
-  - [vash.helpers.escape](#vash-helpers-escape) 
-  - [vash.helpers.tplcache](#vash-helpers-tplcache) 
-- [Layout Helpers](#layout-helpers) 
-  - [vash.helpers.extend](#vash-helpers-extend) 
-  - [vash.helpers.block](#vash-helpers-block) 
-  - [vash.helpers.append](#vash-helpers-append) 
-  - [vash.helpers.prepend](#vash-helpers-prepend) 
-  - [vash.helpers.include](#vash-helpers-include) 
-- [Compiled Helpers](#compiled-helpers) 
-- [Buffer API](#buffer-api) 
-- [Precompiling Templates](#precompiling-templates) 
-- [Vash Runtime (Browser)](#vash-runtime-browser) 
-- [Compile-time API](#compile-time-api) 
-  - [vash.compile](#vash-compile) 
-  - [vash.compileHelper](#vash-compilehelper) 
-  - [vash.compileBatch](#vash-compilebatch) 
-- [Runtime API](#runtime-api) 
-  - [vash.link](#vash-link) 
-  - [vash.lookup](#vash-lookup) 
-  - [vash.install](#vash-install) 
-  - [vash.uninstall](#vash-uninstall) 
-- [vash(1)](#vash-1) 
-  - [Installation](#installation) 
-  - [--target-namespace](#vash1--target-namespace) 
-  - [--property-name](#vash1--property-name) 
-  - [--helper](#vash1--helper) 
-- [Contributing / Building](#contributing-building) 
-- [Getting Help](#getting-help) 
-- [Special Thanks](#special-thanks) 
-- [License](#license) 
+@toc()
 
-
-Features <a id="features"></a>
+Features @lvl1()
 ================
 
 * Mix code and content without ugly delineators, like `<?`, `<%`, or `{{`.
@@ -92,30 +29,30 @@ Features <a id="features"></a>
 * Works in the browser or in node.
 * Comes with a Jade-inspired layout engine (block, include, extend, append/prepend), which even works in the browser.
 
-Syntax Example <a id="syntax-example"></a>
+Syntax Example @lvl1()
 ======================
 
-	<p>How are you @model.name? Today is a sunny day on the planet Gunsmoke.</p>
+	<p>How are you @@model.name? Today is a sunny day on the planet Gunsmoke.</p>
 
-	<ul class="@(model.active ? 'highlight' : '')">
-		@model.forEach(function(m){
+	<ul class="@@(model.active ? 'highlight' : '')">
+		@@model.forEach(function(m){
 			<li>m.name</li>
 		})
 	</ul>
 
-Quick Start <a id="quick-start"></a>
+Quick Start @lvl1()
 ===================
 
-nodejs <a id="nodejs"></a>
+nodejs @lvl2()
 --------------
 
 	var vash = require('vash');
-	var tpl = vash.compile('<p>I am a @model.t!</p>');
+	var tpl = vash.compile('<p>I am a @@model.t!</p>');
 
 	var out = tpl({ t: 'template' });
 	// <p>I am a template!</p>
 
-express <a id="express"></a>
+express @lvl2()
 --------------------
 
 Check out [vash-express-example][] for a full example of hooking up vash as a view engine for express 3. But it's basically as simple as:
@@ -129,25 +66,25 @@ More information is also available in the [Layout Helpers][] sections.
 
 [vash-express-example]: https://github.com/kirbysayshi/vash-express-example
 
-Browser - Vanilla <a id="browser---vanilla"></a>
+Browser - Vanilla @lvl2()
 -------------------------
 
 	<script type="text/javascript" src="vash.min.js"></script>
 
-	var tpl = vash.compile( '<p>I am a @model.t!</p>' );
+	var tpl = vash.compile( '<p>I am a @@model.t!</p>' );
 	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
-Browser - RequireJS <a id="browser---requirejs"></a>
+Browser - RequireJS @lvl2()
 ---------------------------
 
 Be sure to configure paths appropriately, but vash is AMD ready.
 
 	require(['vash'], function(vash){
-		var tpl = vash.compile( '<p>I am a @model.t!</p>' );
+		var tpl = vash.compile( '<p>I am a @@model.t!</p>' );
 		document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 	})
 
-Playground <a id="playground"></a>
+Playground @lvl1()
 ==================
 
 Vash now has a [playground][] of sorts at [CodePen.io][]. It uses the current version of `vash.js` from the `build` folder. Fork it to test your own template ideas!
@@ -155,27 +92,27 @@ Vash now has a [playground][] of sorts at [CodePen.io][]. It uses the current ve
 [playground]: http://codepen.io/kirbysayshi/full/IjrFw
 [CodePen.io]: http://codepen.io
 
-Syntax <a id="syntax"></a>
+Syntax @lvl1()
 ==============
 
 For the following examples, assume a model is passed into the compiled function. If a model is explicitly defined, it will appear as:
 
 	// model = { what: 'hello!' }
 
-The Transition Character: @ <a id="the-transition-character"></a>
+The Transition Character: @@ @lvl2()
 ------------------------------------
 
-Vash uses the `@` symbol to transition between code and markup. To escape and print a literal `@`, use a double `@`, like this: `@@`.
+Vash uses the `@@` symbol to transition between code and markup. To escape and print a literal `@@`, use a double `@@`, like this: `@@@@`.
 
-Expressions <a id="expressions"></a>
+Expressions @lvl2()
 -------------------
 
-The most basic usage of Vash is an implicit expression. Vash is smart enough to know what's valid JS and what's not, and can usually do what you want it to do. And expression is an @ followed by a valid JS identifier. This is then interpolated automatically.
+The most basic usage of Vash is an implicit expression. Vash is smart enough to know what's valid JS and what's not, and can usually do what you want it to do. And expression is an @@ followed by a valid JS identifier. This is then interpolated automatically.
 
 input:
 
 	// model = { what: 'hello!' }
-	<p>@what</p>
+	<p>@@what</p>
 
 output:
 
@@ -187,7 +124,7 @@ To allow for the fastest render time possible, Vash by default requires the mode
 
 input:
 
-	<p>@model.what</p>
+	<p>@@model.what</p>
 
 output:
 
@@ -196,14 +133,14 @@ output:
 As you can see, the output is exactly the same. The name used to reference the model is configurable via `[vash.config.modelName](#config-modelName)`. Typical values are `model` and `it`.
 
 
-Advanced Expressions <a id="advanced-expressions"></a>
+Advanced Expressions @lvl2()
 ----------------------------
 
 Vash typically knows when an expression ends, even when the expression is complex. For example:
 
 input:
 
-	<p>@model.what().who[2]('are you sure')('yes, it\'s ok')( model.complex ? 'FULL POWER' : '' )</p>
+	<p>@@model.what().who[2]('are you sure')('yes, it\'s ok')( model.complex ? 'FULL POWER' : '' )</p>
 
 This will work just fine, assuming you have a model that actually contains that complexity! I hope you don't, and if so, I feel bad.
 
@@ -212,8 +149,8 @@ Callbacks work as well:
 input:
 
 	// model = ['a', 'b']
-	@model.forEach(function(item){
-		<li>@item</li>
+	@@model.forEach(function(item){
+		<li>@@item</li>
 	})
 
 outputs:
@@ -225,7 +162,7 @@ Vash also knows the difference between JS dot notation and a period.
 input:
 
 	// model = { description: 'living' }
-	<p>Plants are @model.description.</p>
+	<p>Plants are @@model.description.</p>
 
 output:
 
@@ -236,7 +173,7 @@ And empty brackets, because they're not valid JS:
 input:
 
 	// model = { formName: 'addresses' }
-	<input type="text" name="@model.formName[]" />
+	<input type="text" name="@@model.formName[]" />
 
 output:
 
@@ -244,7 +181,7 @@ output:
 
 Email addresses, to an extent, are fine as well. Vash makes a trade-off. It uses the following regex to validate an email address:
 
-	/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/
+	/^([a-zA-Z0-9.%]+@@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/
 
 Email addresses can actually contain many more valid characters, and are [really hard to validate][]. Vash can handle a typical email address with ease:
 
@@ -260,14 +197,14 @@ If you have a complex email address that confuses Vash, then you should use an [
 
 [really hard to validate]: http://www.regular-expressions.info/email.html
 
-Explicit Expressions <a id="explicit-expressions"></a>
+Explicit Expressions @lvl2()
 ----------------------------
 
-An explicit expression is simply an expression that, instead of being composed of `@` and a valid JS identifier, is surrounded by parenthesis.
+An explicit expression is simply an expression that, instead of being composed of `@@` and a valid JS identifier, is surrounded by parenthesis.
 
 input:
 
-	<p>@(model.what)</p>
+	<p>@@(model.what)</p>
 
 output:
 
@@ -278,7 +215,7 @@ Why would you ever need this? Perhaps you want to do something like:
 input:
 
 	// model = { hasIceCream: true }
-	<p class="@( model.hasIceCream ? 'ice-cream' : '')">Ice Cream<p>
+	<p class="@@( model.hasIceCream ? 'ice-cream' : '')">Ice Cream<p>
 
 output:
 
@@ -288,7 +225,7 @@ You could even create an anonymous function.
 
 input:
 
-	@(function(type){ return type + ' cream'; }('banana'))
+	@@(function(type){ return type + ' cream'; }('banana'))
 
 output:
 
@@ -296,16 +233,16 @@ output:
 
 As you can see, Vash does not require a model to be referenced, or even passed in.
 
-Code Blocks <a id="code-blocks"></a>
+Code Blocks @lvl2()
 -------------------
 
 Sometimes, AGAINST ALL ODDS, a template may need some quick computation of values to avoid repeating yourself. Unlike expressions and explicit expressions, a code block does not directly output. To compare to PHP, expressions are like `<?= $what ?>`, while a code block is like `<? $what = 'what' ?>`.
 
-A code block is simply `@{  }`.
+A code block is simply `@@{  }`.
 
 input:
 
-	@{ var rideOn = 'shooting star'; }
+	@@{ var rideOn = 'shooting star'; }
 
 output:
 
@@ -313,11 +250,11 @@ That's right, _nothing_! Here's a better example:
 
 input:
 
-	@{
+	@@{
 		var total = model.price + model.tax;
 	}
 
-	<p>Your total is: $@total</p>
+	<p>Your total is: $@@total</p>
 
 output:
 
@@ -327,7 +264,7 @@ Anything is valid within a code block, such as function declarations or even som
 
 input:
 
-	@{ <p>This works!</p> }
+	@@{ <p>This works!</p> }
 
 output:
 
@@ -335,7 +272,7 @@ output:
 
 A code block just tells Vash, "expect the next stuff to be code until otherwise".
 
-Keyword Blocks <a id="keyword-blocks"></a>
+Keyword Blocks @lvl2()
 ----------------------
 
 Vash is aware of keywords, and will open a code block automatically for you.
@@ -343,10 +280,10 @@ Vash is aware of keywords, and will open a code block automatically for you.
 input:
 
 	// model = { type: 'banana' }
-	@if(model.type){
-		<p>I'm a @model.type!</p>
+	@@if(model.type){
+		<p>I'm a @@model.type!</p>
 	} else if(model.name){
-		<p>My name is @model.name.</p>
+		<p>My name is @@model.name.</p>
 	} else {
 		<p>I DON'T KNOW WHO OR WHAT I AM...</p>
 	}
@@ -362,28 +299,28 @@ You don't even need to worry about whitespace or newlines:
 input:
 
 	// model = 1
-	@switch(model){case 1:<p></p>break;case 2:<b></b>break;}
+	@@switch(model){case 1:<p></p>break;case 2:<b></b>break;}
 
 output:
 
 	<p></p>
 
-Comments <a id="comments"></a>
+Comments @lvl2()
 ----------------
 
-Vash also supports comments that are not compiled into the template. These are delineated with `@*` and `*@`
+Vash also supports comments that are not compiled into the template. These are delineated with `@@*` and `*@@`
 
 input:
 
-	@* I am a comment that extends
-	over multiple lines *@
+	@@* I am a comment that extends
+	over multiple lines *@@
 	<p>BANANA!</p>
 
 output:
 
 	<p>BANANA!</p>
 
-HTML Escaping <a id="html-escaping"></a>
+HTML Escaping @lvl2()
 ---------------------
 
 By default, Vash escapes any HTML-like values before outputting them.
@@ -391,7 +328,7 @@ By default, Vash escapes any HTML-like values before outputting them.
 input:
 
 	// model = { what: '<img />' }
-	<p>@model.what</p>
+	<p>@@model.what</p>
 
 output:
 
@@ -402,7 +339,7 @@ If you are sure that you trust the content and/or need to display HTML-like valu
 input:
 
 	// model = { what: '<img />' }
-	<p>@html.raw(model.what)</p>
+	<p>@@html.raw(model.what)</p>
 
 output:
 
@@ -410,7 +347,7 @@ output:
 
 This behavior can be disabled using [vash.config.htmlEscape][].
 
-Explicit Markup <a id="explicit-markup"></a>
+Explicit Markup @lvl2()
 -----------------------
 
 Sometimes you may wish to tell Vash that what you're typing is markup or content, as opposed to code. Take the following example:
@@ -418,7 +355,7 @@ Sometimes you may wish to tell Vash that what you're typing is markup or content
 input:
 
 	// model = ['a']
-	@model.forEach(function(item){
+	@@model.forEach(function(item){
 		item
 	})
 
@@ -426,30 +363,30 @@ output:
 
 	(empty string)
 
-In this situation, you have two options. The first is the `@:` (at colon) escape. It tells Vash that until it sees a newline, treat the input as content, not code.
+In this situation, you have two options. The first is the `@@:` (at colon) escape. It tells Vash that until it sees a newline, treat the input as content, not code.
 
 input:
 
 	// model = ['a']
-	@model.forEach(function(item){
-		@: item
+	@@model.forEach(function(item){
+		@@: item
 	})
 
 output:
 
 	a
 
-The other option, in the event that more than one line is needed, is by using an imaginary HTML tag named `<text>`. When Vash sees this tag, it switches to content mode, and discards the tag. This means that the tag will never be output.
+The other option, in the event that more than one line is needed, is by using an imaginary HTML tag named `@html.raw('<text>')`. When Vash sees this tag, it switches to content mode, and discards the tag. This means that the tag will never be output.
 
 input:
 
 	// model = ['Indeed!']
-	@model.forEach(function(item){
-		<text>
+	@@model.forEach(function(item){
+		@html.raw('<text>')
 			This is some longer content that you
 			apparently wanted on multiple lines,
-			multiple times! @item
-		</text>
+			multiple times! @@item
+		@html.raw('</text>')
 	})
 
 output:
@@ -458,7 +395,7 @@ output:
 	apparently wanted on multiple lines,
 	multiple times! Indeed!
 
-Configuration <a id="configuration"></a>
+Configuration @lvl1()
 =====================
 
 Vash has a few compilation options that are configurable either by setting the relevant value in `vash.config` or by passing in an object with that key/value to [vash.compile][], [vash.compileBatch][], or [vash.compileHelper][].
@@ -471,7 +408,7 @@ Is the global version of:
 
 	vash.compile('<p>My tpl</p>', { debug: true });
 
-vash.config.useWith <a id="vash-config-usewith"></a>
+vash.config.useWith @lvl2()
 ---------------------------
 
 	Default: false
@@ -479,12 +416,12 @@ vash.config.useWith <a id="vash-config-usewith"></a>
 If `useWith` is set to `true`, then Vash will wrap a `with` block around the contents of the compiled function.
 
 	// vash.config.useWith == true
-	<li>@description</li>
+	<li>@@description</li>
 
 vs
 
 	// vash.config.useWith == false
-	<li>@model.description</li>
+	<li>@@model.description</li>
 
 Rendering is the same regardless:
 
@@ -494,7 +431,7 @@ Rendering is the same regardless:
 
 _Tech note: using a `with` block comes at a severe performance penalty (at least 25x slower!)._
 
-vash.config.modelName <a id="vash-config-modelname"></a>
+vash.config.modelName @lvl2()
 -----------------------------
 
 	Default: 'model'
@@ -502,13 +439,13 @@ vash.config.modelName <a id="vash-config-modelname"></a>
 If [vash.config.useWith][] is  `false` (default), then this property is used to determine what the name of the default free variable will be. Example:
 
 	// vash.config.useWith == false
-	<li>@model.description</li>
+	<li>@@model.description</li>
 
 vs
 
 	// vash.config.useWith == false
 	// vash.config.modelName == 'whatwhat'
-	<li>@whatwhat.description</li>
+	<li>@@whatwhat.description</li>
 
 Again, rendering is the same regardless:
 
@@ -518,19 +455,19 @@ Again, rendering is the same regardless:
 
 A common alternative to `model` is `it`.
 
-vash.config.helpersName <a id="vash-config-helpersname"></a>
+vash.config.helpersName @lvl2()
 -------------------------------
 
 	Default: 'html'
 
 Determines the name of the free variable through which registered helper methods can be reached. Example:
 
-	<li>@html.raw(model.description)</li>
+	<li>@@html.raw(model.description)</li>
 
 vs
 
 	// vash.config.helpersName == "help";
-	<li>@help.raw(model.description)</li>
+	<li>@@help.raw(model.description)</li>
 
 Again, rendering is the same regardless:
 
@@ -538,7 +475,7 @@ Again, rendering is the same regardless:
 	// outputs:
 	// <li><strong>Raw</strong> content!</li>
 
-vash.config.htmlEscape <a id="vash-config-htmlescape"></a>
+vash.config.htmlEscape @lvl2()
 ------------------------------
 
 	Default: true
@@ -547,7 +484,7 @@ As of version 0.4x, Vash automatically HTML encodes values generated by an expli
 
 If a value _should not_ be escaped, simply wrap it in a call to [vash.helpers.raw][].
 
-vash.config.debug <a id="vash-config-debug"></a>
+vash.config.debug @lvl2()
 -------------------------
 
 	Default: true
@@ -576,7 +513,7 @@ A template with `debug` set to `true` (default):
 				? html
 				: html.toString();
 		} catch( e ){
-			html.reportError( e, html.vl, html.vc, "<p></p>!LB!" );
+			html.reportError( e, html.vl, html.vc, "<p></p>!@html.raw('L')@html.raw('B')!" );
 		}
 	}
 
@@ -595,7 +532,7 @@ And that same template with `debug` set to `false`:
 
 As you can see, the difference, especially in code size and instruction size is significant. For production apps, templates should be precompiled with `debug` as `false`.
 
-vash.config.debugParser <a id="vash-config-debugparser"></a>
+vash.config.debugParser @lvl2()
 -------------------------------
 
 	Default: false
@@ -605,7 +542,7 @@ Vash's parser will output useful debugging infomation if `debugParser` is `true`
 * Tokens and what mode they were processed as
 * A textual representation of the fully parsed AST
 
-vash.config.debugCompiler <a id="vash-config-debugcompiler"></a>
+vash.config.debugCompiler @lvl2()
 ---------------------------------
 
 	Default: false
@@ -615,7 +552,7 @@ Vash's compiler will output useful debugging information if `debugCompiler` is `
 * The text content of the template function before it is passed into [vash.link][] for actual evaluation
 * The options passed into the compiler. This is useful for debugging [vash.compileBatch][] and [vash.compileHelper][].
 
-vash.config.simple <a id="vash-config-simple"></a>
+vash.config.simple @lvl2()
 --------------------------
 
 	Default: false
@@ -636,26 +573,26 @@ While standard Vash templates are definitely not slow, using `true` for this opt
 
 	node benches.js --tinclude 004.vash,007.vash --vinclude '0.6.2-2482' --chart vashv,ops
 
-vash.config.favorText <a id="vash-config-favortext"></a>
+vash.config.favorText @lvl2()
 -----------------------------
 
 	Default: false
 
 When Vash encounters text that directly follows an opening brace of a block, it assumes that unless it encounters an HTML tag, the text is JS code. For example:
 
-	@it.forEach(function(a){
+	@@it.forEach(function(a){
 		var b = a; // vash assumes this line is code
 	})
 
 When `favorText` is set to `true`, Vash will instead assume that most things are content (not code) unless it's very explicit.
 
-	@it.forEach(function(a){
+	@@it.forEach(function(a){
 		var b = a; // vash.config.favorText assumes this line is content
 	})
 
 This option is __EXPERIMENTAL__, and should be treated as such. It allows Vash to be used in a context like [Markdown](http://daringfireball.net/projects/markdown/syntax), where HTML tags, which typically help Vash tell the difference between code and content, are rare.
 
-Template Options <a id="template-options"></a>
+Template Options @lvl1()
 ========================
 
 These options concern rendering a template, after it has already been compiled. For options related to compiling templates, see [Configuration][].
@@ -674,14 +611,14 @@ The second form accepts a function callback as its second parameter, which is ca
 
 The third form allows for options in addition to [onRenderEnd][]. There are two options that can affect a template while rendering:
 
-asContext <a id="ascontext"></a>
+asContext @lvl2()
 -----------------
 
 	tpl(model, { asContext: true }) -> vash.helpers.constructor
 
 This option tells the template that instead of returning a string, it should return the "render context", otherwise known as an instance of `vash.helpers.constructor` ([Helper System][]).
 
-onRenderEnd <a id="onrenderend"></a>
+onRenderEnd @lvl2()
 -------------------
 
 	tpl(model, { onRenderEnd: function(){} }) -> string
@@ -692,7 +629,7 @@ This option is effectively a callback for once primary execution of the renderin
 
 	var model = { hey: 'what', onRenderEnd: function(err, ctx){ ... } }
 
-Helper System <a id="helper-system"></a>
+Helper System @lvl1()
 ===============
 
 Vash's primary point of expandability lies in its Helper API. When a template is rendering, there is a free variable avaiable. This variable is, by default, named `html`. This name can be changed with the [vash.config.helpersName][] option. `html` is an instance of the prototype that is attached to `vash.helpers`. It's a bit confusing, but this is how it kind of works:
@@ -708,7 +645,7 @@ What this means is that any function that is attached to `vash.helpers` is avail
 
 input:
 
-	<p>@html.echo('hello!')</p>
+	<p>@@html.echo('hello!')</p>
 
 output:
 
@@ -725,25 +662,25 @@ Here is a simple helper that converts text like "This is a holdup!" to "this-is-
 
 Notice how it's just JavaScript. Within a template, it could be accessed via `html.mdHref("This is a holdup!")`.
 
-Built-in Helpers <a id="built-in-helpers"></a>
+Built-in Helpers @lvl1()
 ========================
 
-vash.helpers.raw <a id="vash-helpers-raw"></a>
+vash.helpers.raw @lvl2()
 ------------------------
 
 Available as `html.raw` within an executing template. By default, all content that passes from a model to a template is HTML encoded. In the event that the text is trusted (or is already encoded), wrap the text in this function. For an example, see [HTML Escaping][];
 
-vash.helpers.escape <a id="vash-helpers-escape"></a>
+vash.helpers.escape @lvl2()
 ---------------------------
 
 Available as `html.escape` within an executing template, this is the method Vash uses to HTML encode model values. It can also be used manually.
 
-vash.helpers.tplcache <a id="vash-helpers-tplcache"></a>
+vash.helpers.tplcache @lvl2()
 -----------------------------
 
 The `tplcache` is just that, a place to put a global index of templates. This is used primarily for the more "view engine" aspects that Vash provides, as well as a default location for [precompiled templates][--target-namespace] using [vash(1)][].
 
-Layout Helpers <a id="layout-helpers"></a>
+Layout Helpers @lvl1()
 ======================
 
 Vash provides a relatively simple but powerful view engine whose API is borrowed directly from [Jade][]. Below is the API, but an example can be found at [vash-express-example][].
@@ -760,9 +697,11 @@ When running in [nodejs][] and using [express][], Vash will automatically resolv
 [layout.vash]: https://github.com/kirbysayshi/vash-express-example/blob/master/views/layout.vash
 [Layout.vash]: https://github.com/kirbysayshi/vash-express-example/blob/master/views/layout.vash
 
+@function helpersDisclaimer(){
+	@:_Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
+}
 
-
-vash.helpers.extend <a id="vash-helpers-extend"></a>
+vash.helpers.extend @lvl2()
 ---------------------------
 
 	vash.helpers.extend(parent_path, cb)
@@ -773,16 +712,15 @@ A template can define various locations in itself that can be [overridden](#vash
 
 In the following example, this template extends another named [layout.vash][]. [Layout.vash][] defines an empty [block][vash-helpers-block] named 'content', which is overrided in this example.
 
-	@html.extend('layout', function(model){
-		@html.block('content', function(model){
-			<h1 class="name">Welcome to </h1>
+	@@html.extend('layout', function(model){
+		@@html.block('content', function(model){
+			<h1 class="name">Welcome to @model.title</h1>
 		})
 	})
 
-_Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
+@helpersDisclaimer()
 
-
-vash.helpers.block <a id="vash-helpers-block"></a>
+vash.helpers.block @lvl2()
 --------------------------
 
 	vash.helpers.block(name)
@@ -793,14 +731,13 @@ A block is essentially a placeholder within a template that can be overridden vi
 
 If `cb` is defined, then it becomes default content for the block. The eventual contents of the block can still be overridden by a subsequent call to [vash.helpers.block][] using the same `name` value, either within the current template (silly) or in a template that extends this one using [vash.helpers.extend][]. If [vash.helpers.append][] or [vash.helpers.prepend][] are later called, their content is _added_ to the content defined in `cb`.
 
-	@html.block('main', function(model){
+	@@html.block('main', function(model){
 		<p>Hello, I'm default content. It's nice to meet you.</p>
 	})
 
-_Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
+@helpersDisclaimer()
 
-
-vash.helpers.append <a id="vash-helpers-append"></a>
+vash.helpers.append @lvl2()
 ---------------------------
 
 	vash.helpers.append(name, cb)
@@ -811,14 +748,14 @@ An example is a navigation area. Perhaps there is a default navigation list that
 
 	// layout.vash
 	<ul>
-	@html.block('main-nav', function(model){
+	@@html.block('main-nav', function(model){
 		<li><a href="/">Home</a></li>
 	})
 	</ul>
 
 	// another.vash
-	@html.extend('layout', function(model){
-		@html.append('main-nav', function(){
+	@@html.extend('layout', function(model){
+		@@html.append('main-nav', function(){
 			<li><a href="/another">Another Link</a></li>
 		})
 	})
@@ -828,10 +765,9 @@ This would output when fully rendered:
 	<li><a href="/">Home</a></li>
 	<li><a href="/another">Another Link</a></li>
 
-_Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
+@helpersDisclaimer()
 
-
-vash.helpers.prepend <a id="vash-helpers-prepend"></a>
+vash.helpers.prepend @lvl2()
 ----------------------------
 
 	vash.helpers.prepend(name, cb)
@@ -841,17 +777,16 @@ vash.helpers.prepend <a id="vash-helpers-prepend"></a>
 	<li><a href="/another">Another Link</a></li>
 	<li><a href="/">Home</a></li>
 
-_Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
+@helpersDisclaimer()
 
-
-vash.helpers.include <a id="vash-helpers-include"></a>
+vash.helpers.include @lvl2()
 ----------------------------
 
 	vash.helpers.include(name, model)
 
 This grabs the template `name` and executes it using `model` as the... model. [vash.helpers.include][] is used to literally include the contents of another template. It is analogous to a "partial" in other view engines. Except that there is a hidden power here... as included templates share the same "view engine scope" as other templates, and can thus call all of the layout helper functions, and it will _just work_. Thus, a block within an included template can append to a block defined in a parent. It can even use [vash.helpers.extend][]!
 
-Compiled Helpers <a id="compiled-helpers"></a>
+Compiled Helpers @lvl1()
 ========================
 
 A relatively new feature in Vash (added in 0.6), compiled helpers are a bit meta. They allow a developer to write a helper using Vash syntax instead of the manual buffer API. The below buffer API example `imgfigure` could be rewritten:
@@ -859,15 +794,15 @@ A relatively new feature in Vash (added in 0.6), compiled helpers are a bit meta
 	vash.helpers.imgfigure = function(path, caption){
 		vash.helpers.imgfigure.figcount = vash.helpers.imgfigure.figcount || 0;
 		var figcount = vash.helpers.imgfigure.figcount;
-		<figure id="fig-@(figcount++)">
-			<img src="@path" alt="@caption" />
-			<figcaption>Fig. @figcount: @caption</figcaption>
+		<figure id="fig-@@(figcount++)">
+			<img src="@@path" alt="@@caption" />
+			<figcaption>Fig. @@figcount: @@caption</figcaption>
 		</figure>
 	}
 
 There are two ways to compile a helper. The first is using [vash.compileHelper][], the second is using [vash(1)][]'s [--helper][] option.
 
-Buffer API <a id="buffer-api"></a>
+Buffer API @lvl1()
 ==================
 
 Within a helper (not a template), `this` refers to the current `Helpers` instance. Every instance has a `Buffer` that has methods to help easily add, subtract, or mark content put there by the rendering template.
@@ -937,7 +872,7 @@ TODO: Explain the Buffer methods:
 * toString
 * toHtmlString
 
-Precompiling Templates <a id="precompiling-templates"></a>
+Precompiling Templates @lvl1()
 ==============================
 
 To save both processing time (compiling templates is not trivial) as well as bandwidth (no need to send the whole compiler to the client), Vash supports precompilation of templates. Any template that Vash compiles is given a method called `toClientString`. This method returns a string that can either be `eval`ed or sent to a remote client. For example:
@@ -972,7 +907,7 @@ If `toClientString` is called on that function, the following is returned:
 
 This string could then be sent to the client (probably prefixed with something like `TPLCACHE["name-of-template"] = `). [vash(1)][] helps to automate this easily.
 
-Vash Runtime (Browser) <a id="vash-runtime-browser"></a>
+Vash Runtime (Browser) @lvl1()
 ====================
 
 The Vash runtime is a set of functions that every executing template expects to be available. The runtime is automatically packaged with full Vash builds. However, if only precompiled templates are sent to the browser, then only the runtime must be sent. The runtime includes all helpers and a few standard functions, such as [HTML Escaping][].
@@ -985,35 +920,35 @@ There are two runtime builds:
 [vash-runtime.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime.min.js
 [vash-runtime-all.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime-all.min.js
 
-Compile-time API <a id="compile-time-api"></a>
+Compile-time API @lvl1()
 =============
 
-vash.compile <a id="vash-compile"></a>
+vash.compile @lvl2()
 -----------------------------------------------
 
 	vash.compile(str_template, opt_options) -> Function
 
 At it's core, Vash has a `compile` function that accepts a string and options, and returns a function, otherwise known as a compiled template. That function, when called with a parameter (otherwise known as a _model_), will use that parameter to fill in the template. A model can be any value, including `undefined`, objects, arrays, strings, and booleans.
 
-vash.compileHelper <a id="vash-compilehelper"></a>
+vash.compileHelper @lvl2()
 -----------------------------------------------------
 
 	vash.compileHelper(str_template, opt_options) -> Object
 
 See [Compiled Helpers][] for more detail.
 
-vash.compileBatch <a id="vash-compilebatch"></a>
+vash.compileBatch @lvl2()
 ----------------------------------------------------
 
 	vash.compileBatch(str_template, opt_options) -> Object
 
 This function can take a single string containing many named templates, and output an object containing the compiled versions of those templates. A "named template" is of the form (similar to a `sourceURL`):
 
-	//@batch = div
-	<div>@model</div>\n'
+	//@@batch = div
+	<div>@@model</div>\n'
 
-	//@batch = a
-	<a>@model</a>'
+	//@@batch = a
+	<a>@@model</a>'
 
 This example contains two named templates, "div" and "a". If this example were passed as a single string to `compileBatch`:
 
@@ -1028,16 +963,16 @@ This is meant as a convenience function for developers. Putting each template in
 
 Aside from the newline following the "name" of the template, whitespace is ignored:
 
-	//@              batch = div
-	//@batch=div
-	//         @batch =div
+	//@@              batch = div
+	//@@batch=div
+	//         @@batch =div
 
 Each is treated the same.
 
-Runtime API <a id="runtime-api"></a>
+Runtime API @lvl1()
 ===================
 
-vash.link <a id="vash-link"></a>
+vash.link @lvl2()
 ---------------------------------------------------------
 
 	vash.link(str_tpl, options) -> Function
@@ -1047,7 +982,7 @@ This is primarily an internal function, and has relatively complex behavioral di
 
 [source itself]: https://github.com/kirbysayshi/vash/blob/master/src/vruntime.js
 
-vash.lookup <a id="vash-lookup"></a>
+vash.lookup @lvl2()
 -------------------
 
 	vash.lookup(str_path) -> Function
@@ -1058,7 +993,7 @@ Attempts to grab a template from `vash.helpers.tplcache[str_path]`, and throws a
 
 If `model` is passed and the template is found, the template is automatically executed and returned using `model` as the model.
 
-vash.install <a id="vash-install"></a>
+vash.install @lvl2()
 --------------------
 
 `vash.install` accepts a few signatures:
@@ -1075,7 +1010,7 @@ If `vash.compile` is available (meaning the entire compiler is available, not ju
 
 If an object containing string keys pointing at template functions is passed, then the object's keys are used as the keys for `vash.helpers.tplcache`. This is especially useful when using [vash.compileBatch][], as the result can be directly passed.
 
-vash.uninstall <a id="vash-uninstall"></a>
+vash.uninstall @lvl2()
 ----------------------
 
 	vash.uninstall(str_path) -> bool
@@ -1086,7 +1021,7 @@ Deletes the key named `str_path` from `vash.helpers.tplcache`.
 
 Loops through all templates in `vash.helpers.tplcache`, and if a strict equality is successful, deletes that reference.
 
-vash(1) <a id="vash-1"></a>
+vash(1) @lvl1()
 ===============
 
 Vash also includes a commandline tool that enables easy integration of templates into a unix toolchain. For example, to compile this documentation, the following command is used:
@@ -1114,14 +1049,14 @@ In short, this loads and compiles helpers necessary for this document, grabs the
 
 Some of the options are explained in greater detail below.
 
-Installation <a id="installation"></a>
+Installation @lvl2()
 --------------------
 
 [vash(1)][] comes with Vash, so it will always be within `node_modules/vash/bin/`. However, a global install is also supported, which can be accomplished via:
 
 	npm install -g vash
 
---target-namespace <a id="vash1--target-namespace"></a>
+--target-namespace @lvl2('vash1--target-namespace')
 ---------------------------------------------------
 
 Assigns the compiled template to a specific "namespace". This value only supports simple namespaces, such as `blah.who.what.something`.
@@ -1139,12 +1074,12 @@ Example:
 	vash.helpers.tplcache = vash.helpers.tplcache || {};
 	vash.helpers.tplcache["myTpl"]=vash.link( ... )
 
---property-name <a id="vash1--property-name"></a>
+--property-name @lvl2('vash1--property-name')
 -----------------------------------------------
 
 Specifies what name to use when assigning the compiled template. Defaults to the filename specified with `--file`. If content is piped into [vash(1)][], then this option is __MANDATORY__.
 
---helper <a id="vash1--helper"></a>
+--helper @lvl2('vash1--helper')
 ----------------
 
 This instructs [vash(1)][] to call [vash.compileHelper][] instead of [vash.compile][], and assumes the input is a template that is meant to be a compiled helper.
@@ -1175,19 +1110,19 @@ And without `--helper`, `vash(1)` just outputs an empty template:
 	  : html.toString();
 	}, {"simple":false,"modelName":"model","helpersName":"html"} )
 
-Contributing / Building <a id="contributing-building"></a>
+Contributing / Building @lvl1()
 ====================
 
 Please see [CONTRIBUTING.md][]. In general, if you want something that Vash doesn't have, file a ticket. Pull Requests are also _always_ welcome!
 
 [CONTRIBUTING.md]: https://github.com/kirbysayshi/vash/CONTRIBUTING.md
 
-Getting Help <a id="getting-help"></a>
+Getting Help @lvl1()
 ====================
 
-File a ticket! Or hit me up on Twitter: @KirbySaysHi
+File a ticket! Or hit me up on Twitter: @@KirbySaysHi
 
-Special Thanks <a id="special-thanks"></a>
+Special Thanks @lvl1()
 ======================
 
 Extreme thanks goes to TJ Holowaychuck and his template engine [Jade](http://jade-lang.org). It was the original inspiration for Vash's lexer, [Layout Helpers][], and error reporting, and has been a constant source of inspiration and motivation.
@@ -1200,86 +1135,24 @@ And of course to Vash's [contributors][].
 
 [contributors]: https://github.com/kirbysayshi/vash/AUTHORS
 
-License <a id="license"></a>
+License @lvl1()
 ===============
 
 [MIT](https://github.com/kirbysayshi/vash/LICENSE)
 
-[Features]: #features
-[Syntax Example]: #syntax-example
-[Quick Start]: #quick-start
-[nodejs]: #nodejs
-[express]: #express
-[Browser - Vanilla]: #browser---vanilla
-[Browser - RequireJS]: #browser---requirejs
-[Playground]: #playground
-[Syntax]: #syntax
-[The Transition Character: @]: #the-transition-character
-[Expressions]: #expressions
-[Advanced Expressions]: #advanced-expressions
-[Explicit Expressions]: #explicit-expressions
-[Code Blocks]: #code-blocks
-[Keyword Blocks]: #keyword-blocks
-[Comments]: #comments
-[HTML Escaping]: #html-escaping
-[Explicit Markup]: #explicit-markup
-[Configuration]: #configuration
-[vash.config.useWith]: #vash-config-usewith
-[vash.config.modelName]: #vash-config-modelname
-[vash.config.helpersName]: #vash-config-helpersname
-[vash.config.htmlEscape]: #vash-config-htmlescape
-[vash.config.debug]: #vash-config-debug
-[vash.config.debugParser]: #vash-config-debugparser
-[vash.config.debugCompiler]: #vash-config-debugcompiler
-[vash.config.simple]: #vash-config-simple
-[vash.config.favorText]: #vash-config-favortext
-[Template Options]: #template-options
-[asContext]: #ascontext
-[onRenderEnd]: #onrenderend
-[Helper System]: #helper-system
-[Built-in Helpers]: #built-in-helpers
-[vash.helpers.raw]: #vash-helpers-raw
-[vash.helpers.escape]: #vash-helpers-escape
-[vash.helpers.tplcache]: #vash-helpers-tplcache
-[Layout Helpers]: #layout-helpers
-[vash.helpers.extend]: #vash-helpers-extend
-[vash.helpers.block]: #vash-helpers-block
-[vash.helpers.append]: #vash-helpers-append
-[vash.helpers.prepend]: #vash-helpers-prepend
-[vash.helpers.include]: #vash-helpers-include
-[Compiled Helpers]: #compiled-helpers
-[Buffer API]: #buffer-api
-[Precompiling Templates]: #precompiling-templates
-[Vash Runtime (Browser)]: #vash-runtime-browser
-[Compile-time API]: #compile-time-api
-[vash.compile]: #vash-compile
-[vash.compileHelper]: #vash-compilehelper
-[vash.compileBatch]: #vash-compilebatch
-[Runtime API]: #runtime-api
-[vash.link]: #vash-link
-[vash.lookup]: #vash-lookup
-[vash.install]: #vash-install
-[vash.uninstall]: #vash-uninstall
-[vash(1)]: #vash-1
-[Installation]: #installation
-[--target-namespace]: #vash1--target-namespace
-[--property-name]: #vash1--property-name
-[--helper]: #vash1--helper
-[Contributing / Building]: #contributing-building
-[Getting Help]: #getting-help
-[Special Thanks]: #special-thanks
-[License]: #license
+@html.mdTocRefs()
 
+@html.mdFnList(function(){
 
-<hr /><ol class="footnotes">
-	<li id="fn:razor-ms">
-			 Razor syntax was developed at Microsoft, and typically refers to their Razor View Engine, which ships with ASP.NET MVC 3 and above. In this document, "Razor" will refer to the Razor View Engine, while "syntax" or "Vash syntax" refers to Vash's implementation.
- <a rev="footnote" href="#fnref:razor-ms">&#8617;</a>
-		</li><li id="fn:this-doc">
-			 This document starts off as a [Vash template][] that is then compiled and rendered via [vash(1)][] into markdown! It uses several custom helpers that are not shipped with Vash, but are of course available [for perusal][]. They include things like these footnotes and an autogenerated and linked table of contents.
- <a rev="footnote" href="#fnref:this-doc">&#8617;</a>
-		</li>
-	</ol>
+	@fn('razor-ms', function(){
+		@: Razor syntax was developed at Microsoft, and typically refers to their Razor View Engine, which ships with ASP.NET MVC 3 and above. In this document, "Razor" will refer to the Razor View Engine, while "syntax" or "Vash syntax" refers to Vash's implementation.
+	})
+
+	@fn('this-doc', function(){
+		@: This document starts off as a [Vash template][] that is then compiled and rendered via [vash(1)][] into markdown! It uses several custom helpers that are not shipped with Vash, but are of course available [for perusal][]. They include things like these footnotes and an autogenerated and linked table of contents.
+	})
+
+})
 
 [Vash template]: https://github.com/kirbysayshi/vash/README.vash
 [for perusal]: https://github.com/kirbysayshi/vash/docs/helpers/md.vash

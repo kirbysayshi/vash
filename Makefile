@@ -78,13 +78,13 @@ clean:
 docs: build
 	@cat \
 		<(echo '<script type="text">This document was generated from README.vash</script>') \
-		<(bin/vash <README2.vash --render --helpers <(bin/vash <docs/helpers/* --helper)) \
-		> README2.md
+		<(bin/vash <README.vash --render --helpers <(bin/vash <docs/helpers/* --helper)) \
+		> README.md
 
 docs-dev: docs
 	@cat \
 		<(echo '<link href="docs/gfm.css" rel="stylesheet" type="text/css">') \
-		<(node_modules/marked/bin/marked <README2.md) \
-		> README2.html
+		<(node_modules/marked/bin/marked <README.md) \
+		> README.html
 
 .PHONY: build clean docs docs-dev build-min test test-min
