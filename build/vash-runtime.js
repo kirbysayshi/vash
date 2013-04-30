@@ -1,12 +1,12 @@
 /**
- * Vash - JavaScript Template Parser, v0.6.5-2648
+ * Vash - JavaScript Template Parser, v0.7.0-36
  *
  * https://github.com/kirbysayshi/vash
  *
- * Copyright (c) 2012 Andrew Petersen
+ * Copyright (c) 2013 Andrew Petersen
  * MIT License (LICENSE)
  */
- 
+void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 /*jshint strict:false, asi: false, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 ;(function(){
 
