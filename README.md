@@ -170,7 +170,7 @@ Vash uses the `@` symbol to transition between code and markup. To escape and pr
 Expressions <a name="expressions" />
 -------------------
 
-The most basic usage of Vash is an implicit expression. Vash is smart enough to know what's valid JS and what's not, and can usually do what you want it to do. And expression is an @ followed by a valid JS identifier. This is then interpolated automatically.
+The most basic usage of Vash is an implicit expression. Vash is smart enough to know what's valid JS and what's not, and can usually do what you want it to do. An expression is an @ followed by a valid JS identifier. This is then interpolated automatically.
 
 input:
 
@@ -193,7 +193,7 @@ output:
 
 	<p>hello!</p>
 
-As you can see, the output is exactly the same. The name used to reference the model is configurable via `[vash.config.modelName](#config-modelName)`. Typical values are `model` and `it`.
+As you can see, the output is exactly the same. The name used to reference the model is configurable via [vash.config.modelName][]. Typical values are `model` and `it`.
 
 
 Advanced Expressions <a name="advanced-expressions" />
