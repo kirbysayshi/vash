@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.0-36
+ * Vash - JavaScript Template Parser, v0.7.2-89
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -1253,7 +1253,7 @@ VCompiler.findNonExp = function(node){
 		return false;
 	}
 }
-exports["version"] = "?BUILDNUM?";
+//exports["version"] = "?BUILDNUM?";
 exports["config"] = {
 	 "useWith": false
 	,"modelName": "model"
@@ -2230,4 +2230,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({}));
+}({ "version": "0.7.2-89" }));

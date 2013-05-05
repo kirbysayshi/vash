@@ -1,2 +1,2 @@
 	return exports;
-}({}));
+}({ "version": "{{ version }}" }));

@@ -1,4 +1,3 @@
-exports["version"] = "?BUILDNUM?";
 exports["config"] = {
 	 "useWith": false
 	,"modelName": "model"

@@ -1,7 +1,6 @@
 SHELL:=/bin/bash -O extglob
 
 SRC = \
-	support/exports.head.js \
 	src/vlexer.js \
 	src/vast.js \
 	src/vparser.js \
@@ -10,8 +9,7 @@ SRC = \
 	src/vruntime.js \
 	src/vhelpers.js \
 	src/vhelpers.layout.js \
-	src/vexpress.js \
-	support/exports.tail.js
+	src/vexpress.js
 
 LINTSRC = \
 	src/vruntime.js \
@@ -35,19 +33,23 @@ UGLIFY = $(shell find node_modules -name "uglifyjs" -type f)
 VOWS = $(shell find node_modules -name "vows" -type f)
 JSHINT = $(shell find node_modules/jshint -name "hint" -type f)
 
-LICENSE = @node support/tasks.js license
-BUILDBUMP = @node support/version.js build
+VERSIONREPL = node support/version.js replace
+BUILDBUMP = node support/version.js build
+
+LICENSE = $(VERSIONREPL) < support/license.header.js
+
+EXPORTSHEAD = support/exports.head.js
+EXPORTSTAIL = support/exports.tail.js
 
 LICENSEHEADER = build/license.js
 
-build: $(SRC)
-	$(BUILDBUMP)
-	$(LICENSE) > $(LICENSEHEADER)
-	@cat $(LICENSEHEADER) $^ > build/vash.js
+build: package.json $(SRC)
+	@$(BUILDBUMP)
+	@$(LICENSE) > $(LICENSEHEADER)
+	@cat $(LICENSEHEADER) $(EXPORTSHEAD) $(SRC) <($(VERSIONREPL)< $(EXPORTSTAIL)) > build/vash.js
 	@cat $(LICENSEHEADER) $(RUNTIMEREQSRC) > build/vash-runtime.js
 	@cat $(LICENSEHEADER) $(RUNTIMEALLSRC) > build/vash-runtime-all.js
 	@rm $(LICENSEHEADER)
-	@node support/version.js
 
 build-min: build
 	@$(UGLIFY) build/vash.js > build/vash.min.js
@@ -87,4 +89,4 @@ docs-dev: docs
 		<(node_modules/marked/bin/marked <README.md) \
 		> README.html
 
-.PHONY: build clean docs docs-dev build-min test test-min
+.PHONY: clean docs docs-dev build-min test test-min

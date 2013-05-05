@@ -1,7 +1,7 @@
 {
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.7.1-51",
+  "version": "0.7.2-89",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -23,8 +23,7 @@
   },
   "scripts": {
     "build": "make build",
-    "test": "make test",
-    "test-all": "make test && make test-min",
+    "test": "make test && make test-min",
     "docs": "make docs"
   },
   "dependencies": {
