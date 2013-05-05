@@ -1854,8 +1854,6 @@ vows.describe('vash templating library').addBatch({
 				var  tpl = vash.compile(topic)
 					,actual = tpl();
 
-				console.log(tpl.toString());
-
 				assert.equal( actual.length, 8 );
 			}
 		}
