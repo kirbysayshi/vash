@@ -15,7 +15,7 @@ Vash is a template engine that offers a swift flow between code and content usin
 
 [Razor Syntax]: http://www.asp.net/web-pages/tutorials/basics/2-introduction-to-asp-net-web-programming-using-the-razor-syntax
 
-[![Build Status](https://secure.travis-ci.org/kirbysayshi/Vash.png?branch=master)](https://travis-ci.org/kirbysayshi/Vash)
+[![Build Status](https://secure.travis-ci.org/kirbysayshi/vash.png?branch=master)](https://travis-ci.org/kirbysayshi/vash)
 
 @toc()
 
