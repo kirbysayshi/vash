@@ -1,7 +1,7 @@
 {
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.7.0-41",
+  "version": "0.7.1-51",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -32,7 +32,7 @@
     "uglify-js": "1.0.6"
   },
   "devDependencies": {
-    "vows": "~0.6.4",
+    "vows": "~0.7.0",
     "semver": ">=1.0.0",
     "jshint": "0.8.0",
     "marked": "~0.2.8"
