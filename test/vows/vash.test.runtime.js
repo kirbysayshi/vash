@@ -41,7 +41,7 @@ vows.describe('vash templating library runtime').addBatch({
 
 		,'of a linked function returns the generated function': function( tpl ){
 
-			var  test = 'function anonymous(model,html,__vopts,vash)'
+			var  test = 'function anonymous(model,html,__vopts'
 				,result = tpl.toString().indexOf(test);
 			assert.strictEqual( result, 0, test )
 		}
