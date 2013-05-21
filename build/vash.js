@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.2-89
+ * Vash - JavaScript Template Parser, v0.7.3-2
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -828,6 +828,13 @@ VParser.prototype = {
 				if(next.type !== AT){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
+				} else {
+					// we want to keep the token, but remove its
+					// "special" meaning because during compilation
+					// AT and AT_COLON are discarded
+					next.type = 'CONTENT';
+					this.ast.push(next);
+					this.tokens.pop(); // skip following AT
 				}
 				break;
 
@@ -1253,7 +1260,6 @@ VCompiler.findNonExp = function(node){
 		return false;
 	}
 }
-//exports["version"] = "?BUILDNUM?";
 exports["config"] = {
 	 "useWith": false
 	,"modelName": "model"
@@ -2230,4 +2236,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.2-89" }));
+}({ "version": "0.7.3-2" }));

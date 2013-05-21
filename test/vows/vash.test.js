@@ -891,14 +891,27 @@ vows.describe('vash templating library').addBatch({
 	}
 
 	,'escaping the @ symbol': {
-		topic: function(){
-			var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
-			return vash.compile(str);
+
+		'within content': {
+			topic: function(){
+				var str = '<span>In vash, you use the @@foo to display the value of foo</span>';
+				return vash.compile(str);
+			}
+			,'leaves just a single @': function(topic){
+				assert.equal( topic(), '<span>In vash, you use the @foo to display the value of foo</span>' )
+			}
 		}
-		,'leaves just a single @': function(topic){
-			assert.equal( topic(), '<span>In vash, you use the @foo to display the value of foo</span>' )
+
+		,'within BLK': {
+			topic: '@{ var a = "Twitter: @@KirbySaysHi"; }<text>@a</text>'
+
+			,'leaves a single @': function(topic){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), 'Twitter: @KirbySaysHi' );
+			}
 		}
 	}
+
 	,'"server-side" comments': {
 
 		'multiline': {

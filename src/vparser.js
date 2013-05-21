@@ -336,6 +336,13 @@ VParser.prototype = {
 				if(next.type !== AT){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
+				} else {
+					// we want to keep the token, but remove its
+					// "special" meaning because during compilation
+					// AT and AT_COLON are discarded
+					next.type = 'CONTENT';
+					this.ast.push(next);
+					this.tokens.pop(); // skip following AT
 				}
 				break;
 
