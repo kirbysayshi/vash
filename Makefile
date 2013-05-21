@@ -34,18 +34,16 @@ VOWS = $(shell find node_modules -name "vows" -type f)
 JSHINT = $(shell find node_modules/jshint -name "hint" -type f)
 
 VERSIONREPL = node support/version.js replace
-BUILDBUMP = node support/version.js build
-
-LICENSE = $(VERSIONREPL) < support/license.header.js
 
 EXPORTSHEAD = support/exports.head.js
 EXPORTSTAIL = support/exports.tail.js
 
 LICENSEHEADER = build/license.js
 
-build: package.json $(SRC)
-	@$(BUILDBUMP)
-	@$(LICENSE) > $(LICENSEHEADER)
+all: build build-min
+
+build: build-bump license package.json $(SRC)
+	@mkdir -p build
 	@cat $(LICENSEHEADER) $(EXPORTSHEAD) $(SRC) <($(VERSIONREPL)< $(EXPORTSTAIL)) > build/vash.js
 	@cat $(LICENSEHEADER) $(RUNTIMEREQSRC) > build/vash-runtime.js
 	@cat $(LICENSEHEADER) $(RUNTIMEALLSRC) > build/vash-runtime-all.js
@@ -55,6 +53,13 @@ build-min: build
 	@$(UGLIFY) build/vash.js > build/vash.min.js
 	@$(UGLIFY) build/vash-runtime.js > build/vash-runtime.min.js
 	@$(UGLIFY) build/vash-runtime-all.js > build/vash-runtime-all.min.js
+
+build-bump:
+	@node support/version.js build
+
+license:
+	@mkdir -p build
+	@$(VERSIONREPL) < support/license.header.js > $(LICENSEHEADER)
 
 stats: build-min
 	@printf "%16s %s \n" "vash.js" $$(wc -c < build/vash.js | tr -d ' ')k
@@ -89,4 +94,4 @@ docs-dev: docs
 		<(node_modules/marked/bin/marked <README.md) \
 		> README.html
 
-.PHONY: clean docs docs-dev build-min test test-min
+.PHONY: all build-bump clean docs docs-dev build-min license test test-min
