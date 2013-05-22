@@ -13,7 +13,6 @@ var  AT = 'AT'
 	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
 	,EMAIL = 'EMAIL'
 	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
-	,FAT_ARROW = 'FAT_ARROW'
 	,FORWARD_SLASH = 'FORWARD_SLASH'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
@@ -80,9 +79,6 @@ var TESTS = [
 
 	,AT_COLON, (/^(@\:)/)
 	,AT, (/^(@)/)
-
-
-	,FAT_ARROW, (/^(\(.*?\)?\s*?=>)/)
 
 
 	,PAREN_OPEN, (/^(\()/)

@@ -365,11 +365,6 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 
-			//case FAT_ARROW:
-			//	this.ast.push(curr)
-			//	this.ast = this.ast.beget(BLK);
-			//	break;
-
 			case FORWARD_SLASH:
 			case SINGLE_QUOTE:
 			case DOUBLE_QUOTE:
@@ -525,11 +520,6 @@ VParser.prototype = {
 				break;
 
 			case BRACE_OPEN:
-				this.tokens.push(curr); // defer
-				this.ast = this.ast.beget(BLK);
-				break;
-
-			case FAT_ARROW:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(BLK);
 				break;
