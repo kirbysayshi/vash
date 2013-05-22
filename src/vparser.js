@@ -6,6 +6,8 @@ function VParser(tokens, options){
 	this.tokens = tokens;
 	this.ast = vQuery(PRG);
 	this.prevTokens = [];
+
+	this.inCommentLine = false;
 }
 
 var PRG = "PROGRAM", MKP = "MARKUP", BLK = "BLOCK", EXP = "EXPRESSION" ;
@@ -333,14 +335,14 @@ VParser.prototype = {
 		switch(curr.type){
 
 			case AT:
-				if(next.type !== AT){
+				if(next.type !== AT && !this.inCommentLine){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
 				} else {
 					// we want to keep the token, but remove its
 					// "special" meaning because during compilation
 					// AT and AT_COLON are discarded
-					next.type = 'CONTENT';
+					next.type = CONTENT;
 					this.ast.push(next);
 					this.tokens.pop(); // skip following AT
 				}
@@ -367,6 +369,43 @@ VParser.prototype = {
 			//	this.ast.push(curr)
 			//	this.ast = this.ast.beget(BLK);
 			//	break;
+
+			case FORWARD_SLASH:
+			case SINGLE_QUOTE:
+			case DOUBLE_QUOTE:
+				if(
+					curr.type === FORWARD_SLASH
+					&& next
+					&& next.type === FORWARD_SLASH
+				){
+					this.inCommentLine = true;
+				}
+
+				if(!this.inCommentLine) {
+					// assume regex or quoted string
+					subTokens = this.advanceUntilMatched(
+						 curr
+						,curr.type
+						,PAIRS[ curr.type ]
+						,BACKSLASH
+						,BACKSLASH ).map(function(tok){
+							// mark AT within a regex/quoted string as literal
+							if(tok.type === AT) tok.type = CONTENT;
+							return tok;
+						});
+					this.ast.pushFlatten(subTokens.reverse());
+				} else {
+					this.ast.push(curr);
+				}
+
+				break;
+
+			case NEWLINE:
+				if(this.inCommentLine){
+					this.inCommentLine = false;
+				}
+				this.ast.push(curr);
+				break;
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:

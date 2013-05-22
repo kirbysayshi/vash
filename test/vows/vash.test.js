@@ -888,6 +888,14 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl({ a: 'a' }), '<span>o</span>')
 			}
 		}
+
+		,'within BLK': {
+			topic: '@{ var re = /[@\'"]/gi; }<span>@a.replace(re, "o")</span>'
+			,'replaces': function( topic ){
+				var tpl = vash.compile( topic, { useWith: true } );
+				assert.equal( tpl({ a: '@' }), '<span>o</span>');
+			}
+		}
 	}
 
 	,'escaping the @ symbol': {
@@ -902,10 +910,10 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
-		,'within BLK': {
-			topic: '@{ var a = "Twitter: @@KirbySaysHi"; }<text>@a</text>'
+		,'within quoted string in BLK': {
+			topic: '@{ var a = "Twitter: @KirbySaysHi"; }<text>@a</text>'
 
-			,'leaves a single @': function(topic){
+			,'is not required': function(topic){
 				var tpl = vash.compile(topic);
 				assert.equal( tpl(), 'Twitter: @KirbySaysHi' );
 			}
@@ -1806,6 +1814,30 @@ vows.describe('vash templating library').addBatch({
 					,actual = tpl()
 					,expected = '<p>http://google.com</p>'
 				assert.equal( actual, expected );
+			}
+		}
+
+		,'containing @': {
+			topic: '@{ // this is a @comment\n}'
+
+			,"are treated as literal": function(topic){
+				var tpl = vash.compile(topic)
+					,actual = tpl()
+					,expected = '';
+
+				assert.equal(actual, expected);
+			}
+		}
+
+		,'containing a single quote': {
+			topic: '@{ // this is a comment y\'all\n}'
+
+			,"does not enter string mode": function(topic){
+				var tpl = vash.compile(topic)
+					,actual = tpl()
+					,expected = '';
+
+				assert.equal(actual, expected);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.4-19
+ * Vash - JavaScript Template Parser, v0.7.5-2
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -38,6 +38,7 @@ var  AT = 'AT'
 	,EMAIL = 'EMAIL'
 	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
 	,FAT_ARROW = 'FAT_ARROW'
+	,FORWARD_SLASH = 'FORWARD_SLASH'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
@@ -69,6 +70,7 @@ PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
 PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 PAIRS[AT_COLON] = NEWLINE;
+PAIRS[FORWARD_SLASH] = FORWARD_SLASH; // regex
 
 
 
@@ -157,6 +159,7 @@ var TESTS = [
 	,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
 	,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
+	,FORWARD_SLASH, (/^(\/)/)
 
 	,OPERATOR, (/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/)
 	,ASSIGN_OPERATOR, (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/)
@@ -498,6 +501,8 @@ function VParser(tokens, options){
 	this.tokens = tokens;
 	this.ast = vQuery(PRG);
 	this.prevTokens = [];
+
+	this.inCommentLine = false;
 }
 
 var PRG = "PROGRAM", MKP = "MARKUP", BLK = "BLOCK", EXP = "EXPRESSION" ;
@@ -825,14 +830,14 @@ VParser.prototype = {
 		switch(curr.type){
 
 			case AT:
-				if(next.type !== AT){
+				if(next.type !== AT && !this.inCommentLine){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
 				} else {
 					// we want to keep the token, but remove its
 					// "special" meaning because during compilation
 					// AT and AT_COLON are discarded
-					next.type = 'CONTENT';
+					next.type = CONTENT;
 					this.ast.push(next);
 					this.tokens.pop(); // skip following AT
 				}
@@ -859,6 +864,43 @@ VParser.prototype = {
 			//	this.ast.push(curr)
 			//	this.ast = this.ast.beget(BLK);
 			//	break;
+
+			case FORWARD_SLASH:
+			case SINGLE_QUOTE:
+			case DOUBLE_QUOTE:
+				if(
+					curr.type === FORWARD_SLASH
+					&& next
+					&& next.type === FORWARD_SLASH
+				){
+					this.inCommentLine = true;
+				}
+
+				if(!this.inCommentLine) {
+					// assume regex or quoted string
+					subTokens = this.advanceUntilMatched(
+						 curr
+						,curr.type
+						,PAIRS[ curr.type ]
+						,BACKSLASH
+						,BACKSLASH ).map(function(tok){
+							// mark AT within a regex/quoted string as literal
+							if(tok.type === AT) tok.type = CONTENT;
+							return tok;
+						});
+					this.ast.pushFlatten(subTokens.reverse());
+				} else {
+					this.ast.push(curr);
+				}
+
+				break;
+
+			case NEWLINE:
+				if(this.inCommentLine){
+					this.inCommentLine = false;
+				}
+				this.ast.push(curr);
+				break;
 
 			case BRACE_OPEN:
 			case PAREN_OPEN:
@@ -2236,4 +2278,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.4-19" }));
+}({ "version": "0.7.5-2" }));

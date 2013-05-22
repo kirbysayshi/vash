@@ -14,6 +14,7 @@ var  AT = 'AT'
 	,EMAIL = 'EMAIL'
 	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
 	,FAT_ARROW = 'FAT_ARROW'
+	,FORWARD_SLASH = 'FORWARD_SLASH'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
@@ -45,6 +46,7 @@ PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
 PAIRS[PAREN_OPEN] = PAREN_CLOSE;
 PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
 PAIRS[AT_COLON] = NEWLINE;
+PAIRS[FORWARD_SLASH] = FORWARD_SLASH; // regex
 
 
 
@@ -133,6 +135,7 @@ var TESTS = [
 	,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
 	,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
+	,FORWARD_SLASH, (/^(\/)/)
 
 	,OPERATOR, (/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/)
 	,ASSIGN_OPERATOR, (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/)
