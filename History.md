@@ -1,3 +1,8 @@
+v0.7.4-19 / 05-21-2013
+======================
+
+* `@` inside of string or comments within code block is now literal
+
 v0.7.0-35 / 04-30-2013
 ========================
 
