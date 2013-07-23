@@ -1,8 +1,9 @@
 var  semver = require('semver')
     ,fs = require('fs')
+    ,path = require('path')
     ,program = require('commander');
 
-var  pkgpath = __dirname + '/../package.json'
+var  pkgpath = path.join(__dirname, '../', 'package.json')
     ,pkg = JSON.parse( fs.readFileSync(pkgpath, 'utf8') )
     ,types = ['major', 'minor', 'patch', 'build'];
 

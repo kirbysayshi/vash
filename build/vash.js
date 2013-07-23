@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.5-2
+ * Vash - JavaScript Template Parser, v0.7.6-2
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -37,7 +37,6 @@ var  AT = 'AT'
 	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
 	,EMAIL = 'EMAIL'
 	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
-	,FAT_ARROW = 'FAT_ARROW'
 	,FORWARD_SLASH = 'FORWARD_SLASH'
 	,FUNCTION = 'FUNCTION'
 	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
@@ -104,9 +103,6 @@ var TESTS = [
 
 	,AT_COLON, (/^(@\:)/)
 	,AT, (/^(@)/)
-
-
-	,FAT_ARROW, (/^(\(.*?\)?\s*?=>)/)
 
 
 	,PAREN_OPEN, (/^(\()/)
@@ -860,11 +856,6 @@ VParser.prototype = {
 				this.tokens.push(curr); // defer
 				break;
 
-			//case FAT_ARROW:
-			//	this.ast.push(curr)
-			//	this.ast = this.ast.beget(BLK);
-			//	break;
-
 			case FORWARD_SLASH:
 			case SINGLE_QUOTE:
 			case DOUBLE_QUOTE:
@@ -1020,11 +1011,6 @@ VParser.prototype = {
 				break;
 
 			case BRACE_OPEN:
-				this.tokens.push(curr); // defer
-				this.ast = this.ast.beget(BLK);
-				break;
-
-			case FAT_ARROW:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(BLK);
 				break;
@@ -2278,4 +2264,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.5-2" }));
+}({ "version": "0.7.6-2" }));
