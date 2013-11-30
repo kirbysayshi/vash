@@ -90,7 +90,7 @@ docs: build
 
 docs-dev: docs
 	@cat \
-		<(echo '<link href="docs/gfm.css" rel="stylesheet" type="text/css">') \
+		<(echo '<!DOCTYPE html><link href="docs/gfm.css" rel="stylesheet" type="text/css">') \
 		<(node_modules/marked/bin/marked <README.md) \
 		> README.html
 
