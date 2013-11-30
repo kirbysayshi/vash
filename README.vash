@@ -19,6 +19,9 @@ Vash is a template engine that offers a swift flow between code and content usin
 
 [![NPM](https://nodei.co/npm/vash.png?downloads=true&stars=true)](https://nodei.co/npm/vash/) [![NPM](https://nodei.co/npm-dl/vash.png)](https://nodei.co/npm/vash/)
 
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/kirbysayshi/vash/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
+
 @toc()
 
 Features @lvl1()
@@ -712,7 +715,7 @@ This is Vash's main form of inheritance for view templates. `parent_path` is the
 
 A template can define various locations in itself that can be [overridden](#vash-helpers-block) or [added to](#vash-helpers-append). In addition, a template that calls `extend` can even be extended itself!
 
-In the following example, this template extends another named [layout.vash][]. [Layout.vash][] defines an empty [block][vash-helpers-block] named 'content', which is overrided in this example.
+In the following example, this template extends another named [layout.vash][]. [Layout.vash][] defines an empty [block](#vash-helpers-block) named 'content', which is overrided in this example.
 
 	@@html.extend('layout', function(model){
 		@@html.block('content', function(model){
@@ -930,7 +933,7 @@ vash.compile @lvl2()
 
 	vash.compile(str_template, opt_options) -> Function
 
-At it's core, Vash has a `compile` function that accepts a string and options, and returns a function, otherwise known as a compiled template. That function, when called with a parameter (otherwise known as a _model_), will use that parameter to fill in the template. A model can be any value, including `undefined`, objects, arrays, strings, and booleans.
+At its core, Vash has a `compile` function that accepts a string and options, and returns a function, otherwise known as a compiled template. That function, when called with a parameter (otherwise known as a _model_), will use that parameter to fill in the template. A model can be any value, including `undefined`, objects, arrays, strings, and booleans.
 
 vash.compileHelper @lvl2()
 -----------------------------------------------------
