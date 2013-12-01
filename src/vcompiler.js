@@ -1,5 +1,7 @@
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
+var lx = require('./vlexer');
+
 function VCompiler(ast, originalMarkup, options){
 	this.ast = ast;
 	this.originalMarkup = originalMarkup || '';
@@ -14,6 +16,8 @@ function VCompiler(ast, originalMarkup, options){
 
 	this.buffer = [];
 }
+
+module.exports = VCompiler;
 
 var VCP = VCompiler.prototype;
 
@@ -89,7 +93,7 @@ VCP.visitNode = function(node){
 		child = children[i];
 
 		// if saveAT is true, or if AT_COLON is used, these should not be compiled
-		if( child.type && child.type === AT || child.type === AT_COLON ) continue;
+		if( child.type && child.type === lx.AT || child.type === lx.AT_COLON ) continue;
 
 		if(child.vquery){
 

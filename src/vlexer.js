@@ -1,51 +1,51 @@
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
 // The basic tokens, defined as constants
-var  AT = 'AT'
-	,ASSIGN_OPERATOR = 'ASSIGN_OPERATOR'
-	,AT_COLON = 'AT_COLON'
-	,AT_STAR_CLOSE = 'AT_STAR_CLOSE'
-	,AT_STAR_OPEN = 'AT_STAR_OPEN'
-	,BACKSLASH = 'BACKSLASH'
-	,BRACE_CLOSE = 'BRACE_CLOSE'
-	,BRACE_OPEN = 'BRACE_OPEN'
-	,CONTENT = 'CONTENT'
-	,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
-	,EMAIL = 'EMAIL'
-	,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
-	,FORWARD_SLASH = 'FORWARD_SLASH'
-	,FUNCTION = 'FUNCTION'
-	,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
-	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
-	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
-	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
-	,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
-	,IDENTIFIER = 'IDENTIFIER'
-	,KEYWORD = 'KEYWORD'
-	,LOGICAL = 'LOGICAL'
-	,NEWLINE = 'NEWLINE'
-	,NUMERIC_CONTENT = 'NUMERIC_CONTENT'
-	,OPERATOR = 'OPERATOR'
-	,PAREN_CLOSE = 'PAREN_CLOSE'
-	,PAREN_OPEN = 'PAREN_OPEN'
-	,PERIOD = 'PERIOD'
-	,SINGLE_QUOTE = 'SINGLE_QUOTE'
-	,TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE'
-	,TEXT_TAG_OPEN = 'TEXT_TAG_OPEN'
-	,WHITESPACE = 'WHITESPACE';
+exports.AT = 'AT';
+exports.ASSIGN_OPERATOR = 'ASSIGN_OPERATOR';
+exports.AT_COLON = 'AT_COLON';
+exports.AT_STAR_CLOSE = 'AT_STAR_CLOSE';
+exports.AT_STAR_OPEN = 'AT_STAR_OPEN';
+exports.BACKSLASH = 'BACKSLASH';
+exports.BRACE_CLOSE = 'BRACE_CLOSE';
+exports.BRACE_OPEN = 'BRACE_OPEN';
+exports.CONTENT = 'CONTENT';
+exports.DOUBLE_QUOTE = 'DOUBLE_QUOTE';
+exports.EMAIL = 'EMAIL';
+exports.ESCAPED_QUOTE = 'ESCAPED_QUOTE';
+exports.FORWARD_SLASH = 'FORWARD_SLASH';
+exports.FUNCTION = 'FUNCTION';
+exports.HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE';
+exports.HARD_PAREN_OPEN = 'HARD_PAREN_OPEN';
+exports.HTML_TAG_CLOSE = 'HTML_TAG_CLOSE';
+exports.HTML_TAG_OPEN = 'HTML_TAG_OPEN';
+exports.HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN';
+exports.HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE';
+exports.IDENTIFIER = 'IDENTIFIER';
+exports.KEYWORD = 'KEYWORD';
+exports.LOGICAL = 'LOGICAL';
+exports.NEWLINE = 'NEWLINE';
+exports.NUMERIC_CONTENT = 'NUMERIC_CONTENT';
+exports.OPERATOR = 'OPERATOR';
+exports.PAREN_CLOSE = 'PAREN_CLOSE';
+exports.PAREN_OPEN = 'PAREN_OPEN';
+exports.PERIOD = 'PERIOD';
+exports.SINGLE_QUOTE = 'SINGLE_QUOTE';
+exports.TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE';
+exports.TEXT_TAG_OPEN = 'TEXT_TAG_OPEN';
+exports.WHITESPACE = 'WHITESPACE';
 
-var PAIRS = {};
+var PAIRS = exports.PAIRS = {};
 
 // defined through indexing to help minification
-PAIRS[AT_STAR_OPEN] = AT_STAR_CLOSE;
-PAIRS[BRACE_OPEN] = BRACE_CLOSE;
-PAIRS[DOUBLE_QUOTE] = DOUBLE_QUOTE;
-PAIRS[HARD_PAREN_OPEN] = HARD_PAREN_CLOSE;
-PAIRS[PAREN_OPEN] = PAREN_CLOSE;
-PAIRS[SINGLE_QUOTE] = SINGLE_QUOTE;
-PAIRS[AT_COLON] = NEWLINE;
-PAIRS[FORWARD_SLASH] = FORWARD_SLASH; // regex
+PAIRS[exports.AT_STAR_OPEN] = exports.AT_STAR_CLOSE;
+PAIRS[exports.BRACE_OPEN] = exports.BRACE_CLOSE;
+PAIRS[exports.DOUBLE_QUOTE] = exports.DOUBLE_QUOTE;
+PAIRS[exports.HARD_PAREN_OPEN] = exports.HARD_PAREN_CLOSE;
+PAIRS[exports.PAREN_OPEN] = exports.PAREN_CLOSE;
+PAIRS[exports.SINGLE_QUOTE] = exports.SINGLE_QUOTE;
+PAIRS[exports.AT_COLON] = exports.NEWLINE;
+PAIRS[exports.FORWARD_SLASH] = exports.FORWARD_SLASH; // regex
 
 
 
@@ -70,40 +70,40 @@ var TESTS = [
 	// will be content, while `something@example.com` will be the email address.
 	//
 	// However, this is "Good Enough"© :).
-	EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
+	exports.EMAIL, (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
 
 
-	,AT_STAR_OPEN, (/^(@\*)/)
-	,AT_STAR_CLOSE, (/^(\*@)/)
+	,exports.AT_STAR_OPEN, (/^(@\*)/)
+	,exports.AT_STAR_CLOSE, (/^(\*@)/)
 
 
-	,AT_COLON, (/^(@\:)/)
-	,AT, (/^(@)/)
+	,exports.AT_COLON, (/^(@\:)/)
+	,exports.AT, (/^(@)/)
 
 
-	,PAREN_OPEN, (/^(\()/)
-	,PAREN_CLOSE, (/^(\))/)
+	,exports.PAREN_OPEN, (/^(\()/)
+	,exports.PAREN_CLOSE, (/^(\))/)
 
 
-	,HARD_PAREN_OPEN, (/^(\[)/)
-	,HARD_PAREN_CLOSE, (/^(\])/)
+	,exports.HARD_PAREN_OPEN, (/^(\[)/)
+	,exports.HARD_PAREN_CLOSE, (/^(\])/)
 
 
-	,BRACE_OPEN, (/^(\{)/)
-	,BRACE_CLOSE, (/^(\})/)
+	,exports.BRACE_OPEN, (/^(\{)/)
+	,exports.BRACE_CLOSE, (/^(\})/)
 
 
-	,TEXT_TAG_OPEN, (/^(<text>)/)
-	,TEXT_TAG_CLOSE, (/^(<\/text>)/)
+	,exports.TEXT_TAG_OPEN, (/^(<text>)/)
+	,exports.TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
 
-	,HTML_TAG_OPEN, function(){
+	,exports.HTML_TAG_OPEN, function(){
 		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 			,reSelfClosing = /^(<[a-zA-Z@]+[^>]*?\s*\/\s*>)/
 
-		var tok = this.scan( reSelfClosing, HTML_TAG_VOID_OPEN )
-			|| this.scan( reHtml, HTML_TAG_OPEN );
+		var tok = this.scan( reSelfClosing, exports.HTML_TAG_VOID_OPEN )
+			|| this.scan( reHtml, exports.HTML_TAG_OPEN );
 
 		if( tok ){
 			this.spewIf( tok, reEmail );
@@ -113,39 +113,39 @@ var TESTS = [
 
 		return tok;
 	}
-	,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
-	,HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
+	,exports.HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
+	,exports.HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
 
 
-	,PERIOD, (/^(\.)/)
-	,NEWLINE, function(){
-		var token = this.scan(/^(\n)/, NEWLINE);
+	,exports.PERIOD, (/^(\.)/)
+	,exports.NEWLINE, function(){
+		var token = this.scan(/^(\n)/, exports.NEWLINE);
 		if(token){
 			this.lineno++;
 			this.charno = 0;
 		}
 		return token;
 	}
-	,WHITESPACE, (/^(\s)/)
-	,FUNCTION, (/^(function)(?![\d\w])/)
-	,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
-	,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
+	,exports.WHITESPACE, (/^(\s)/)
+	,exports.FUNCTION, (/^(function)(?![\d\w])/)
+	,exports.KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
+	,exports.IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
-	,FORWARD_SLASH, (/^(\/)/)
+	,exports.FORWARD_SLASH, (/^(\/)/)
 
-	,OPERATOR, (/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/)
-	,ASSIGN_OPERATOR, (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/)
-	,LOGICAL, (/^(&&|\|\||&|\||\^)/)
-
-
-	,ESCAPED_QUOTE, (/^(\\+['"])/)
-	,BACKSLASH, (/^(\\)/)
-	,DOUBLE_QUOTE, (/^(\")/)
-	,SINGLE_QUOTE, (/^(\')/)
+	,exports.OPERATOR, (/^(===|!==|==|!==|>>>|<<|>>|>=|<=|>|<|\+|-|\/|\*|\^|%|\:|\?)/)
+	,exports.ASSIGN_OPERATOR, (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=|=)/)
+	,exports.LOGICAL, (/^(&&|\|\||&|\||\^)/)
 
 
-	,NUMERIC_CONTENT, (/^([0-9]+)/)
-	,CONTENT, (/^([^\s})@.]+?)/)
+	,exports.ESCAPED_QUOTE, (/^(\\+['"])/)
+	,exports.BACKSLASH, (/^(\\)/)
+	,exports.DOUBLE_QUOTE, (/^(\")/)
+	,exports.SINGLE_QUOTE, (/^(\')/)
+
+
+	,exports.NUMERIC_CONTENT, (/^([0-9]+)/)
+	,exports.CONTENT, (/^([^\s})@.]+?)/)
 
 ];
 
@@ -225,3 +225,5 @@ VLexer.prototype = {
 		}
 	}
 }
+
+exports.VLexer = VLexer;

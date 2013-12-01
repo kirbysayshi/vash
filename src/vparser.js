@@ -1,5 +1,8 @@
 /*jshint strict:false, asi:true, laxcomma:true, laxbreak:true, boss:true, curly:true, node:true, browser:true, devel:true */
 
+var lx = require('./vlexer');
+var vQuery = require('./vast');
+
 function VParser(tokens, options){
 
 	this.options = options || {};
@@ -9,6 +12,8 @@ function VParser(tokens, options){
 
 	this.inCommentLine = false;
 }
+
+module.exports = VParser;
 
 var PRG = "PROGRAM", MKP = "MARKUP", BLK = "BLOCK", EXP = "EXPRESSION" ;
 
@@ -182,19 +187,19 @@ VParser.prototype = {
 
 		switch(curr.type){
 
-			case AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
+			case lx.AT_STAR_OPEN:
+				this.advanceUntilMatched(curr, lx.AT_STAR_OPEN, lx.AT_STAR_CLOSE, lx.AT, lx.AT);
 				break;
 
-			case AT:
+			case lx.AT:
 				if(next) {
 
 					if(this.options.saveAT) this.ast.push( curr );
 
 					switch(next.type){
 
-						case PAREN_OPEN:
-						case IDENTIFIER:
+						case lx.PAREN_OPEN:
+						case lx.IDENTIFIER:
 
 							if(this.ast.length === 0) {
 								this.ast = this.ast.parent;
@@ -204,9 +209,9 @@ VParser.prototype = {
 							this.ast = this.ast.beget( EXP );
 							break;
 
-						case KEYWORD:
-						case FUNCTION:
-						case BRACE_OPEN:
+						case lx.KEYWORD:
+						case lx.FUNCTION:
+						case lx.BRACE_OPEN:
 
 							if(this.ast.length === 0) {
 								this.ast = this.ast.parent;
@@ -216,8 +221,8 @@ VParser.prototype = {
 							this.ast = this.ast.beget( BLK );
 							break;
 
-						case AT:
-						case AT_COLON:
+						case lx.AT:
+						case lx.AT_COLON:
 
 							// we want to keep the token, but remove its
 							// "special" meaning because during compilation
@@ -234,12 +239,12 @@ VParser.prototype = {
 				}
 				break;
 
-			case TEXT_TAG_OPEN:
-			case HTML_TAG_OPEN:
-			case HTML_TAG_VOID_OPEN:
+			case lx.TEXT_TAG_OPEN:
+			case lx.HTML_TAG_OPEN:
+			case lx.HTML_TAG_VOID_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
 
-				if(tagName === null && next && next.type === AT && ahead){
+				if(tagName === null && next && next.type === lx.AT && ahead){
 					tagName = ahead.val.match(/(.*)/); // HACK for <@exp>
 				}
 
@@ -252,13 +257,13 @@ VParser.prototype = {
 
 				// mark this ast as void, to enable recognition of HTML_TAG_VOID_CLOSE,
 				// which is otherwise generic
-				if(curr.type === HTML_TAG_VOID_OPEN){
+				if(curr.type === lx.HTML_TAG_VOID_OPEN){
 					this.ast.tagVoid = this.ast.tagName;
 				}
 
 				if(
-					HTML_TAG_VOID_OPEN === curr.type
-					|| HTML_TAG_OPEN === curr.type
+					lx.HTML_TAG_VOID_OPEN === curr.type
+					|| lx.HTML_TAG_OPEN === curr.type
 					|| this.options.saveTextTag
 				){
 					this.ast.push(curr);
@@ -266,8 +271,8 @@ VParser.prototype = {
 
 				break;
 
-			case TEXT_TAG_CLOSE:
-			case HTML_TAG_CLOSE:
+			case lx.TEXT_TAG_CLOSE:
+			case lx.HTML_TAG_CLOSE:
 				tagName = curr.val.match(/^<\/([^>]+)/i);
 
 				if(tagName === null && next && next.type === AT && ahead){
@@ -284,7 +289,7 @@ VParser.prototype = {
 					this.ast = opener;
 				}
 
-				if(HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
+				if(lx.HTML_TAG_CLOSE === curr.type || this.options.saveTextTag) {
 					this.ast.push( curr );
 				}
 
@@ -296,7 +301,7 @@ VParser.prototype = {
 
 				break;
 
-			case HTML_TAG_VOID_CLOSE:
+			case lx.HTML_TAG_VOID_CLOSE:
 
 				// this should only be a valid token if tagVoid is defined, meaning
 				// HTML_TAG_VOID_OPEN was previously found within this markup block
@@ -309,7 +314,7 @@ VParser.prototype = {
 
 				break;
 
-			case BACKSLASH:
+			case lx.BACKSLASH:
 				curr.val += '\\';
 				this.ast.push(curr);
 				break;
@@ -334,44 +339,44 @@ VParser.prototype = {
 
 		switch(curr.type){
 
-			case AT:
-				if(next.type !== AT && !this.inCommentLine){
+			case lx.AT:
+				if(next.type !== lx.AT && !this.inCommentLine){
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.beget(MKP);
 				} else {
 					// we want to keep the token, but remove its
 					// "special" meaning because during compilation
 					// AT and AT_COLON are discarded
-					next.type = CONTENT;
+					next.type = lx.CONTENT;
 					this.ast.push(next);
 					this.tokens.pop(); // skip following AT
 				}
 				break;
 
-			case AT_STAR_OPEN:
-				this.advanceUntilMatched(curr, AT_STAR_OPEN, AT_STAR_CLOSE, AT, AT);
+			case lx.AT_STAR_OPEN:
+				this.advanceUntilMatched(curr, lx.AT_STAR_OPEN, lx.AT_STAR_CLOSE, lx.AT, lx.AT);
 				break;
 
-			case AT_COLON:
+			case lx.AT_COLON:
 				this.subParse(curr, MKP, true);
 				break;
 
-			case TEXT_TAG_OPEN:
-			case TEXT_TAG_CLOSE:
-			case HTML_TAG_VOID_OPEN:
-			case HTML_TAG_OPEN:
-			case HTML_TAG_CLOSE:
+			case lx.TEXT_TAG_OPEN:
+			case lx.TEXT_TAG_CLOSE:
+			case lx.HTML_TAG_VOID_OPEN:
+			case lx.HTML_TAG_OPEN:
+			case lx.HTML_TAG_CLOSE:
 				this.ast = this.ast.beget(MKP);
 				this.tokens.push(curr); // defer
 				break;
 
-			case FORWARD_SLASH:
-			case SINGLE_QUOTE:
-			case DOUBLE_QUOTE:
+			case lx.FORWARD_SLASH:
+			case lx.SINGLE_QUOTE:
+			case lx.DOUBLE_QUOTE:
 				if(
-					curr.type === FORWARD_SLASH
+					curr.type === lx.FORWARD_SLASH
 					&& next
-					&& next.type === FORWARD_SLASH
+					&& next.type === lx.FORWARD_SLASH
 				){
 					this.inCommentLine = true;
 				}
@@ -381,11 +386,11 @@ VParser.prototype = {
 					subTokens = this.advanceUntilMatched(
 						 curr
 						,curr.type
-						,PAIRS[ curr.type ]
-						,BACKSLASH
-						,BACKSLASH ).map(function(tok){
+						,lx.PAIRS[ curr.type ]
+						,lx.BACKSLASH
+						,lx.BACKSLASH ).map(function(tok){
 							// mark AT within a regex/quoted string as literal
-							if(tok.type === AT) tok.type = CONTENT;
+							if(tok.type === lx.AT) tok.type = lx.CONTENT;
 							return tok;
 						});
 					this.ast.pushFlatten(subTokens.reverse());
@@ -395,30 +400,30 @@ VParser.prototype = {
 
 				break;
 
-			case NEWLINE:
+			case lx.NEWLINE:
 				if(this.inCommentLine){
 					this.inCommentLine = false;
 				}
 				this.ast.push(curr);
 				break;
 
-			case BRACE_OPEN:
-			case PAREN_OPEN:
-				submode = this.options.favorText && curr.type === BRACE_OPEN
+			case lx.BRACE_OPEN:
+			case lx.PAREN_OPEN:
+				submode = this.options.favorText && curr.type === lx.BRACE_OPEN
 					? MKP
 					: BLK;
 
 				this.subParse( curr, submode );
 
-				subTokens = this.advanceUntilNot(WHITESPACE);
+				subTokens = this.advanceUntilNot(lx.WHITESPACE);
 				next = this.tokens[ this.tokens.length - 1 ];
 
 				if(
 					next
-					&& next.type !== KEYWORD
-					&& next.type !== FUNCTION
-					&& next.type !== BRACE_OPEN
-					&& curr.type !== PAREN_OPEN
+					&& next.type !== lx.KEYWORD
+					&& next.type !== lx.FUNCTION
+					&& next.type !== lx.BRACE_OPEN
+					&& curr.type !== lx.PAREN_OPEN
 				){
 					// defer whitespace
 					this.tokens.push.apply(this.tokens, subTokens.reverse());
@@ -449,17 +454,17 @@ VParser.prototype = {
 
 		switch(curr.type){
 
-			case KEYWORD:
-			case FUNCTION:
+			case lx.KEYWORD:
+			case lx.FUNCTION:
 				this.ast = this.ast.beget(BLK);
 				this.tokens.push(curr); // defer
 				break;
 
-			case WHITESPACE:
-			case LOGICAL:
-			case ASSIGN_OPERATOR:
-			case OPERATOR:
-			case NUMERIC_CONTENT:
+			case lx.WHITESPACE:
+			case lx.LOGICAL:
+			case lx.ASSIGN_OPERATOR:
+			case lx.OPERATOR:
+			case lx.NUMERIC_CONTENT:
 				if(this.ast.parent && this.ast.parent.mode === EXP){
 
 					this.ast.push(curr);
@@ -472,20 +477,20 @@ VParser.prototype = {
 
 				break;
 
-			case IDENTIFIER:
+			case lx.IDENTIFIER:
 				this.ast.push(curr);
 				break;
 
-			case SINGLE_QUOTE:
-			case DOUBLE_QUOTE:
+			case lx.SINGLE_QUOTE:
+			case lx.DOUBLE_QUOTE:
 
 				if(this.ast.parent && this.ast.parent.mode === EXP){
 					subTokens = this.advanceUntilMatched(
 						curr
 						,curr.type
-						,PAIRS[ curr.type ]
-						,BACKSLASH
-						,BACKSLASH );
+						,lx.PAIRS[ curr.type ]
+						,lx.BACKSLASH
+						,lx.BACKSLASH );
 					this.ast.pushFlatten(subTokens.reverse());
 
 				} else {
@@ -496,13 +501,13 @@ VParser.prototype = {
 
 				break;
 
-			case HARD_PAREN_OPEN:
-			case PAREN_OPEN:
+			case lx.HARD_PAREN_OPEN:
+			case lx.PAREN_OPEN:
 
 				prev = this.prevTokens[ this.prevTokens.length - 1 ];
 				ahead = this.tokens[ this.tokens.length - 1 ];
 
-				if( curr.type === HARD_PAREN_OPEN && ahead.type === HARD_PAREN_CLOSE ){
+				if( curr.type === lx.HARD_PAREN_OPEN && ahead.type === lx.HARD_PAREN_CLOSE ){
 					// likely just [], which is not likely valid outside of EXP
 					this.tokens.push(curr); // defer
 					this.ast = this.ast.parent; //this.ast.beget(MKP);
@@ -512,26 +517,26 @@ VParser.prototype = {
 				this.subParse(curr, EXP);
 				ahead = this.tokens[ this.tokens.length - 1 ];
 
-				if( (prev && prev.type === AT) || (ahead && ahead.type === IDENTIFIER) ){
+				if( (prev && prev.type === lx.AT) || (ahead && ahead.type === lx.IDENTIFIER) ){
 					// explicit expression is automatically ended
 					this.ast = this.ast.parent;
 				}
 
 				break;
 
-			case BRACE_OPEN:
+			case lx.BRACE_OPEN:
 				this.tokens.push(curr); // defer
 				this.ast = this.ast.beget(BLK);
 				break;
 
-			case PERIOD:
+			case lx.PERIOD:
 				ahead = this.tokens[ this.tokens.length - 1 ];
 				if(
 					ahead &&
-					(  ahead.type === IDENTIFIER
-					|| ahead.type === KEYWORD
-					|| ahead.type === FUNCTION
-					|| ahead.type === PERIOD
+					(  ahead.type === lx.IDENTIFIER
+					|| ahead.type === lx.KEYWORD
+					|| ahead.type === lx.FUNCTION
+					|| ahead.type === lx.PERIOD
 					// if it's "expressions all the way down", then there is no way
 					// to exit EXP mode without running out of tokens, i.e. we're
 					// within a sub parser
