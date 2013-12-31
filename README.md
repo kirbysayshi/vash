@@ -155,9 +155,9 @@ Be sure to configure paths appropriately, but vash is AMD ready.
 Playground <a name="playground"></a>
 ==================
 
-Vash now has a [playground][] of sorts at [CodePen.io][]. It uses the current version of `vash.js` from the `build` folder. Fork it to test your own template ideas!
+Vash now has [a playground][] of sorts at [CodePen.io][]. It uses the current version of `vash.js` from the `build` folder. Fork it to test your own template ideas!
 
-[playground]: http://codepen.io/kirbysayshi/full/IjrFw
+[a playground]: http://codepen.io/kirbysayshi/full/IjrFw
 [CodePen.io]: http://codepen.io
 
 Syntax <a name="syntax"></a>
