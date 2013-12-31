@@ -1,7 +1,7 @@
 {
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.7.6-7",
+  "version": "0.7.6-14",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -34,6 +34,9 @@
     "vows": "~0.7.0",
     "semver": "~1",
     "jshint": "0.8.0",
-    "marked": "~0.2.8"
+    "marked": "~0.2.8",
+    "gulp": "~2.6.0",
+    "gulp-concat": "~1.1.0",
+    "event-stream": "~3.0.16"
   }
 }
