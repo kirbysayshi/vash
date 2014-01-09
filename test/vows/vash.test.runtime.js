@@ -152,11 +152,15 @@ vows.describe('vash templating library runtime').addBatch({
 
 			var  str = vash.compile('@html.fn("one") @html.fn("two")').toClientString() + '()'
 				,client = vash.helpers.fn.toClientString() + '; \n' + str
+				,ctx = { vash: vruntime }
 
-			var actual = vm.runInNewContext( client, { vash: vruntime } );
+			console.log(vash.helpers.fn.toClientString());
+
+			var actual = vm.runInNewContext( client, ctx );
 
 			assert.ok( actual.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
 			assert.ok( actual.indexOf('fnref:two') > -1, 'expect indexOf fnref:two to be > -1' );
+			assert.equal( ctx.fnCtn, undefined, 'expect `this` within helper to be instance' );
 		}
 	}
 
