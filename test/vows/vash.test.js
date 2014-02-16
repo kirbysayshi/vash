@@ -1166,6 +1166,18 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl(), '<p></p>' );
 			}
 		}
+
+		,'newlines within nested markup': {
+			topic: '<span>@model<span\n></span></span>'
+
+			,'does not prevent HTML matching': function(topic) {
+				var tpl = vash.compile(topic)
+					, actual = tpl('1');
+
+				assert.equal( '<span>1<span\n></span></span>', actual )
+			}
+		}
+
 	}
 	,'simple expression followed by @()': {
 
