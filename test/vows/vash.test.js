@@ -769,6 +769,30 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(tpl(), expected);
 		}
 	}
+	,'self-closing tag containing >': {
+
+		topic: '<button data-bind="enable: @model.length > 0" />'
+
+		,'compiles and renders': function(topic) {
+			var tpl = vash.compile(topic)
+				,expected = '<button data-bind="enable: 0 > 0" />';
+
+			assert.equal(tpl([]), expected);
+		}
+	}
+
+	,'self-closing tag containing > with no whitespace': {
+
+		topic: '<button data-bind="enable:@model.length>0"/>'
+
+		,'compiles and renders': function(topic) {
+			var tpl = vash.compile(topic)
+				,expected = '<button data-bind="enable:0>0"/>';
+
+			assert.equal(tpl([]), expected);
+		}
+	}
+
 	,'markup with numbers': {
 		topic: function(){
 			var str = "<div>"
@@ -1936,6 +1960,7 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( actual.length, 8 );
 			}
 		}
+
 	}
 
 	/*,'implicit compilation': {

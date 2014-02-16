@@ -154,8 +154,6 @@ vows.describe('vash templating library runtime').addBatch({
 				,client = vash.helpers.fn.toClientString() + '; \n' + str
 				,ctx = { vash: vruntime }
 
-			console.log(vash.helpers.fn.toClientString());
-
 			var actual = vm.runInNewContext( client, ctx );
 
 			assert.ok( actual.indexOf('fnref:one') > -1, 'expect indexOf fnref:one to be > -1' );
