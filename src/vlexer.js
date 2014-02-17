@@ -98,6 +98,14 @@ var TESTS = [
 
 
 	,HTML_TAG_OPEN, function(){
+
+		// Some context:
+		// These only need to match something that is _possibly_ a tag,
+		// self closing tag, or email address. They do not need to be able to
+		// fully parse a tag into separate parts. They can be thought of as a
+		// huge look ahead to determine if a large swath of text is an tag,
+		// even if it contains other components (like expressions or else).
+
 		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?["a-zA-Z]*>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
 			,reSelfClosing = /^(<[a-zA-Z@]+(?:\s+\S+)*\s*\/>)/
