@@ -17,6 +17,8 @@ var input = ''
 + '})\n'
 + '<@model.sometag>what</@model.sometag>\n'
 + '@{ var a = "what"; <span>insideblock</span> }\n'
++ '<silly>@model.what[0]("who")["and"]</silly>\n'
++ '@("what"[0] + (function() { return { hey: \'hey\' } })["hey"])\n'
 + '</p>\n'
 
 var l = new Lexer();
@@ -26,7 +28,7 @@ var tokens = l.read();
 
 var p = new Parser();
 p.write(tokens);
-for(var i = 0; i < 210; i++) {
+for(var i = 0; i < 280; i++) {
   p.read();
 }
 

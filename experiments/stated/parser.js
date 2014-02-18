@@ -9,6 +9,7 @@ var MarkupNode = require('./nodes/markup');
 var MarkupAttributeNode = require('./nodes/markupattribute');
 var ExpressionNode = require('./nodes/expression');
 var ExplicitExpressionNode = require('./nodes/explicitexpression');
+var IndexExpressionNode = require('./nodes/indexexpression');
 var LocationNode = require('./nodes/location');
 var BlockNode = require('./nodes/block');
 
@@ -499,6 +500,65 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     updateLoc(valueNode, curr);
   }
 
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+// These are really only used when continuing on an expression (for now):
+// @model.what[0]()
+Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
+  var valueNode = node.values[node.values.length-1];
+
+  if (node._waitingForEndQuote) {
+    if (curr.val === node._waitingForEndQuote) {
+      node._waitingForEndQuote = null;
+    }
+
+    updateLoc(valueNode, curr);
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  if (
+    curr.type === tks.HARD_PAREN_OPEN
+    && !valueNode
+  ) {
+    updateLoc(node, curr);
+    return true;
+  }
+
+  if (curr.type === tks.HARD_PAREN_CLOSE) {
+    this.closeNode(node);
+    updateLoc(node, curr);
+    return true;
+  }
+
+  if (curr.type === tks.PAREN_OPEN) {
+    valueNode = new ExplicitExpressionNode();
+    node.values.push(valueNode);
+    updateLoc(valueNode, curr);
+    this.openNode(valueNode);
+    return false;
+  }
+
+  if (!valueNode || valueNode.type !== 'VashText') {
+    valueNode = new TextNode();
+    node.values.push(valueNode);
+  }
+
+  if (!node._waitingForEndQuote
+    && (curr.type === tks.DOUBLE_QUOTE
+    || curr.type === tks.SINGLE_QUOTE)
+  ) {
+    node._waitingForEndQuote = curr.val;
+    updateLoc(valueNode, curr);
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  // Default.
+
+  updateLoc(valueNode, curr);
   appendTextValue(valueNode, curr);
   return true;
 }
