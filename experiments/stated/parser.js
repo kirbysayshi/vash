@@ -78,8 +78,8 @@ Parser.prototype.closeNode = function(node) {
     this.stack.push(last);
   }
 
-  this.lg('Closing node %s, returning to node %s',
-    node.type, last.type)
+  this.lg('Closing node %s (%s), returning to node %s',
+    node.type, node.name, last.type)
 
   this.node = last;
 }
@@ -96,7 +96,7 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     return false;
   }
 
-  if (curr.type === tks.HTML_TAG_OPEN) {
+  if (curr.type === tks.LT_SIGN) {
     valueNode = new MarkupNode();
     this.openNode(valueNode);
     node.body.push(valueNode);
@@ -119,45 +119,80 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
 
 Parser.prototype.continueMarkupNode = function(node, curr, next) {
   var valueNode = node.values[node.values.length-1];
-  var tagName;
 
-  if (!node.name) {
+  if (!node.name || node.name === '!') {
 
-    tagName = extractTagName(curr);
-    node.name = tagName;
-    updateLoc(node, curr);
-
-    if (
-      tagName
-      && tagName[0] === '@'
-      && curr.type === tks.HTML_TAG_OPEN
-    ) {
-      // We have a <@expression ...>
+    if (curr.type === tks.AT) {
       valueNode = new ExpressionNode();
       node.expression = valueNode;
       this.openNode(valueNode);
       updateLoc(valueNode, curr);
+      return true;
+    }
 
-      // HACK.
-      var hack = new TextNode();
-      hack.value += tagName.substring(1);
-      valueNode.values.push(hack);
+    if (curr.type === tks.IDENTIFIER) {
+      node.name = node.name
+        ? node.name + curr.val
+        : curr.val;
+      updateLoc(node, curr);
+      return true;
+    }
+
+    if (curr.type === tks.LT_SIGN) {
+      updateLoc(node, curr);
+      return true;
+    }
+
+    // Handle end of <@model.something>
+    if (curr.type === tks.GT_SIGN) {
+      node.name = (node.name ? node.name : '')
+        + 'VashDynamicMarkup';
+      return true;
+    }
+
+    // Handle <!crap
+    if (curr.type === tks.EXCLAMATION_POINT) {
+      node.name = curr.val;
+      return true;
+    }
+
+    var msg = 'Could not discern tag name from token ' + curr;
+    throw new Error(msg);
+  }
+
+  if (curr.type === tks.GT_SIGN && !node._waitingForFinishedClose) {
+    node._finishedOpen = true;
+
+    if (MarkupNode.isVoid(node.name)) {
+      this.closeNode(node);
+      updateLoc(node, curr);
     }
 
     return true;
   }
 
-  if (curr.type === tks.GT_SIGN) {
-    node._finishedOpen = true;
+  if (curr.type === tks.GT_SIGN && node._waitingForFinishedClose) {
+    node._waitingForFinishedClose = false;
+    this.closeNode(node);
+    updateLoc(node, curr);
     return true;
   }
 
-  if (
-    curr.type === tks.HTML_TAG_VOID_CLOSE
-    || curr.type === tks.HTML_TAG_CLOSE
-  ) {
+  // </
+  if (curr.type === tks.HTML_TAG_CLOSE) {
+    node._waitingForFinishedClose = true;
+    return true;
+  }
+
+  if (curr.type === tks.HTML_TAG_VOID_CLOSE) {
     this.closeNode(node);
     updateLoc(node, curr);
+    return true;
+  }
+
+  if (node._waitingForFinishedClose) {
+    this.lg('Ignoring %s while waiting for closing GT_SIGN',
+      curr);
     return true;
   }
 
@@ -173,6 +208,16 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  if (
+    curr.type === tks.AT
+    && next.type === tks.BRACE_OPEN
+  ) {
+    valueNode = new BlockNode();
+    this.openNode(valueNode);
+    node.values.push(valueNode);
+    return true;
+  }
+
   // @something
   if (curr.type === tks.AT && node._finishedOpen) {
     valueNode = new ExpressionNode();
@@ -180,6 +225,14 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     this.openNode(valueNode);
     node.values.push(valueNode);
     return true;
+  }
+
+  if (curr.type === tks.LT_SIGN) {
+    valueNode = new MarkupNode();
+    updateLoc(valueNode, curr);
+    this.openNode(valueNode);
+    node.values.push(valueNode);
+    return false;
   }
 
   // Default
@@ -216,7 +269,10 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   }
 
   // End of left, value only
-  if (curr.type === tks.WHITESPACE && !node._expectRight) {
+  if (
+    (curr.type === tks.WHITESPACE || curr.type === tks.GT_SIGN)
+    && !node._expectRight
+  ) {
     node._finishedLeft = true;
     updateLoc(node, curr);
     this.closeNode(node);
@@ -389,6 +445,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     valueNode = new BlockNode();
     updateLoc(valueNode, curr);
     node.values.push(valueNode);
+    this.openNode(valueNode);
     return false;
   }
 
@@ -404,7 +461,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   if (
-    curr.type === tks.HTML_TAG_OPEN
+    curr.type === tks.LT_SIGN
+    && (next.type === tks.AT || next.type === tks.IDENTIFIER)
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
@@ -415,23 +473,29 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     return false;
   }
 
-  // Default
-
-  var attachmentPoint;
+  var attachmentNode;
 
   if (node._reachedOpenBrace && node._reachedCloseBrace) {
-    attachmentPoint = node.tail;
+    attachmentNode = node.tail;
   } else if (!node._reachedOpenBrace) {
-    attachmentPoint = node.head;
+    attachmentNode = node.head;
   } else {
-    attachmentPoint = node.values;
+    attachmentNode = node.values;
   }
 
-  valueNode = attachmentPoint[attachmentPoint.length-1];
+  valueNode = attachmentNode[attachmentNode.length-1];
+
+  if (curr.type === tks.PAREN_OPEN) {
+    valueNode = new ExplicitExpressionNode();
+    updateLoc(valueNode, curr);
+    attachmentNode.push(valueNode);
+    this.openNode(valueNode);
+    return false;
+  }
 
   if (!valueNode || valueNode.type !== 'VashText') {
     valueNode = new TextNode();
-    attachmentPoint.push(valueNode);
+    attachmentNode.push(valueNode);
     updateLoc(valueNode, curr);
   }
 
@@ -450,17 +514,6 @@ function updateLoc(node, token) {
   }
 
   node.endloc = loc;
-}
-
-function extractTagName(token) {
-  var match = token.val.match(/^<(\s*@?[a-zA-Z]+)/);
-  if (!match) {
-    var msg = 'Attempted to extract tag name from '
-      + token + ' but failed';
-    throw new Error(msg);
-  }
-
-  return match[1].trim();
 }
 
 function appendTextValue(textNode, token) {

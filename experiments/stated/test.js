@@ -11,10 +11,10 @@ var input = ''
 + '@model.things.forEach(function(thing) {\n'
 + '  <span>@thing.name</span>\n'
 + '  <@model.how>YEP</@model.how>\n'
-+ '  @(function() {\n'
++ '  (function() {\n'
 + '    <p></p>\n'
 + '  }())\n'
-+ '});\n'
++ '})\n'
 + '<@model.sometag>what</@model.sometag>\n'
 + '@{ var a = "what"; <span>insideblock</span> }\n'
 + '</p>\n'
@@ -26,7 +26,7 @@ var tokens = l.read();
 
 var p = new Parser();
 p.write(tokens);
-for(var i = 0; i < 100; i++) {
+for(var i = 0; i < 210; i++) {
   p.read();
 }
 

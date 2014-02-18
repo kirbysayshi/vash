@@ -12,6 +12,7 @@ var  AT = 'AT'
   ,BRACE_OPEN = 'BRACE_OPEN'
   ,CONTENT = 'CONTENT'
   ,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
+  ,EXCLAMATION_POINT = 'EXCLAMATION_POINT'
   ,EQUAL_SIGN = 'EQUAL_SIGN'
   ,EMAIL = 'EMAIL'
   ,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
@@ -74,11 +75,8 @@ var TESTS = [
   ,TEXT_TAG_OPEN, (/^(<text>)/)
   ,TEXT_TAG_CLOSE, (/^(<\/text>)/)
 
-
-  ,HTML_TAG_OPEN, (/^(<\s*@?[a-zA-Z]+)/)
+  ,HTML_TAG_VOID_CLOSE, (/^(\/>)/)
   ,HTML_TAG_CLOSE, (/^(<\/)/)
-  ,HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
-
   ,LT_SIGN, (/^(<)/)
   ,GT_SIGN, (/^(>)/)
 
@@ -102,6 +100,7 @@ var TESTS = [
 
   ,ESCAPED_QUOTE, (/^(\\+['"])/)
   ,BACKSLASH, (/^(\\)/)
+  ,EXCLAMATION_POINT, (/^(!)/)
   ,DOUBLE_QUOTE, (/^(\")/)
   ,SINGLE_QUOTE, (/^(\')/)
 
