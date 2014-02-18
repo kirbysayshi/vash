@@ -76,7 +76,7 @@ var TESTS = [
 
 
   ,HTML_TAG_OPEN, (/^(<\s*@?[a-zA-Z]+)/)
-  ,HTML_TAG_CLOSE, (/^(<\/[^>@\b]+?>)/)
+  ,HTML_TAG_CLOSE, (/^(<\/)/)
   ,HTML_TAG_VOID_CLOSE, (/^(\/\s*>)/)
 
   ,LT_SIGN, (/^(<)/)

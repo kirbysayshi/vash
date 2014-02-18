@@ -3,13 +3,14 @@ var debug = require('debug');
 
 var tks = require('./lexer');
 
-var ProgramNode = require('./nodes/program');;
-var TextNode = require('./nodes/text');;
-var MarkupNode = require('./nodes/markup');;
-var MarkupAttributeNode = require('./nodes/markupattribute');;
-var ExpressionNode = require('./nodes/expression');;
-var ExplicitExpressionNode = require('./nodes/explicitexpression');;
-var LocationNode = require('./nodes/location');;
+var ProgramNode = require('./nodes/program');
+var TextNode = require('./nodes/text');
+var MarkupNode = require('./nodes/markup');
+var MarkupAttributeNode = require('./nodes/markupattribute');
+var ExpressionNode = require('./nodes/expression');
+var ExplicitExpressionNode = require('./nodes/explicitexpression');
+var LocationNode = require('./nodes/location');
+var BlockNode = require('./nodes/block');
 
 function Parser() {
   this.lg = debug('vash:parser');
@@ -83,32 +84,6 @@ Parser.prototype.closeNode = function(node) {
   this.node = last;
 }
 
-function addLocIfNeeded(node, startOrEnd, token) {
-  var loc;
-  loc = new LocationNode();
-  loc.line = token.line;
-  loc.column = token.chr;
-
-  if (startOrEnd === 'start' && !node.startloc) {
-    node.startloc = loc;
-    return;
-  }
-
-  if (startOrEnd === 'end') {
-    node.endloc = loc;
-  }
-}
-
-function extractTagName(token) {
-  var match = token.val.match(/^<(\s*@?[a-zA-Z]+)/);
-  if (!match) {
-    var msg = 'Attempted to extract tag name from '
-      + token + ' but failed';
-    throw new Error(msg);
-  }
-
-  return match[1].trim();
-}
 
 Parser.prototype.continueProgramNode = function(node, curr, next) {
 
@@ -133,11 +108,11 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
   if (!valueNode || valueNode.type !== 'VashText') {
     valueNode = new TextNode();
     node.body.push(valueNode);
-    addLocIfNeeded(valueNode, 'start', curr);
+    updateLoc(valueNode, curr);
   }
 
   appendTextValue(valueNode, curr);
-  addLocIfNeeded(valueNode, 'end', curr);
+  updateLoc(valueNode, curr);
 
   return true;
 }
@@ -147,16 +122,28 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
   var tagName;
 
   if (!node.name) {
-    tagName = extractTagName(curr)
 
-    if (tagName[0] === '@') {
+    tagName = extractTagName(curr);
+    node.name = tagName;
+    updateLoc(node, curr);
+
+    if (
+      tagName
+      && tagName[0] === '@'
+      && curr.type === tks.HTML_TAG_OPEN
+    ) {
       // We have a <@expression ...>
-      // or <@(expression)
-      // Do something here...
+      valueNode = new ExpressionNode();
+      node.expression = valueNode;
+      this.openNode(valueNode);
+      updateLoc(valueNode, curr);
+
+      // HACK.
+      var hack = new TextNode();
+      hack.value += tagName.substring(1);
+      valueNode.values.push(hack);
     }
 
-    node.name = tagName;
-    addLocIfNeeded(node, 'start', curr);
     return true;
   }
 
@@ -165,9 +152,12 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
-  if (curr.type === tks.HTML_TAG_VOID_CLOSE) {
+  if (
+    curr.type === tks.HTML_TAG_VOID_CLOSE
+    || curr.type === tks.HTML_TAG_CLOSE
+  ) {
     this.closeNode(node);
-    addLocIfNeeded(node, 'end', curr);
+    updateLoc(node, curr);
     return true;
   }
 
@@ -186,7 +176,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
   // @something
   if (curr.type === tks.AT && node._finishedOpen) {
     valueNode = new ExpressionNode();
-    addLocIfNeeded(valueNode, 'start', curr);
+    updateLoc(valueNode, curr);
     this.openNode(valueNode);
     node.values.push(valueNode);
     return true;
@@ -196,12 +186,12 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   if (!valueNode || valueNode.type !== 'VashText') {
     valueNode = new TextNode();
-    addLocIfNeeded(valueNode, 'start', curr);
+    updateLoc(valueNode, curr);
     node.values.push(valueNode);
   }
 
   appendTextValue(valueNode, curr);
-  addLocIfNeeded(valueNode, 'end', curr);
+  updateLoc(valueNode, curr);
   return true;
 }
 
@@ -220,7 +210,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
       node.right.push(valueNode);
     }
 
-    addLocIfNeeded(valueNode, 'start', curr);
+    updateLoc(valueNode, curr);
     this.openNode(valueNode);
     return true;
   }
@@ -228,7 +218,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   // End of left, value only
   if (curr.type === tks.WHITESPACE && !node._expectRight) {
     node._finishedLeft = true;
-    addLocIfNeeded(node, 'end', curr);
+    updateLoc(node, curr);
     this.closeNode(node);
     return false; // defer
   }
@@ -253,7 +243,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
   // End of quoted value.
   if (node.rightIsQuoted === curr.val) {
-    addLocIfNeeded(node, 'end', curr);
+    updateLoc(node, curr);
     this.closeNode(node);
     return true;
   }
@@ -280,8 +270,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   }
 
   appendTextValue(valueNode, curr);
-  addLocIfNeeded(valueNode, 'start', curr);
-  addLocIfNeeded(valueNode, 'end', curr);
+  updateLoc(valueNode, curr);
 
   return true;
 }
@@ -296,28 +285,32 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
     return false;
   }
 
-  if (
-    (curr.type === tks.PERIOD && next.type !== tks.IDENTIFIER)
-    || curr.type === tks.WHITESPACE
-    || curr.type === tks.DOUBLE_QUOTE
-    || curr.type === tks.SINGLE_QUOTE
-  ) {
-    addLocIfNeeded(node, 'end', curr);
-    this.closeNode(node);
+  if (curr.type === tks.HARD_PAREN_OPEN) {
+    valueNode = new IndexExpressionNode();
+    node.values.push(valueNode);
+    this.openNode(valueNode);
     return false;
   }
 
   // Default
-  // Should default consume, or end?
+  // Consume only specific cases, otherwise close.
 
-  if (!valueNode) {
-    valueNode = new TextNode();
-    node.values.push(valueNode);
-    addLocIfNeeded(valueNode, 'start', curr);
+  if (
+    curr.type === tks.IDENTIFIER
+    || (curr.type === tks.PERIOD && next.type === tks.IDENTIFIER)
+  ) {
+    if (!valueNode) {
+      valueNode = new TextNode();
+      node.values.push(valueNode);
+      updateLoc(valueNode, curr);
+    }
+
+    appendTextValue(valueNode, curr);
+    return true;
+  } else {
+    this.closeNode(node);
+    return false;
   }
-
-  appendTextValue(valueNode, curr);
-  return true;
 }
 
 Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
@@ -330,7 +323,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     curr.type === tks.PAREN_OPEN && node.values.length === 0
   ) {
     // This is the beginning of the explicit (mark as consumed)
-    addLocIfNeeded(node, 'start', curr);
+    updateLoc(node, curr);
     return true;
   }
 
@@ -338,7 +331,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     // New explicit expression
     valueNode = new ExplicitExpressionNode();
     node.values.push(valueNode);
-    addLocIfNeeded(valueNode, 'start', curr);
+    updateLoc(valueNode, curr);
     this.openNode(valueNode);
     // And do nothing with the token (mark as consumed)
     return true;
@@ -346,16 +339,24 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
 
   if (curr.type === tks.PAREN_CLOSE && !node._waitingForEndQuote) {
     // Close current explicit expression
-    addLocIfNeeded(node, 'end', curr);
+    updateLoc(node, curr);
     this.closeNode(node);
     // And do nothing with the token (mark as consumed)
     return true;
   }
 
+  if (curr.type === tks.FUNCTION && !node._waitingForEndQuote) {
+    valueNode = new BlockNode();
+    node.values.push(valueNode);
+    updateLoc(valueNode, curr);
+    this.openNode(valueNode);
+    return false;
+  }
+
   if (curr.val === node._waitingForEndQuote) {
     node._waitingForEndQuote = null;
     valueNode += curr.val;
-    addLocIfNeeded(valueNode, 'end', curr);
+    updateLoc(valueNode, curr);
     return true;
   }
 
@@ -366,8 +367,100 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
   }
 
   appendTextValue(valueNode, curr);
-  addLocIfNeeded(valueNode, 'end', curr);
+  updateLoc(valueNode, curr);
   return true;
+}
+
+Parser.prototype.continueBlockNode = function(node, curr, next) {
+
+  var valueNode = node.values[node.values.length-1];
+
+  if (
+    curr.type === tks.BRACE_OPEN
+    && !node._reachedOpenBrace
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    node._reachedOpenBrace = true;
+    return true;
+  }
+
+  if (curr.type === tks.BRACE_OPEN) {
+    valueNode = new BlockNode();
+    updateLoc(valueNode, curr);
+    node.values.push(valueNode);
+    return false;
+  }
+
+  if (
+    curr.type === tks.BRACE_CLOSE
+    && !node._reachedCloseBrace
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
+  if (
+    curr.type === tks.HTML_TAG_OPEN
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    valueNode = new MarkupNode();
+    updateLoc(valueNode, curr);
+    node.values.push(valueNode);
+    this.openNode(valueNode);
+    return false;
+  }
+
+  // Default
+
+  var attachmentPoint;
+
+  if (node._reachedOpenBrace && node._reachedCloseBrace) {
+    attachmentPoint = node.tail;
+  } else if (!node._reachedOpenBrace) {
+    attachmentPoint = node.head;
+  } else {
+    attachmentPoint = node.values;
+  }
+
+  valueNode = attachmentPoint[attachmentPoint.length-1];
+
+  if (!valueNode || valueNode.type !== 'VashText') {
+    valueNode = new TextNode();
+    attachmentPoint.push(valueNode);
+    updateLoc(valueNode, curr);
+  }
+
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+function updateLoc(node, token) {
+  var loc;
+  loc = new LocationNode();
+  loc.line = token.line;
+  loc.column = token.chr;
+
+  if (!node.startloc) {
+    node.startloc = loc;
+  }
+
+  node.endloc = loc;
+}
+
+function extractTagName(token) {
+  var match = token.val.match(/^<(\s*@?[a-zA-Z]+)/);
+  if (!match) {
+    var msg = 'Attempted to extract tag name from '
+      + token + ' but failed';
+    throw new Error(msg);
+  }
+
+  return match[1].trim();
 }
 
 function appendTextValue(textNode, token) {
@@ -378,6 +471,5 @@ function appendTextValue(textNode, token) {
   }
 
   textNode.value += token.val;
-  addLocIfNeeded(textNode, 'start', token);
-  addLocIfNeeded(textNode, 'end', token);
+  updateLoc(textNode, token);
 }

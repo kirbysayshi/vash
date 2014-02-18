@@ -26,7 +26,7 @@ var tokens = l.read();
 
 var p = new Parser();
 p.write(tokens);
-for(var i = 0; i < 80; i++) {
+for(var i = 0; i < 100; i++) {
   p.read();
 }
 
