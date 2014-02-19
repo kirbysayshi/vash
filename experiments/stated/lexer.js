@@ -56,7 +56,7 @@ VLexer.prototype = {
         ,toString: function(){
           return '[' + this.type
             + ' (' + this.line + ',' + this.chr + '): '
-            + this.val + ']';
+            + this.val.replace(/(\n)/, '\\n') + ']';
         }
       };
 
