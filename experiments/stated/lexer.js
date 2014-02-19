@@ -1,112 +1,8 @@
-
 var debug = require('debug');
-
-// The basic tokens, defined as constants
-var  AT = 'AT'
-  ,ASSIGN_OPERATOR = 'ASSIGN_OPERATOR'
-  ,AT_COLON = 'AT_COLON'
-  ,AT_STAR_CLOSE = 'AT_STAR_CLOSE'
-  ,AT_STAR_OPEN = 'AT_STAR_OPEN'
-  ,BACKSLASH = 'BACKSLASH'
-  ,BRACE_CLOSE = 'BRACE_CLOSE'
-  ,BRACE_OPEN = 'BRACE_OPEN'
-  ,CONTENT = 'CONTENT'
-  ,DOUBLE_QUOTE = 'DOUBLE_QUOTE'
-  ,EXCLAMATION_POINT = 'EXCLAMATION_POINT'
-  ,EQUAL_SIGN = 'EQUAL_SIGN'
-  ,EMAIL = 'EMAIL'
-  ,ESCAPED_QUOTE = 'ESCAPED_QUOTE'
-  ,FORWARD_SLASH = 'FORWARD_SLASH'
-  ,FUNCTION = 'FUNCTION'
-  ,GT_SIGN = 'GT_SIGN'
-  ,HARD_PAREN_CLOSE = 'HARD_PAREN_CLOSE'
-  ,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
-  ,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
-  ,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-  ,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
-  ,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
-  ,IDENTIFIER = 'IDENTIFIER'
-  ,KEYWORD = 'KEYWORD'
-  ,LOGICAL = 'LOGICAL'
-  ,LT_SIGN = 'LT_SIGN'
-  ,NEWLINE = 'NEWLINE'
-  ,NUMERIC_CONTENT = 'NUMERIC_CONTENT'
-  ,OPERATOR = 'OPERATOR'
-  ,PAREN_CLOSE = 'PAREN_CLOSE'
-  ,PAREN_OPEN = 'PAREN_OPEN'
-  ,PERIOD = 'PERIOD'
-  ,SINGLE_QUOTE = 'SINGLE_QUOTE'
-  ,TEXT_TAG_CLOSE = 'TEXT_TAG_CLOSE'
-  ,TEXT_TAG_OPEN = 'TEXT_TAG_OPEN'
-  ,WHITESPACE = 'WHITESPACE';
+var tokens = require('./tokens');
 
 
-// The order of these is important, as it is the order in which
-// they are run against the input string.
-// They are separated out here to allow for better minification
-// with the least amount of effort from me. :)
 
-// NOTE: this is an array, not an object literal! The () around
-// the regexps are for the sake of the syntax highlighter in my
-// editor... sublimetext2
-
-var TESTS = [
-
-   AT_STAR_OPEN, (/^(@\*)/)
-  ,AT_STAR_CLOSE, (/^(\*@)/)
-
-
-  ,AT_COLON, (/^(@\:)/)
-  ,AT, (/^(@)/)
-
-
-  ,PAREN_OPEN, (/^(\()/)
-  ,PAREN_CLOSE, (/^(\))/)
-
-
-  ,HARD_PAREN_OPEN, (/^(\[)/)
-  ,HARD_PAREN_CLOSE, (/^(\])/)
-
-
-  ,BRACE_OPEN, (/^(\{)/)
-  ,BRACE_CLOSE, (/^(\})/)
-
-
-  ,TEXT_TAG_OPEN, (/^(<text>)/)
-  ,TEXT_TAG_CLOSE, (/^(<\/text>)/)
-
-  ,HTML_TAG_VOID_CLOSE, (/^(\/>)/)
-  ,HTML_TAG_CLOSE, (/^(<\/)/)
-  ,LT_SIGN, (/^(<)/)
-  ,GT_SIGN, (/^(>)/)
-
-  ,EQUAL_SIGN, (/^(=)/)
-  ,PERIOD, (/^(\.)/)
-  ,NEWLINE, function(){
-    var token = this.scan(/^(\n)/, NEWLINE);
-    if(token){
-      this.lineno++;
-      this.charno = 0;
-    }
-    return token;
-  }
-  ,WHITESPACE, (/^(\s)/)
-  ,FUNCTION, (/^(function)(?![\d\w])/)
-  ,KEYWORD, (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
-  ,IDENTIFIER, (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
-
-  ,FORWARD_SLASH, (/^(\/)/)
-
-
-  ,ESCAPED_QUOTE, (/^(\\+['"])/)
-  ,BACKSLASH, (/^(\\)/)
-  ,EXCLAMATION_POINT, (/^(!)/)
-  ,DOUBLE_QUOTE, (/^(\")/)
-  ,SINGLE_QUOTE, (/^(\')/)
-
-  ,CONTENT, (/^([^\s])/)
-
-];
 
 
 
@@ -123,10 +19,6 @@ function VLexer(str){
 }
 
 module.exports = VLexer;
-// Export all the tokens for use in the parser.
-for(var i = 0; i < TESTS.length; i += 2) {
-  module.exports[TESTS[i]] = TESTS[i];
-}
 
 VLexer.prototype = {
 
@@ -177,9 +69,9 @@ VLexer.prototype = {
 
     var i, name, test, result;
 
-    for(i = 0; i < TESTS.length; i += 2){
-      test = TESTS[i+1];
-      test.displayName = TESTS[i];
+    for(i = 0; i < tokens.tests.length; i += 2){
+      test = tokens.tests[i+1];
+      test.displayName = tokens.tests[i];
 
       if(typeof test === 'function'){
         // assume complex callback
@@ -188,7 +80,7 @@ VLexer.prototype = {
 
       if(typeof test.exec === 'function'){
         // assume regex
-        result = this.scan(test, TESTS[i]);
+        result = this.scan(test, tokens.tests[i]);
       }
 
       if( result ){

@@ -1,7 +1,7 @@
 
 var debug = require('debug');
 
-var tks = require('./lexer');
+var tks = require('./tokens');
 
 var ProgramNode = require('./nodes/program');
 var TextNode = require('./nodes/text');
