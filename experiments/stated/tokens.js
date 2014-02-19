@@ -3,6 +3,9 @@
 // They are separated out here to allow for better minification
 // with the least amount of effort from me. :)
 
+// Any function instead of regex is called with the lexer as the
+// context.
+
 // NOTE: this is an array, not an object literal! The () around
 // the regexps are for the sake of the syntax highlighter in my
 // editor... sublimetext2
@@ -70,5 +73,4 @@ exports.tests = TESTS;
 // Export all the tokens as constants.
 for(var i = 0; i < TESTS.length; i += 2) {
   exports[TESTS[i]] = TESTS[i];
-  //exports.tests[TESTS[i]] = TESTS[i+1];
 }
