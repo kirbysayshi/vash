@@ -33,3 +33,13 @@ for(var i = 0; i < 280; i++) {
 }
 
 console.log(util.inspect(p.stack[0], { depth: null, colors: true }));
+
+//var traverse = require('./traverse');
+//traverse(p.stack[0], {
+//  enter: function(node) { console.log('ENTER', node.type, node.parent ? node.parent.type : null) },
+//  leave: function(node) { console.log('LEAVE', node.type, node.parent ? node.parent.type : null) }
+//});
+
+var codegen = require('./codegen');
+var compiled = codegen(p.stack[0], { htmlEscape: true, helpersName: 'html' });
+console.log(compiled);

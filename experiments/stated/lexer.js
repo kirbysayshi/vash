@@ -1,11 +1,6 @@
 var debug = require('debug');
 var tokens = require('./tokens');
 
-
-
-
-
-
 // This pattern and basic lexer code were originally from the
 // Jade lexer, but have been modified:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
