@@ -1,6 +1,6 @@
-module.exports = function TextNode(value) {
+module.exports = function TextNode() {
   this.type = 'VashText';
-  this.value = value || '';
+  this.value = '';
   this.startloc = null;
   this.endloc = null;
 }
