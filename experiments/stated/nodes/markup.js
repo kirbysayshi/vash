@@ -4,6 +4,8 @@ module.exports = function MarkupNode() {
   this.expression = null; // or ExpressionNode
   this.attributes = [];
   this.values = [];
+  this.isVoid = false;
+  this.voidClosed = false;
   this.startloc = null;
   this.endloc = null;
 

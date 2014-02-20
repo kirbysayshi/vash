@@ -59,7 +59,6 @@ Parser.prototype.openNode = function(node) {
   this.lg('Opened node %s from %s',
     node.type, (this.node ? this.node.type : null));
   this.node = node;
-
 }
 
 Parser.prototype.closeNode = function(node) {
@@ -165,6 +164,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     node._finishedOpen = true;
 
     if (MarkupNode.isVoid(node.name)) {
+      node.isVoid = true;
       this.closeNode(node);
       updateLoc(node, curr);
     }
@@ -187,6 +187,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   if (curr.type === tks.HTML_TAG_VOID_CLOSE) {
     this.closeNode(node);
+    node.isVoid = true;
+    node.voidClosed = true;
     updateLoc(node, curr);
     return true;
   }
