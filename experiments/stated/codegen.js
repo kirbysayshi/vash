@@ -40,9 +40,7 @@ gens.VashMarkup = function(node, opts, generate) {
 }
 
 gens.VashMarkupAttribute = function(node, opts, generate) {
-  var quote = node.rightIsQuoted
-    ? node.rightIsQuoted
-    : '';
+  var quote = node.rightIsQuoted || '';
   quote = escapeMarkupContent(quote);
   return node.left.map(generate).join('')
     + (node.right.length
