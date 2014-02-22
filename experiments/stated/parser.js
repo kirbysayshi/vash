@@ -221,6 +221,16 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  if (
+    curr.type === tks.AT
+    && next.type === tks.KEYWORD
+  ) {
+    valueNode = new BlockNode();
+    this.openNode(valueNode);
+    node.values.push(valueNode);
+    return true;
+  }
+
   // @something
   if (curr.type === tks.AT && node._finishedOpen) {
     valueNode = new ExpressionNode();
