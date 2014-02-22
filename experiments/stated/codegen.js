@@ -29,7 +29,7 @@ gens.VashMarkup = function(node, opts, generate) {
     + bcwrap('<')
     + name
     + bcwrap(node.attributes.length ? ' ' : '')
-    + node.attributes.map(generate).join(' ')
+    + node.attributes.map(generate).join(bcwrap(' '))
     + (node.isVoid
       ? bcwrap(node.voidClosed ? ' />' : '>')
       : bcwrap('>')
@@ -43,7 +43,7 @@ gens.VashMarkupAttribute = function(node, opts, generate) {
   var quote = node.rightIsQuoted || '';
   quote = escapeMarkupContent(quote);
   return node.left.map(generate).join('')
-    + (node.right.length
+    + (node.right.length || node.rightIsQuoted
       ?   bcwrap('=' + quote)
         + node.right.map(generate).join('')
         + bcwrap(quote)
