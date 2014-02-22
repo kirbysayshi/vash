@@ -8,13 +8,22 @@ var input = ''
 + '<!DOCTYPE html>\n'
 + 'Hello, content.\n'
 + '<p @model.attr data-bind="and-how: @model.who <@(model.what)">\n'
++ '@switch(what) {\n'
++ '  case "hello":\n'
++ '    <img src="hello" />\n'
++ '    break;\n'
++ '  default:\n'
++ '    <link href="hello">\n'
++ '    break;\n'
++ '}\n'
 + '@(function() { <p>)</p> })\n'
 + '@model.things.forEach(function(thing) {\n'
++ '  if(true) { <b></b> } else <i></i>\n'
 + '  <span class=\'what\'>@thing.name</span>\n'
 + '  <@model.how>YEP</@model.how>\n'
 + '  (function() {\n'
 + '    <p></p>\n'
-+ '  }())\n'
++ '  }("arg"))\n'
 + '})\n'
 + '<@model.sometag>what</@model.sometag>\n'
 + '@{ var a = "what"; <span>insideblock</span> }\n'
@@ -42,5 +51,5 @@ console.log(util.inspect(p.stack[0], { depth: null, colors: true }));
 //});
 
 var codegen = require('./codegen');
-var compiled = codegen(p.stack[0], { htmlEscape: true, helpersName: 'html' });
+var compiled = codegen(p.stack[0], { htmlEscape: true, helpersName: 'html', modelName: 'model', source: input });
 console.log(compiled);
