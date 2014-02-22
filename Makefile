@@ -29,9 +29,9 @@ RUNTIMEALLSRC = \
 	src/vhelpers.js \
 	src/vhelpers.layout.js
 
-UGLIFY = $(shell find node_modules -name "uglifyjs" -type f)
-VOWS = $(shell find node_modules -name "vows" -type f)
-JSHINT = $(shell find node_modules/jshint -name "hint" -type f)
+UGLIFY = node_modules/uglify-js/bin/uglifyjs
+VOWS = node_modules/vows/bin/vows
+JSHINT = node_modules/jshint/bin/hint
 
 VERSIONREPL = node support/version.js replace
 
@@ -71,10 +71,14 @@ stats: build-min
 	@printf "%16s %s \n" "gzipped" $$(gzip -cf < build/vash-runtime.min.js | wc -c | tr -d ' ')k
 
 test: build
-	@$(VOWS) test/vows/* --spec
+	VASHPATH=../../build/vash.js \
+	VASHRUNTIMEPATH=../../build/vash-runtime.min.js \
+	$(VOWS) test/vows/* --spec
 
 test-min: build-min
-	@$(VOWS) test/vows/* --spec --whichv=../../build/vash.min.js --whichr=../../build/vash-runtime.min.js
+	VASHPATH=../../build/vash.js \
+	VASHRUNTIMEPATH=../../build/vash-runtime.min.js \
+	$(VOWS) test/vows/* --spec
 
 lint:
 	@$(JSHINT) $(LINTSRC)

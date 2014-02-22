@@ -4,14 +4,7 @@ var vows = require('vows')
 	,path = require('path')
 	,vm = require('vm')
 
-	,program = require('commander')
-	,vash
-
-program
-	.option('-w, --whichv <filename>', 'Run test suite against [filename]', path.join( __dirname, '../../build/vash') )
-	.parse( process.argv );
-
-vash = require( program.whichv );
+	,vash = require( process.env.VASHPATH )
 
 vash.config.useWith = false;
 vash.config.debug = false;
