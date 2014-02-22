@@ -29,7 +29,7 @@ Parser.prototype.write = function(tokens) {
 }
 
 Parser.prototype.read = function() {
-  if (!this.tokens.length) return false;
+  if (!this.tokens.length) return null;
 
   if (!this.node) {
     this.openNode(new ProgramNode());
@@ -52,6 +52,15 @@ Parser.prototype.read = function() {
     this.lg('Deferring curr %s', curr);
     this.deferredTokens.push(curr);
   }
+}
+
+Parser.prototype.dumpAST = function() {
+  if (!this.stack.length) {
+    var msg = 'No AST to dump.';
+    throw new Error(msg);
+  }
+
+  return JSON.stringify(this.stack[0], null, '  ');
 }
 
 Parser.prototype.openNode = function(node) {
