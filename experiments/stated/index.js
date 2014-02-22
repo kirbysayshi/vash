@@ -41,7 +41,9 @@ exports.compile = function(markup, options) {
 
   var opts = {};
   Object.keys(exports.config).forEach(function(prop) {
-    opts[prop] = options[prop] || exports.config[prop];
+    opts[prop] = prop in options
+      ? options[prop]
+      : exports.config[prop];
   });
 
   var l = new Lexer();
