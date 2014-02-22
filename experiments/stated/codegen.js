@@ -69,10 +69,17 @@ gens.VashText = function(node, opts, generate) {
     : node.value;
 }
 
+var reQuote = /(['"])/g;
+var reEscapedQuote = /\\+(["'])/g;
+var reLineBreak = /\n/g;
+var reHelpersName = /HELPERSNAME/g;
+var reModelName = /MODELNAME/g;
+var reOriginalMarkup = /ORIGINALMARKUP/g;
+
 function escapeMarkupContent(str) {
   return str
     .replace(/(')/, '\\$1')
-    .replace(/\n/g, '\\n');
+    .replace(reLineBreak, '\\n');
 }
 
 var BUFFER_HEAD = '\n__vbuffer.push(';
@@ -102,6 +109,73 @@ function maybeHTMLEscape(node, opts, str) {
   }
 }
 
+function replaceDevTokens(str, opts){
+  return str
+    .replace( reHelpersName, opts.helpersName )
+    .replace( reModelName, opts.modelName );
+}
+
+function head(opts){
+  var str = ''
+    + (opts.debug ? 'try { \n' : '')
+    + 'var __vbuffer = HELPERSNAME.buffer; \n'
+    + 'HELPERSNAME.options = __vopts; \n'
+    + 'MODELNAME = MODELNAME || {}; \n'
+    + (opts.useWith ? 'with( MODELNAME ){ \n' : '');
+
+  str = replaceDevTokens(str, opts);
+  return str;
+}
+
+function helperHead(opts){
+  var str = ''
+    + (options.debug ? 'try { \n' : '')
+    + 'var __vbuffer = this.buffer; \n'
+    + 'var MODELNAME = this.model; \n'
+    + 'var HELPERSNAME = this; \n';
+
+  str = this.replaceDevTokens(str);
+  return str;
+}
+
+function tail(opts){
+  var str = ''
+    + (opts.simple
+      ? 'return HELPERSNAME.buffer.join(""); \n'
+      : '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
+        + 'return (__vopts && __vopts.asContext) \n'
+        + '  ? HELPERSNAME \n'
+        + '  : HELPERSNAME.toString(); \n' )
+    + (opts.useWith ? '} \n' : '')
+    + (opts.debug ? '} catch( e ){ \n'
+      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+      + '} \n' : '');
+
+  str = replaceDevTokens(str, opts)
+    .replace(reOriginalMarkup, escapeForDebug(opts.source));
+
+  return str;
+}
+
+ function helperTail(opts){
+  var str = ''
+    + (options.debug ? '} catch( e ){ \n'
+      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP" ); \n'
+      + '} \n' : '');
+
+  str = replaceDevTokens(str)
+    .replace(reOriginalMarkup, escapeForDebug(opts.source));
+
+  return str;
+}
+
+function escapeForDebug( str ){
+  return str
+    .replace(reLineBreak, '!LB!')
+    .replace(reQuote, '\\$1')
+    .replace(reEscapedQuote, '\\$1')
+}
+
 // Not necessary, but provides faster execution when not in debug mode
 // and looks nicer.
 function condenseContent(str) {
@@ -124,7 +198,16 @@ function generate(node, opts) {
     }
   }
 
-  return condenseContent(gen(opts, node));
+  var generated = gen(opts, node);
+
+  var body;
+  if(!opts.asHelper){
+    body = head(opts) + generated + tail(opts);
+  } else {
+    body = helperHead(opts) + generated + helperTail(opts);
+  }
+
+  return condenseContent(body);
 }
 
 module.exports = generate;
