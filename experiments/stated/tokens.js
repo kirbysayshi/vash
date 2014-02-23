@@ -52,13 +52,12 @@ var TESTS = [
   }
   , 'WHITESPACE', (/^(\s)/)
   , 'FUNCTION', (/^(function)(?![\d\w])/)
-  , 'KEYWORD', (/^(case|catch|do|else|finally|for|function|goto|if|instanceof|return|switch|try|typeof|var|while|with)(?![\d\w])/)
+  , 'BLOCK_KEYWORD', (/^(case|catch|do|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
+  , 'KEYWORD', (/^(instanceof|return|typeof|var)(?![\d\w])/)
   , 'IDENTIFIER', (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
   , 'FORWARD_SLASH', (/^(\/)/)
 
-
-  , 'ESCAPED_QUOTE', (/^(\\+['"])/)
   , 'BACKSLASH', (/^(\\)/)
   , 'EXCLAMATION_POINT', (/^(!)/)
   , 'DOUBLE_QUOTE', (/^(\")/)

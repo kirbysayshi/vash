@@ -250,7 +250,7 @@ Mark.prototype.findInBuffer = function(){
 // ERROR REPORTING
 
 // Liberally modified from https://github.com/visionmedia/jade/blob/master/jade.js
-helpers.constructor.reportError = function(e, lineno, chr, orig, lb){
+helpers.constructor.reportError = function(e, lineno, chr, orig, lb, atRenderTime){
 
   lb = lb || '!LB!';
 
@@ -271,7 +271,9 @@ helpers.constructor.reportError = function(e, lineno, chr, orig, lb){
 
   e.vashlineno = lineno;
   e.vashcharno = chr;
-  e.message = 'Problem while rendering template at line '
+  e.message = 'Problem while '
+    + (atRenderTime ? 'rendering' : 'compiling')
+    + ' template at line '
     + lineno + ', character ' + chr
     + '.\nOriginal message: ' + e.message + '.'
     + '\nContext: \n\n' + contextStr + '\n\n';
@@ -319,7 +321,7 @@ vash['link'] = function( cmpFunc, options ){
       cmpFunc = Function.apply(null, cmpOpts);
     } catch(e) {
       // TODO: add flag to reportError to know if it's at compile time or runtime
-      helpers.reportError(e, 0, 0, originalFunc, /\n/);
+      helpers.reportError(e, 0, 0, originalFunc, /\n/, false);
     }
   }
 

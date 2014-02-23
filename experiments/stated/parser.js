@@ -19,6 +19,7 @@ function Parser() {
   this.deferredTokens = [];
   this.node = null;
   this.stack = [];
+  this.previousWasEscape = false;
 }
 
 module.exports = Parser;
@@ -44,7 +45,11 @@ Parser.prototype.read = function() {
   this.lg('  curr %s', curr);
   this.lg('  next %s', next);
 
-  var consumed = this[dispatch](this.node, curr, next);
+  if (this.previousWasEscape) {
+    this.lg('  Previous token was an escaping backslash');
+  }
+
+  var consumed = this[dispatch](this.node, curr, next, this.previousWasEscape);
 
   if (next) {
     // Next may be undefined when about to run out of tokens.
@@ -54,6 +59,14 @@ Parser.prototype.read = function() {
   if (!consumed) {
     this.lg('Deferring curr %s', curr);
     this.deferredTokens.push(curr);
+  } else {
+
+    if (!this.previousWasEscape && curr.type === tks.BACKSLASH) {
+      this.previousWasEscape = true;
+    } else {
+      this.previousWasEscape = false;
+    }
+
   }
 }
 
@@ -108,7 +121,7 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     return false;
   }
 
-  if (curr.type === tks.AT && (next.type === tks.KEYWORD || next.type === tks.BRACE_OPEN)) {
+  if (curr.type === tks.AT && (next.type === tks.BLOCK_KEYWORD || next.type === tks.BRACE_OPEN)) {
     valueNode = new BlockNode();
     node.body.push(valueNode);
     this.openNode(valueNode);
@@ -126,6 +139,16 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     valueNode = new MarkupNode();
     this.openNode(valueNode);
     node.body.push(valueNode);
+    return false;
+  }
+
+  // Special case for ProgramNode:
+  // allow for keywords to not need to be prefixed with @,
+  // like `catch (e) {}`.
+  if (curr.type === tks.KEYWORD) {
+    valueNode = new BlockNode();
+    node.body.push(valueNode);
+    this.openNode(valueNode);
     return false;
   }
 
@@ -249,7 +272,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   if (
     curr.type === tks.AT
-    && next.type === tks.KEYWORD
+    && next.type === tks.BLOCK_KEYWORD
   ) {
     valueNode = new BlockNode();
     this.openNode(valueNode);
@@ -373,10 +396,41 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 Parser.prototype.continueExpressionNode = function(node, curr, next) {
   var valueNode = node.values[node.values.length-1];
 
+  if (
+    curr.type === tks.AT
+    && next.type === tks.HARD_PAREN_OPEN
+  ) {
+    // LEGACY: @[], which means a legacy escape to content.
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
   if (curr.type === tks.PAREN_OPEN) {
     valueNode = new ExplicitExpressionNode();
     this.openNode(valueNode);
     node.values.push(valueNode);
+    return false;
+  }
+
+  if (
+    curr.type === tks.HARD_PAREN_OPEN
+    && node.values[0]
+    && node.values[0].type === 'VashExplicitExpression'
+  ) {
+    // @()[0], hard parens should be content
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return false;
+  }
+
+  if (
+    curr.type === tks.HARD_PAREN_OPEN
+    && next.type === tks.HARD_PAREN_CLOSE
+  ) {
+    // [], empty index should be content (php forms...)
+    updateLoc(node, curr);
+    this.closeNode(node);
     return false;
   }
 
@@ -390,10 +444,25 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   // Default
   // Consume only specific cases, otherwise close.
 
-  if (
-    curr.type === tks.IDENTIFIER
-    || (curr.type === tks.PERIOD && next.type === tks.IDENTIFIER)
-  ) {
+  if (curr.type === tks.PERIOD && next.type === tks.IDENTIFIER) {
+    if (valueNode && valueNode.type !== 'VashText') {
+      valueNode = new TextNode();
+      node.values.push(valueNode);
+      updateLoc(valueNode, curr);
+    }
+
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  if (curr.type === tks.IDENTIFIER) {
+
+    if (node.values.length > 0 && valueNode && valueNode.type !== 'VashText') {
+      // Assume we just ended an explicit expression.
+      this.closeNode(node);
+      return false;
+    }
+
     if (!valueNode) {
       valueNode = new TextNode();
       node.values.push(valueNode);
@@ -408,14 +477,13 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   }
 }
 
-Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
+Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, previousWasEscape) {
 
   var valueNode = node.values[node.values.length-1];
 
   if (
-    curr.type === tks.AT && node.values.length === 0
-    ||
-    curr.type === tks.PAREN_OPEN && node.values.length === 0
+    node.values.length === 0
+    && (curr.type === tks.AT || curr.type === tks.PAREN_OPEN)
   ) {
     // This is the beginning of the explicit (mark as consumed)
     updateLoc(node, curr);
@@ -448,17 +516,32 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     return false;
   }
 
-  if (curr.val === node._waitingForEndQuote) {
-    node._waitingForEndQuote = null;
-    valueNode += curr.val;
-    updateLoc(valueNode, curr);
-    return true;
-  }
-
   // Default
   if (!valueNode || valueNode.type !== 'VashText') {
     valueNode = new TextNode();
     node.values.push(valueNode);
+  }
+
+  if (
+    !node._waitingForEndQuote
+    && (curr.type === tks.SINGLE_QUOTE || curr.type === tks.DOUBLE_QUOTE)
+  ) {
+    this.lg('Now waiting for end quote with value %s', curr.val);
+    node._waitingForEndQuote = curr.val;
+    appendTextValue(valueNode, curr);
+    updateLoc(valueNode, curr);
+    return true;
+  }
+
+  if (
+    curr.val === node._waitingForEndQuote
+    && !previousWasEscape
+  ) {
+    node._waitingForEndQuote = null;
+    this.lg('Happy to find end quote with value %s', curr.val);
+    appendTextValue(valueNode, curr);
+    updateLoc(valueNode, curr);
+    return true;
   }
 
   appendTextValue(valueNode, curr);
@@ -470,6 +553,51 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
 
   var valueNode = node.values[node.values.length-1];
 
+  if (curr.type === tks.BLOCK_KEYWORD && !node._reachedOpenBrace && !node.keyword) {
+    node.keyword = curr.val;
+    return true;
+  }
+
+  if (
+    curr.type === tks.BLOCK_KEYWORD
+    && !node._reachedOpenBrace
+  ) {
+    // Assume something like if (test) expressionstatement;
+    node.hasBraces = false;
+    valueNode = new BlockNode();
+    updateLoc(valueNode, curr);
+    node.values.push(valueNode);
+    this.openNode(valueNode);
+    return false;
+  }
+
+  if (
+    curr.type === tks.BLOCK_KEYWORD
+    && !node._reachedCloseBrace
+    && node.hasBraces
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    valueNode = new BlockNode();
+    updateLoc(valueNode, curr);
+    node.values.push(valueNode);
+    this.openNode(valueNode);
+    return false;
+  }
+
+  if (
+    curr.type === tks.BLOCK_KEYWORD
+    && node._reachedCloseBrace
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    valueNode = new BlockNode();
+    updateLoc(valueNode, curr);
+    node.tail.push(valueNode);
+    this.openNode(valueNode);
+    return false;
+  }
+
   if (
     curr.type === tks.BRACE_OPEN
     && !node._reachedOpenBrace
@@ -477,10 +605,15 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._withinCommentLine
   ) {
     node._reachedOpenBrace = true;
+    node.hasBraces = true;
     return true;
   }
 
-  if (curr.type === tks.BRACE_OPEN) {
+  if (
+    curr.type === tks.BRACE_OPEN
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
     valueNode = new BlockNode();
     updateLoc(valueNode, curr);
     node.values.push(valueNode);
@@ -490,12 +623,14 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
 
   if (
     curr.type === tks.BRACE_CLOSE
+    && node.hasBraces
     && !node._reachedCloseBrace
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
     updateLoc(node, curr);
-    this.closeNode(node);
+    node._reachedCloseBrace = true;
+    //this.closeNode(node);
     return true;
   }
 
@@ -512,7 +647,15 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     return false;
   }
 
-  if (curr.type === tks.AT && next.type === tks.KEYWORD) {
+  if (curr.type === tks.HTML_TAG_CLOSE) {
+    if (node._reachedCloseBrace || !node._reachedOpenBrace) {
+      updateLoc(node, curr);
+      this.closeNode(node);
+      return false;
+    }
+  }
+
+  if (curr.type === tks.AT && next.type === tks.BLOCK_KEYWORD) {
     // This is for backwards compatibility, allowing for @for() { @for() {} }
     valueNode = new BlockNode();
     updateLoc(valueNode, curr);
@@ -533,6 +676,20 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   valueNode = attachmentNode[attachmentNode.length-1];
+
+  if (
+    curr.type !== tks.BLOCK_KEYWORD
+    && curr.type !== tks.PAREN_OPEN
+    && curr.type !== tks.WHITESPACE
+    && curr.type !== tks.NEWLINE
+    && node.hasBraces
+    && node._reachedCloseBrace
+  ) {
+    // Handle if (test) { } content
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return false;
+  }
 
   if (curr.type === tks.PAREN_OPEN) {
     valueNode = new ExplicitExpressionNode();
@@ -617,7 +774,7 @@ function updateLoc(node, token) {
   loc.line = token.line;
   loc.column = token.chr;
 
-  if (!node.startloc) {
+  if (node.startloc === null) {
     node.startloc = loc;
   }
 

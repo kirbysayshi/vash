@@ -32,7 +32,7 @@ VLexer.prototype = {
       if (result) {
         out.push(result);
         this.lg('Read %s at line %d, column %d with content %s',
-          result.type, result.line, result.chr, result.val);
+          result.type, result.line, result.chr, result.val.replace(/(\n)/, '\\n'));
       }
     }
     return out;

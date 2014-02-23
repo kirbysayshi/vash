@@ -1,3 +1,6 @@
+var debug = require('debug')
+var lg = debug('vash:');
+
 var Lexer = require('./lexer');
 var Parser = require('./parser');
 var codegen = require('./codegen');
@@ -62,6 +65,7 @@ exports.compile = function(markup, options) {
   p.lg(p.dumpAST());
 
   var compiled = codegen(p.stack[0], opts);
+  lg(compiled);
   var tpl = runtime.link(compiled, opts);
 
   return tpl;
