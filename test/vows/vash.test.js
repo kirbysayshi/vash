@@ -346,6 +346,64 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[]"></a>');
 		}
 	}
+
+	,'explicit expressions containing quoted characters': {
+
+		topic: function() {
+
+			// For now just include ASCII.
+			var UNICODE_MAX = 127; // 1114111;
+
+			// 0-31 are control characters.
+			for(var i = 32, chars = []; i <= UNICODE_MAX; i++) {
+				chars.push(String.fromCharCode(i));
+			}
+
+			return chars;
+		}
+
+		,'do not need to be escaped': function(chars){
+
+			var str = chars.map(wrapCharWithExpression).join('');
+			var tpl = vash.compile(str, { htmlEscape: false });
+			var expected = chars.map(wrapCharWithP);
+			assert.equal( tpl(), expected.join('') );
+
+			function wrapCharWithExpression(chr) {
+				return '<p>@("' + escapeIfNeeded(chr) + '")</p>\n';
+			}
+
+			function wrapCharWithP(chr) {
+				return '<p>' + chr + '</p>\n';
+			}
+
+			function escapeIfNeeded(chr) {
+				if (chr === '"' || chr === '\n' || chr === '\\') return '\\' + chr;
+				else return chr;
+			}
+		}
+	}
+
+	,'a parent expression': {
+
+		topic: '@(function() { <p>)</p> }())'
+
+		,'should not consume content PAREN_CLOSE': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '<p>)</p>' );
+		}
+	}
+
+	,'a parent block': {
+
+		topic: '@{ function what() { <p>}</p> } }'
+
+		,'should not consume content BRACE_CLOSE': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '' );
+		}
+	}
+
 	,'anonymous blocks': {
 
 		'empty,': {
