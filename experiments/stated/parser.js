@@ -29,7 +29,7 @@ Parser.prototype.write = function(tokens) {
 }
 
 Parser.prototype.read = function() {
-  if (!this.tokens.length) return null;
+  if (!this.tokens.length && !this.deferredTokens.length) return null;
 
   if (!this.node) {
     this.openNode(new ProgramNode());
@@ -41,12 +41,15 @@ Parser.prototype.read = function() {
   var dispatch = 'continue' + this.node.constructor.name;
 
   this.lg('Read: %s', dispatch);
-  this.lg('curr %s', curr);
-  this.lg('next %s', next);
+  this.lg('  curr %s', curr);
+  this.lg('  next %s', next);
 
   var consumed = this[dispatch](this.node, curr, next);
 
-  this.deferredTokens.push(next);
+  if (next) {
+    // Next may be undefined when about to run out of tokens.
+    this.deferredTokens.push(next);
+  }
 
   if (!consumed) {
     this.lg('Deferring curr %s', curr);
