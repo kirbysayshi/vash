@@ -596,51 +596,6 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(tpl(), '<span>different text</span>');
 		}
 	}
-	,'markup within a code block followed by else with an expression': {
-		topic: function(){
-			var str = '@if(false){ \n'
-				+ '<span>this is text \n'
-				+ 'that spans multiple lines</span> \n'
-				+ ' } else { \n'
-				+ ' @name.how \n'
-				+ ' } ';
-			return str;
-		}
-		,'disregards newline re-entry into BLK mode': function(topic){
-			vash.config.useWith = true;
-			var tpl = tryCompile(topic);
-			vash.config.useWith = false;
-			assert.equal(tpl( { name: {how: 'you' } } ), 'you');
-		}
-	}
-	,'markup within a complex if code block followed by else with an expression': {
-		topic: function(){
-			var str = '@if( heyo.ya !== true ){ \n'
-				+ '<input name="item-quantity-@item.id" type="text" value="@item.quantity" maxlength="5" size="6" />'
-				+ ' } else { \n'
-				+ ' @name.how \n'
-				+ ' } ';
-			return str;
-		}
-		,'disregards newline re-entry into BLK mode': function(topic){
-			var tpl = tryCompile(topic);
-			assert.equal(tpl( { heyo: { ya: true }, name: {how: 'you' }, item: { id: 0, quantity: 23 } } ), 'you');
-		}
-	}
-	,'markup within a complex if code block followed by else with an expression, all within markup': {
-		topic: function(){
-			var str = '<td>@if( false ){ } else { @name.how }</td>';
-			return str;
-		}
-		,'"else" is a keyword': function(topic){
-			var tpl = tryCompile(topic);
-			assert.equal(tpl( {
-				name: {
-					how: 'you'
-				}
-			} ), '<td>you</td>');
-		}
-	}
 	,'markup within a code block with an expression in the tag name': {
 		topic: function(){
 			var str = '@if(true){ \n'
