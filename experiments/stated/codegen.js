@@ -30,6 +30,7 @@ gens.VashMarkup = function(node, opts, generate) {
     ? node.expression.values.map(generate).join('')
     : bcwrap(node.name);
   return ''
+    + dbgstart(node, opts)
     + bcwrap('<')
     + name
     + bcwrap(node.attributes.length ? ' ' : '')
@@ -41,24 +42,37 @@ gens.VashMarkup = function(node, opts, generate) {
         + bcwrap('</')
         + name
         + bcwrap('>'))
+    + dbgend(node, opts)
 }
 
 gens.VashMarkupAttribute = function(node, opts, generate) {
   var quote = node.rightIsQuoted || '';
   quote = escapeMarkupContent(quote);
-  return node.left.map(generate).join('')
+  return ''
+    + dbgstart(node, opts)
+    + node.left.map(generate).join('')
     + (node.right.length || node.rightIsQuoted
       ?   bcwrap('=' + quote)
         + node.right.map(generate).join('')
         + bcwrap(quote)
-      : '');
+      : '')
+    + dbgend(node, opts);
 }
 
 gens.VashBlock = function(node, opts, generate) {
-  return node.head.map(generate).join('')
-    + '{'
+  var hasValues = node.values.length > 0;
+  var openBrace = hasValues
+    ? '{' + dbgstart(node, opts)
+    : '';
+  var closeBrace = hasValues
+    ? dbgend(node, opts) + '}'
+    : '';
+  return ''
+    + (node.keyword ? node.keyword : '')
+    + node.head.map(generate).join('')
+    + openBrace
     + node.values.map(generate).join('')
-    + '}'
+    + closeBrace
     + node.tail.map(generate).join('');
 }
 
@@ -103,6 +117,22 @@ function parentIsContent(node) {
   return node.parent.type === 'VashMarkup'
     || node.parent.type === 'VashMarkupAttribute'
     || node.parent.type === 'VashProgram';
+}
+
+function dbgstart(node, opts) {
+  return opts.debug
+    ? ''
+      + opts.helpersName + '.vl = ' + node.startloc.line + ', '
+      + opts.helpersName + '.vc = ' + node.startloc.column + '; \n'
+    : '';
+}
+
+function dbgend(node, opts) {
+  return opts.debug
+    ? ''
+      + opts.helpersName + '.vl = ' + node.endloc.line + ', '
+      + opts.helpersName + '.vc = ' + node.endloc.column + '; \n'
+    : '';
 }
 
 function maybeHTMLEscape(node, opts, str) {
