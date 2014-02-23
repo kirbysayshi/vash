@@ -108,6 +108,20 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     return false;
   }
 
+  if (curr.type === tks.AT && (next.type === tks.KEYWORD || next.type === tks.BRACE_OPEN)) {
+    valueNode = new BlockNode();
+    node.body.push(valueNode);
+    this.openNode(valueNode);
+    return true;
+  }
+
+  if (curr.type === tks.AT) {
+    valueNode = new ExpressionNode();
+    this.openNode(valueNode);
+    node.body.push(valueNode);
+    return true;
+  }
+
   if (curr.type === tks.LT_SIGN) {
     valueNode = new MarkupNode();
     this.openNode(valueNode);
@@ -496,6 +510,16 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     node.values.push(valueNode);
     this.openNode(valueNode);
     return false;
+  }
+
+  if (curr.type === tks.AT && next.type === tks.KEYWORD) {
+    // This is for backwards compatibility, allowing for @for() { @for() {} }
+    valueNode = new BlockNode();
+    updateLoc(valueNode, curr);
+    // TODO: shouldn't this need a more accurate target (tail, values, head)?
+    node.values.push(valueNode);
+    this.openNode(valueNode);
+    return true;
   }
 
   var attachmentNode;

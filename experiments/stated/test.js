@@ -7,6 +7,7 @@ var input = ''
 + '<img />\n'
 + '<!DOCTYPE html>\n'
 + 'Hello, content.\n'
++ '@for(var i = 0; i < 1; i++) { <i></i> }\n'
 + '<p @model.attr data-bind="and-how: @model.who <@(model.what)">\n'
 + '@switch(model.what) {\n'
 + '  case "hello":\n'
@@ -44,9 +45,11 @@ var testModel = {
 }
 
 var expectedOutput = ''
++ 'what\n'
 + '<img />\n'
 + '<!DOCTYPE html>\n'
 + 'Hello, content.\n'
++ '<i></i>\n' // this new line is included because PROGRAM is like MARKUP
 + '<p htmlattribute data-bind="and-how: who <what">\n'
 + '<link href="hello">\n'
 + '<p>)</p>\n'
@@ -95,6 +98,8 @@ var tpl = runtime.link(compiled, opts);
 
 require('colors');
 var diff = require('diff');
+
+console.log(tpl(testModel));
 
 var d = diff.diffWords(expectedOutput, tpl(testModel))
 
