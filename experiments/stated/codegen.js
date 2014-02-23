@@ -10,7 +10,11 @@ gens.VashProgram = function(node, opts, generate) {
 
 gens.VashExplicitExpression = function(node, opts, generate) {
   var str = node.values.map(generate).join('');
-  return '(' + maybeHTMLEscape(node, opts, str) + ')';
+  str = '(' + maybeHTMLEscape(node, opts, str) + ')';
+  if (parentIsContent(node)) {
+    str = bewrap(str);
+  }
+  return str;
 }
 
 gens.VashExpression = function(node, opts, generate) {
@@ -142,7 +146,7 @@ function tail(opts){
   var str = ''
     + (opts.simple
       ? 'return HELPERSNAME.buffer.join(""); \n'
-      : '(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
+      : ';(__vopts && __vopts.onRenderEnd && __vopts.onRenderEnd(null, HELPERSNAME)); \n'
         + 'return (__vopts && __vopts.asContext) \n'
         + '  ? HELPERSNAME \n'
         + '  : HELPERSNAME.toString(); \n' )
