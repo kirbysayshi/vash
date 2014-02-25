@@ -1110,23 +1110,12 @@ vows.describe('vash templating library').addBatch({
 	}
 	,'content } in closed markup': {
 		topic: function(){
-			var str = '@if(true) { <li> @} </li> }';
+			var str = '@if(true) { <li> } </li> }';
 			return str;
 		}
 		,'does not need to be escaped': function(topic){
-			//assert.doesNotThrow( function(){ vash.compile(topic) }, Error);
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 			assert.equal( vash.compile(topic)(), '<li> } </li>');
-		}
-	}
-	,'content } in open markup': {
-		topic: function(){
-			var str = '@if(true) { <img src="" /> @} }';
-			return str;
-		}
-		,'can be escaped with @': function(topic){
-			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
-			assert.equal( vash.compile(topic)(), '<img src="" />} ');
 		}
 	}
 	,'content } in expression': {
