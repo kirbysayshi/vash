@@ -121,7 +121,12 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     return false;
   }
 
-  if (curr.type === tks.AT && (next.type === tks.BLOCK_KEYWORD || next.type === tks.BRACE_OPEN)) {
+  if (
+    curr.type === tks.AT
+    && (next.type === tks.BLOCK_KEYWORD
+      || next.type === tks.BRACE_OPEN
+      || next.type === tks.FUNCTION)
+  ) {
     valueNode = new BlockNode();
     node.body.push(valueNode);
     this.openNode(valueNode);
@@ -285,7 +290,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   if (
     curr.type === tks.AT
-    && next.type === tks.BLOCK_KEYWORD
+    && (next.type === tks.BLOCK_KEYWORD
+      || next.type === tks.FUNCTION)
   ) {
     valueNode = new BlockNode();
     this.openNode(valueNode);

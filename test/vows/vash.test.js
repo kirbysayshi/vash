@@ -1240,7 +1240,7 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)(), ' what' );
+			assert.equal( vash.compile(topic)(), 'what' );
 		}
 	}
 	,'@function with markup': {
@@ -1249,7 +1249,7 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)({ name: 'what' }), ' <li>what</li>' );
+			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li>' );
 		}
 	}
 
