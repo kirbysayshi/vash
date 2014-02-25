@@ -1135,7 +1135,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'renders': function(topic){
-			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div> </div>' );
+			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div></div>' );
 		}
 	}
 	,'unclosed block': {
@@ -1218,7 +1218,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'renders': function(topic){
 			assert.equal( vash.compile(topic)({ Score: '1', i: 0 })
-				, '<li data-score="1" class="user-panel-track even">');
+				, '<li data-score="1" class="user-panel-track even"></li>');
 		}
 	}
 	,'empty string': {
