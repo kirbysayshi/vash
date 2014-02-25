@@ -681,8 +681,13 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     }
   }
 
-  if (curr.type === tks.AT && next.type === tks.BLOCK_KEYWORD) {
-    // This is for backwards compatibility, allowing for @for() { @for() {} }
+  if (
+    curr.type === tks.AT
+    && (next.type === tks.BLOCK_KEYWORD
+      || next.type === tks.BRACE_OPEN
+      || next.type === tks.FUNCTION)
+  ) {
+    // Backwards compatibility, allowing for @for() { @for() { @{ } } }
     valueNode = new BlockNode();
     updateLoc(valueNode, curr);
     // TODO: shouldn't this need a more accurate target (tail, values, head)?
