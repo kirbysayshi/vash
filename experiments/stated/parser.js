@@ -464,7 +464,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   // Default
   // Consume only specific cases, otherwise close.
 
-  if (curr.type === tks.PERIOD && next.type === tks.IDENTIFIER) {
+  if (curr.type === tks.PERIOD && next && next.type === tks.IDENTIFIER) {
     if (valueNode && valueNode.type !== 'VashText') {
       valueNode = new TextNode();
       node.values.push(valueNode);
