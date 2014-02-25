@@ -1574,12 +1574,23 @@ vows.describe('vash templating library').addBatch({
 
 	,'switch statement': {
 
-		topic: '@switch(model){ case 1: <p></p>break; case 2: <b></b>break; }'
+		'without braced cases': {
+			topic: '@switch(model){ case 1: <p></p>break; case 2: <b></b>break; }'
 
-		,'work': function( topic ){
-			var tpl = vash.compile( topic );
-			assert.equal( tpl(1), '<p></p>' );
-			assert.equal( tpl(2), '<b></b>' );
+			,'work': function( topic ){
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(1), '<p></p>' );
+				assert.equal( tpl(2), '<b></b>' );
+			}
+		}
+
+		,'with braced cases': {
+			topic: '@switch(model){ case 1: { <p></p>break; } case 2: { <b></b>break; } }'
+			,work: function( topic ) {
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(1), '<p></p>' );
+				assert.equal( tpl(2), '<b></b>' );
+			}
 		}
 	}
 
