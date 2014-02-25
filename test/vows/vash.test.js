@@ -665,7 +665,7 @@ vows.describe('vash templating library').addBatch({
 		,'parses': function(topic){
 
 			var tpl = tryCompile(topic);
-			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what> \n');
+			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what>');
 		}
 	}
 	,'markup within a code block with an expression after the tag name': {
@@ -680,7 +680,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'parses': function(topic){
 			var tpl = tryCompile(topic);
-			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what> \n<span class="what">this is text \nthat spans multiple lines</span> \n');
+			assert.equal(tpl({ name: 'what' }), '<span-what>this is text \nthat spans multiple lines</span-what><span class="what">this is text \nthat spans multiple lines</span>');
 		}
 	}
 	,'markup within a code block within markup within a code block': {
@@ -750,8 +750,9 @@ vows.describe('vash templating library').addBatch({
 		}
 
 		,'exits MKP with expression': function(topic){
-			var  tpl = vash.compile(topic.replace('/>', '@(true)/>'))
-				,expected = '<br true/>';
+			var str = topic.replace('/>', '@(true)/>')
+			var  tpl = vash.compile(str)
+				,expected = '<br true />';
 
 			assert.equal(tpl(), expected);
 		}
@@ -793,7 +794,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'compiles and renders': function(topic) {
 			var tpl = vash.compile(topic)
-				,expected = '<button data-bind="enable:0>0"/>';
+				,expected = '<button data-bind="enable:0>0" />';
 
 			assert.equal(tpl([]), expected);
 		}
@@ -840,7 +841,7 @@ vows.describe('vash templating library').addBatch({
 			return '@if(true){ <@name>This is content</@name> }';
 		}
 		,'is allowed': function(topic){
-			assert.equal( vash.compile(topic, { useWith: true })({name: 'what'}), '<what>This is content</what> ' );
+			assert.equal( vash.compile(topic, { useWith: true })({name: 'what'}), '<what>This is content</what>' );
 		}
 	}
 	,'complex expression as tagname': {

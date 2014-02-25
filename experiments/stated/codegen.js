@@ -26,13 +26,14 @@ gens.VashExpression = function(node, opts, generate) {
 }
 
 gens.VashMarkup = function(node, opts, generate) {
-  var name = node.expression
-    ? node.expression.values.map(generate).join('')
+  var name = node.name ? bcwrap(node.name) : '';
+  var tagNameValue = node.expression
+    ? name + generate(node.expression)
     : bcwrap(node.name);
   return ''
     + dbgstart(node, opts)
     + bcwrap('<')
-    + name
+    + tagNameValue
     + bcwrap(node.attributes.length ? ' ' : '')
     + node.attributes.map(generate).join(bcwrap(' '))
     + (node.isVoid
@@ -40,7 +41,7 @@ gens.VashMarkup = function(node, opts, generate) {
       : bcwrap('>')
         + node.values.map(generate).join('')
         + bcwrap('</')
-        + name
+        + tagNameValue
         + bcwrap('>'))
     + dbgend(node, opts)
 }
@@ -228,6 +229,7 @@ function generate(node, opts) {
 
     function genChild(child) {
       if (!child.parent) child.parent = node;
+      lg('Generating child type %s of parent type %s', child.type, node.type)
       return gen(opts, child);
     }
   }

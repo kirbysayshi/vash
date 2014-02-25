@@ -169,7 +169,15 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
 Parser.prototype.continueMarkupNode = function(node, curr, next) {
   var valueNode = node.values[node.values.length-1];
 
-  if (!node.name || node.name === '!') {
+  if (
+    !node._finishedOpen
+    && curr.type !== tks.GT_SIGN
+    && curr.type !== tks.LT_SIGN
+    && curr.type !== tks.WHITESPACE
+    && curr.type !== tks.HTML_TAG_VOID_CLOSE
+  ) {
+
+    // Assume tag name
 
     if (curr.type === tks.AT) {
       valueNode = new ExpressionNode();
@@ -201,12 +209,17 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
     // Handle <!crap
     if (curr.type === tks.EXCLAMATION_POINT) {
-      node.name = curr.val;
+      node.name = node.name
+        ? node.name + curr.val
+        : curr.val;
       return true;
     }
 
-    var msg = 'Could not discern tag name from token ' + curr;
-    throw new Error(msg);
+    node.name = node.name
+      ? node.name + curr.val
+      : curr.val;
+    updateLoc(node, curr);
+    return true;
   }
 
   if (curr.type === tks.GT_SIGN && !node._waitingForFinishedClose) {
@@ -289,12 +302,17 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
-  if (curr.type === tks.LT_SIGN) {
+  if (curr.type === tks.LT_SIGN && node._finishedOpen) {
     valueNode = new MarkupNode();
     updateLoc(valueNode, curr);
     this.openNode(valueNode);
     node.values.push(valueNode);
     return false;
+  }
+
+  if (curr.type === tks.LT_SIGN && !node._finishedOpen) {
+    updateLoc(node, curr);
+    return true;
   }
 
   // Default
@@ -332,8 +350,10 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
   // End of left, value only
   if (
-    (curr.type === tks.WHITESPACE || curr.type === tks.GT_SIGN)
-    && !node._expectRight
+    !node._expectRight
+    && (curr.type === tks.WHITESPACE
+      || curr.type === tks.GT_SIGN
+      || curr.type === tks.HTML_TAG_VOID_CLOSE)
   ) {
     node._finishedLeft = true;
     updateLoc(node, curr);
