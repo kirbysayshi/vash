@@ -62,12 +62,14 @@ gens.VashMarkupAttribute = function(node, opts, generate) {
 
 gens.VashBlock = function(node, opts, generate) {
   var hasValues = node.values.length > 0;
-  var isSwitch = node.keyword === 'switch';
-  var openBrace = hasValues
-    ? '{' + (isSwitch ? '' : dbgstart(node, opts))
+  var unsafeForDbg = node.keyword === 'switch'
+    || !node.name
+    || !hasValues;
+  var openBrace = hasValues || node.hasBraces
+    ? '{' + (unsafeForDbg ? '' : dbgstart(node, opts))
     : '';
-  var closeBrace = hasValues
-    ? (isSwitch ? '' : dbgend(node, opts)) + '}'
+  var closeBrace = hasValues || node.hasBraces
+    ? (unsafeForDbg ? '' : dbgend(node, opts)) + '}'
     : '';
   return ''
     + (node.keyword ? node.keyword : '')
