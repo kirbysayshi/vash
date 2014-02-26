@@ -262,7 +262,9 @@ function generate(node, opts) {
     body = helperHead(opts) + generated + helperTail(opts);
   }
 
-  return condenseContent(body);
+  return opts.debug
+    ? body
+    : condenseContent(body);
 }
 
 module.exports = generate;
