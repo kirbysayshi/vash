@@ -167,12 +167,12 @@ function head(opts){
 
 function helperHead(opts){
   var str = ''
-    + (options.debug ? 'try { \n' : '')
+    + (opts.debug ? 'try { \n' : '')
     + 'var __vbuffer = this.buffer; \n'
     + 'var MODELNAME = this.model; \n'
     + 'var HELPERSNAME = this; \n';
 
-  str = this.replaceDevTokens(str);
+  str = replaceDevTokens(str, opts);
   return str;
 }
 
@@ -197,11 +197,11 @@ function tail(opts){
 
  function helperTail(opts){
   var str = ''
-    + (options.debug ? '} catch( e ){ \n'
+    + (opts.debug ? '} catch( e ){ \n'
       + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP", true ); \n'
       + '} \n' : '');
 
-  str = replaceDevTokens(str)
+  str = replaceDevTokens(str, opts)
     .replace(reOriginalMarkup, escapeForDebug(opts.source));
 
   return str;
