@@ -6,6 +6,12 @@ var Parser = require('./parser');
 var codegen = require('./codegen');
 var runtime = require('./runtime');
 
+// Attach all runtime exports to enable backwards compatible behavior,
+// like `vash.install` to still be accessible in a full build.
+Object.keys(runtime).forEach(function(key) {
+  exports[key] = runtime[key];
+});
+
 exports.config = {
 
   // Parser Options
