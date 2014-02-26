@@ -32,9 +32,6 @@ var TESTS = [
   , 'BRACE_CLOSE', (/^(\})/)
 
 
-  , 'TEXT_TAG_OPEN', (/^(<text>)/)
-  , 'TEXT_TAG_CLOSE', (/^(<\/text>)/)
-
   , 'HTML_TAG_VOID_CLOSE', (/^(\/>)/)
   , 'HTML_TAG_CLOSE', (/^(<\/)/)
   , 'LT_SIGN', (/^(<)/)

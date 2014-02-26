@@ -26,23 +26,39 @@ gens.VashExpression = function(node, opts, generate) {
 }
 
 gens.VashMarkup = function(node, opts, generate) {
+  var isText = node.name === 'text';
   var name = node.name ? bcwrap(node.name) : '';
-  var tagNameValue = node.expression
-    ? name + generate(node.expression)
-    : bcwrap(node.name);
-  return ''
-    + dbgstart(node, opts)
+  var tagNameValue = name
+    + (node.expression ? generate(node.expression) : '');
+
+  var tagOpen = ''
     + bcwrap('<')
     + tagNameValue
     + bcwrap(node.attributes.length ? ' ' : '')
     + node.attributes.map(generate).join(bcwrap(' '))
-    + (node.isVoid
-      ? bcwrap(node.voidClosed ? ' />' : '>')
-      : bcwrap('>')
-        + node.values.map(generate).join('')
-        + bcwrap('</')
-        + tagNameValue
-        + bcwrap('>'))
+
+  var values;
+  var tagClose;
+
+  if (node.isVoid) {
+    tagOpen += bcwrap(node.voidClosed ? ' />' : '>');
+    values = '';
+    tagClose = '';
+  } else {
+    tagOpen += bcwrap('>');
+    values = node.values.map(generate).join('');
+    tagClose = bcwrap('</') + tagNameValue + bcwrap('>')
+  }
+
+  if (isText) {
+    tagOpen = tagClose = '';
+  }
+
+  return ''
+    + dbgstart(node, opts)
+    + tagOpen
+    + values
+    + tagClose
     + dbgend(node, opts)
 }
 
