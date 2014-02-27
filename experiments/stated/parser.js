@@ -479,13 +479,17 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
 
   var valueNode = node.values[node.values.length-1];
 
-  if (curr.type === tks.BLOCK_KEYWORD && !node._reachedOpenBrace && !node.keyword) {
+  if (
+    (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
+    && !node._reachedOpenBrace
+    && !node.keyword
+  ) {
     node.keyword = curr.val;
     return true;
   }
 
   if (
-    curr.type === tks.BLOCK_KEYWORD
+    (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
     && !node._reachedOpenBrace
   ) {
     // Assume something like if (test) expressionstatement;
@@ -496,7 +500,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   if (
-    curr.type === tks.BLOCK_KEYWORD
+    (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
     && !node._reachedCloseBrace
     && node.hasBraces
     && !node._waitingForEndQuote
@@ -508,7 +512,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   if (
-    curr.type === tks.BLOCK_KEYWORD
+    (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
     && node._reachedCloseBrace
     && !node._waitingForEndQuote
     && !node._withinCommentLine
