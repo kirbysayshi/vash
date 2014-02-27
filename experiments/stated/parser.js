@@ -160,6 +160,11 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
 Parser.prototype.continueMarkupNode = function(node, curr, next) {
   var valueNode = node.values[node.values.length-1];
 
+  if (curr.type === tks.LT_SIGN && !node._finishedOpen) {
+    updateLoc(node, curr);
+    return true;
+  }
+
   if (
     !node._finishedOpen
     && curr.type !== tks.GT_SIGN
@@ -190,6 +195,9 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
       node.isVoid = true;
       this.closeNode(node);
       updateLoc(node, curr);
+    } else {
+      valueNode = this.openNode(new MarkupContentNode(), node.values);
+      updateLoc(valueNode, curr);
     }
 
     return true;
@@ -232,48 +240,20 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  // Whitespace between attributes should be ignored.
   if (
-    curr.type === tks.AT
-    && next.type === tks.BRACE_OPEN
+    curr.type === tks.WHITESPACE
+    && !node._finishedOpen
   ) {
-    this.openNode(new BlockNode(), node.values);
-    return true;
-  }
-
-  if (
-    curr.type === tks.AT
-    && (next.type === tks.BLOCK_KEYWORD
-      || next.type === tks.FUNCTION)
-  ) {
-    this.openNode(new BlockNode(), node.values);
-    return true;
-  }
-
-  // @something
-  if (curr.type === tks.AT && node._finishedOpen) {
-    valueNode = this.openNode(new ExpressionNode(), node.values);
-    updateLoc(valueNode, curr);
-    return true;
-  }
-
-  if (curr.type === tks.LT_SIGN && node._finishedOpen) {
-    // TODO: possibly check for same tag name, and if HTML5 incompatible,
-    // such as p within p, then close current.
-    valueNode = this.openNode(new MarkupNode(), node.values);
-    updateLoc(valueNode, curr);
-    return false;
-  }
-
-  if (curr.type === tks.LT_SIGN && !node._finishedOpen) {
     updateLoc(node, curr);
     return true;
   }
 
   // Default
 
-  valueNode = ensureTextNode(node.values);
-  appendTextValue(valueNode, curr);
-  return true;
+  //valueNode = ensureTextNode(node.values);
+  //appendTextValue(valueNode, curr);
+  //return true;
 }
 
 Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
@@ -338,6 +318,65 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
     valueNode = ensureTextNode(node.left);
   } else {
     valueNode = ensureTextNode(node.right);
+  }
+
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
+  var valueNode = ensureTextNode(node.values);
+
+  if (curr.type === tks.AT_COLON) {
+    node._waitingForNewline = true;
+    updateLoc(valueNode, curr);
+    return true;
+  }
+
+  if (curr.type === tks.NEWLINE && node._waitingForNewline === true) {
+    node._waitingForNewline = false;
+    appendTextValue(valueNode, curr);
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
+  if (
+    curr.type === tks.AT
+    && next.type === tks.BRACE_OPEN
+  ) {
+    this.openNode(new BlockNode(), node.values);
+    return true;
+  }
+
+  if (
+    curr.type === tks.AT
+    && (next.type === tks.BLOCK_KEYWORD
+      || next.type === tks.FUNCTION)
+  ) {
+    this.openNode(new BlockNode(), node.values);
+    return true;
+  }
+
+  // @something
+  if (curr.type === tks.AT) {
+    valueNode = this.openNode(new ExpressionNode(), node.values);
+    updateLoc(valueNode, curr);
+    return true;
+  }
+
+  if (curr.type === tks.HTML_TAG_CLOSE) {
+    this.closeNode(node);
+    updateLoc(node, curr);
+    return false;
+  }
+
+  if (curr.type === tks.LT_SIGN) {
+    // TODO: possibly check for same tag name, and if HTML5 incompatible,
+    // such as p within p, then close current.
+    valueNode = this.openNode(new MarkupNode(), node.values);
+    updateLoc(valueNode, curr);
+    return false;
   }
 
   appendTextValue(valueNode, curr);
@@ -630,27 +669,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   valueNode = ensureTextNode(attachmentNode);
-  appendTextValue(valueNode, curr);
-  return true;
-}
-
-Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
-  var valueNode = ensureTextNode(node.values);
-
-  if (curr.type === tks.AT_COLON) {
-    node._waitingForNewline = true;
-    updateLoc(valueNode, curr);
-    return true;
-  }
-
-  if (curr.type === tks.NEWLINE) {
-    node._waitingForNewline = false;
-    appendTextValue(valueNode, curr);
-    updateLoc(node, curr);
-    this.closeNode(node);
-    return true;
-  }
-
   appendTextValue(valueNode, curr);
   return true;
 }
