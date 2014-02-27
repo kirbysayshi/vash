@@ -358,11 +358,11 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     return true;
   }
 
-  // Mark @@: as an escaped @:
+  // Mark @@: or @@ as escaped.
   if (
     curr.type === tks.AT
     && next
-    && next.type === tks.AT_COLON
+    && (next.type === tks.AT_COLON || next.type === tks.AT)
   ) {
     next._considerEscaped = true;
     return true;
