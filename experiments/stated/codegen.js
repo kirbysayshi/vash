@@ -76,6 +76,13 @@ gens.VashMarkupAttribute = function(node, opts, generate) {
     + dbgend(node, opts);
 }
 
+gens.VashMarkupContent = function(node, opts, generate) {
+  return ''
+    + dbgstart(node, opts)
+    + node.values.map(generate).join('');
+    + dbgend(node, opts)
+}
+
 gens.VashBlock = function(node, opts, generate) {
   var hasValues = node.values.length > 0;
   var unsafeForDbg = node.keyword === 'switch'
@@ -135,6 +142,7 @@ function bewrap(str) {
 
 function parentIsContent(node) {
   return node.parent.type === 'VashMarkup'
+    || node.parent.type === 'VashMarkupContent'
     || node.parent.type === 'VashMarkupAttribute'
     || node.parent.type === 'VashProgram';
 }

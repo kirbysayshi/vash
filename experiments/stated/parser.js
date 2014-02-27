@@ -7,6 +7,7 @@ var nodestuff = require('./nodestuff');
 var ProgramNode = require('./nodes/program');
 var TextNode = require('./nodes/text');
 var MarkupNode = require('./nodes/markup');
+var MarkupContentNode = require('./nodes/markupcontent');
 var MarkupAttributeNode = require('./nodes/markupattribute');
 var ExpressionNode = require('./nodes/expression');
 var ExplicitExpressionNode = require('./nodes/explicitexpression');
@@ -480,6 +481,14 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   var valueNode = node.values[node.values.length-1];
 
   if (
+    curr.type === tks.AT_COLON
+    && (!node.hasBraces || node._reachedOpenBrace)
+  ) {
+    valueNode = this.openNode(new MarkupContentNode(), node.values);
+    return false;
+  }
+
+  if (
     (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
     && !node._reachedOpenBrace
     && !node.keyword
@@ -621,6 +630,27 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   valueNode = ensureTextNode(attachmentNode);
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
+  var valueNode = ensureTextNode(node.values);
+
+  if (curr.type === tks.AT_COLON) {
+    node._waitingForNewline = true;
+    updateLoc(valueNode, curr);
+    return true;
+  }
+
+  if (curr.type === tks.NEWLINE) {
+    node._waitingForNewline = false;
+    appendTextValue(valueNode, curr);
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
   appendTextValue(valueNode, curr);
   return true;
 }
