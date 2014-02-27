@@ -12,7 +12,19 @@
 
 var TESTS = [
 
-    'AT_STAR_OPEN', (/^(@\*)/)
+  // A real email address is considerably more complex, and unfortunately
+  // this complexity makes it impossible to differentiate between an address
+  // and an AT expression.
+  //
+  // Instead, this regex assumes the only valid characters for the user portion
+  // of the address are alphanumeric, period, and %. This means that a complex email like
+  // who-something@example.com will be interpreted as an email, but incompletely. `who-`
+  // will be content, while `something@example.com` will be the email address.
+  //
+  // However, this is "Good Enough"© :).
+    'EMAIL', (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
+
+  , 'AT_STAR_OPEN', (/^(@\*)/)
   , 'AT_STAR_CLOSE', (/^(\*@)/)
 
 

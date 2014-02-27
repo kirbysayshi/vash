@@ -260,7 +260,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
   var valueNode;
 
-  if (curr.type === tks.AT) {
+  if (curr.type === tks.AT && !curr._considerEscaped) {
     // To expression
 
     valueNode = this.openNode(new ExpressionNode(), !node._finishedLeft
@@ -327,7 +327,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
   var valueNode = ensureTextNode(node.values);
 
-  if (curr.type === tks.AT_COLON) {
+  if (curr.type === tks.AT_COLON && !curr._considerEscaped) {
     node._waitingForNewline = true;
     updateLoc(valueNode, curr);
     return true;
@@ -358,8 +358,18 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     return true;
   }
 
+  // Mark @@: as an escaped @:
+  if (
+    curr.type === tks.AT
+    && next
+    && next.type === tks.AT_COLON
+  ) {
+    next._considerEscaped = true;
+    return true;
+  }
+
   // @something
-  if (curr.type === tks.AT) {
+  if (curr.type === tks.AT && !curr._considerEscaped) {
     valueNode = this.openNode(new ExpressionNode(), node.values);
     updateLoc(valueNode, curr);
     return true;
