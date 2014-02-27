@@ -14,6 +14,7 @@ var ExplicitExpressionNode = require('./nodes/explicitexpression');
 var IndexExpressionNode = require('./nodes/indexexpression');
 var LocationNode = require('./nodes/location');
 var BlockNode = require('./nodes/block');
+var CommentNode = require('./nodes/comment');
 
 function Parser() {
   this.lg = debug('vash:parser');
@@ -150,9 +151,34 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
     return false;
   }
 
+  if (curr.type === tks.AT_STAR_OPEN) {
+    this.openNode(new CommentNode(), node.body);
+    return false;
+  }
+
   // Default
 
   valueNode = ensureTextNode(node.body);
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+Parser.prototype.continueCommentNode = function(node, curr, next) {
+  var valueNode = ensureTextNode(node.values);
+
+  if (curr.type === tks.AT_STAR_OPEN && !node._waitingForClose) {
+    node._waitingForClose = true;
+    updateLoc(node, curr);
+    return true;
+  }
+
+  if (curr.type === tks.AT_STAR_CLOSE && node._waitingForClose) {
+    node._waitingForClose = null;
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
   appendTextValue(valueNode, curr);
   return true;
 }
@@ -528,6 +554,11 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
 Parser.prototype.continueBlockNode = function(node, curr, next) {
 
   var valueNode = node.values[node.values.length-1];
+
+  if (curr.type === tks.AT_STAR_OPEN) {
+    this.openNode(new CommentNode(), node.body);
+    return false;
+  }
 
   if (
     curr.type === tks.AT_COLON

@@ -114,6 +114,10 @@ gens.VashText = function(node, opts, generate) {
     : node.value;
 }
 
+gens.VashComment = function(node, opts, generate) {
+  return '';
+}
+
 var reQuote = /(['"])/g;
 var reEscapedQuote = /\\+(["'])/g;
 var reLineBreak = /\n/g;
