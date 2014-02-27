@@ -2,6 +2,7 @@
 var debug = require('debug');
 
 var tks = require('./tokens');
+var nodestuff = require('./nodestuff');
 
 var ProgramNode = require('./nodes/program');
 var TextNode = require('./nodes/text');
@@ -79,11 +80,17 @@ Parser.prototype.dumpAST = function() {
   return JSON.stringify(this.stack[0], null, '  ');
 }
 
-Parser.prototype.openNode = function(node) {
+Parser.prototype.openNode = function(node, opt_insertArr) {
   this.stack.push(node);
   this.lg('Opened node %s from %s',
     node.type, (this.node ? this.node.type : null));
   this.node = node;
+
+  if (opt_insertArr) {
+    opt_insertArr.push(node);
+  }
+
+  return node;
 }
 
 Parser.prototype.closeNode = function(node) {
@@ -98,11 +105,6 @@ Parser.prototype.closeNode = function(node) {
   this.stack.pop();
   var last = this.stack[this.stack.length-1];
 
-  // Program is always root.
-  if (last.type === 'VashProgram') {
-    this.stack.push(last);
-  }
-
   this.lg('Closing node %s (%s), returning to node %s',
     node.type, node.name, last.type)
 
@@ -115,9 +117,7 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
   var valueNode = node.body[node.body.length-1];
 
   if (curr.type === tks.AT && next.type === tks.PAREN_OPEN) {
-    valueNode = new ExplicitExpressionNode();
-    this.openNode(valueNode);
-    node.body.push(valueNode);
+    this.openNode(new ExplicitExpressionNode(), node.body);
     return false;
   }
 
@@ -127,23 +127,17 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
       || next.type === tks.BRACE_OPEN
       || next.type === tks.FUNCTION)
   ) {
-    valueNode = new BlockNode();
-    node.body.push(valueNode);
-    this.openNode(valueNode);
+    this.openNode(new BlockNode(), node.body);
     return true;
   }
 
   if (curr.type === tks.AT) {
-    valueNode = new ExpressionNode();
-    this.openNode(valueNode);
-    node.body.push(valueNode);
+    this.openNode(new ExpressionNode(), node.body);
     return true;
   }
 
   if (curr.type === tks.LT_SIGN) {
-    valueNode = new MarkupNode();
-    this.openNode(valueNode);
-    node.body.push(valueNode);
+    this.openNode(new MarkupNode(), node.body);
     return false;
   }
 
@@ -151,23 +145,14 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
   // allow for keywords to not need to be prefixed with @,
   // like `catch (e) {}`.
   if (curr.type === tks.KEYWORD) {
-    valueNode = new BlockNode();
-    node.body.push(valueNode);
-    this.openNode(valueNode);
+    this.openNode(new BlockNode(), node.body);
     return false;
   }
 
   // Default
 
-  if (!valueNode || valueNode.type !== 'VashText') {
-    valueNode = new TextNode();
-    node.body.push(valueNode);
-    updateLoc(valueNode, curr);
-  }
-
+  valueNode = ensureTextNode(node.body);
   appendTextValue(valueNode, curr);
-  updateLoc(valueNode, curr);
-
   return true;
 }
 
@@ -185,38 +170,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     // Assume tag name
 
     if (curr.type === tks.AT) {
-      valueNode = new ExpressionNode();
-      node.expression = valueNode;
-      this.openNode(valueNode);
-      updateLoc(valueNode, curr);
-      return true;
-    }
-
-    if (curr.type === tks.IDENTIFIER) {
-      node.name = node.name
-        ? node.name + curr.val
-        : curr.val;
-      updateLoc(node, curr);
-      return true;
-    }
-
-    if (curr.type === tks.LT_SIGN) {
-      updateLoc(node, curr);
-      return true;
-    }
-
-    // Handle end of <@model.something>
-    if (curr.type === tks.GT_SIGN) {
-      node.name = (node.name ? node.name : '')
-        + 'VashDynamicMarkup';
-      return true;
-    }
-
-    // Handle <!crap
-    if (curr.type === tks.EXCLAMATION_POINT) {
-      node.name = node.name
-        ? node.name + curr.val
-        : curr.val;
+      node.expression = this.openNode(new ExpressionNode());
+      updateLoc(node.expression, curr);
       return true;
     }
 
@@ -272,9 +227,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     && next.type !== tks.HTML_TAG_VOID_CLOSE
   ) {
     // enter attribute
-    valueNode = new MarkupAttributeNode();
-    this.openNode(valueNode);
-    node.attributes.push(valueNode);
+    this.openNode(new MarkupAttributeNode(), node.attributes);
     return true;
   }
 
@@ -282,9 +235,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     curr.type === tks.AT
     && next.type === tks.BRACE_OPEN
   ) {
-    valueNode = new BlockNode();
-    this.openNode(valueNode);
-    node.values.push(valueNode);
+    this.openNode(new BlockNode(), node.values);
     return true;
   }
 
@@ -293,26 +244,22 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     && (next.type === tks.BLOCK_KEYWORD
       || next.type === tks.FUNCTION)
   ) {
-    valueNode = new BlockNode();
-    this.openNode(valueNode);
-    node.values.push(valueNode);
+    this.openNode(new BlockNode(), node.values);
     return true;
   }
 
   // @something
   if (curr.type === tks.AT && node._finishedOpen) {
-    valueNode = new ExpressionNode();
+    valueNode = this.openNode(new ExpressionNode(), node.values);
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
-    node.values.push(valueNode);
     return true;
   }
 
   if (curr.type === tks.LT_SIGN && node._finishedOpen) {
-    valueNode = new MarkupNode();
+    // TODO: possibly check for same tag name, and if HTML5 incompatible,
+    // such as p within p, then close current.
+    valueNode = this.openNode(new MarkupNode(), node.values);
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
-    node.values.push(valueNode);
     return false;
   }
 
@@ -323,14 +270,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   // Default
 
-  if (!valueNode || valueNode.type !== 'VashText') {
-    valueNode = new TextNode();
-    updateLoc(valueNode, curr);
-    node.values.push(valueNode);
-  }
-
+  valueNode = ensureTextNode(node.values);
   appendTextValue(valueNode, curr);
-  updateLoc(valueNode, curr);
   return true;
 }
 
@@ -341,16 +282,11 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   if (curr.type === tks.AT) {
     // To expression
 
-    valueNode = new ExpressionNode();
-
-    if (!node._finishedLeft) {
-      node.left.push(valueNode);
-    } else {
-      node.right.push(valueNode);
-    }
+    valueNode = this.openNode(new ExpressionNode(), !node._finishedLeft
+      ? node.left
+      : node.right);
 
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
     return true;
   }
 
@@ -398,24 +334,12 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   var rightValueNode = node.right[node.right.length-1];
 
   if (!node._finishedLeft) {
-    if (!leftValueNode || leftValueNode.type !== 'VashText') {
-      leftValueNode = new TextNode();
-      node.left.push(leftValueNode);
-    }
-
-    valueNode = leftValueNode;
+    valueNode = ensureTextNode(node.left);
   } else {
-    if (!rightValueNode || rightValueNode.type !== 'VashText') {
-      rightValueNode = new TextNode();
-      node.right.push(rightValueNode);
-    }
-
-    valueNode = rightValueNode;
+    valueNode = ensureTextNode(node.right);
   }
 
   appendTextValue(valueNode, curr);
-  updateLoc(valueNode, curr);
-
   return true;
 }
 
@@ -433,9 +357,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.PAREN_OPEN) {
-    valueNode = new ExplicitExpressionNode();
-    this.openNode(valueNode);
-    node.values.push(valueNode);
+    this.openNode(new ExplicitExpressionNode(), node.values);
     return false;
   }
 
@@ -461,9 +383,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.HARD_PAREN_OPEN) {
-    valueNode = new IndexExpressionNode();
-    node.values.push(valueNode);
-    this.openNode(valueNode);
+    this.openNode(new IndexExpressionNode(), node.values);
     return false;
   }
 
@@ -471,12 +391,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   // Consume only specific cases, otherwise close.
 
   if (curr.type === tks.PERIOD && next && next.type === tks.IDENTIFIER) {
-    if (valueNode && valueNode.type !== 'VashText') {
-      valueNode = new TextNode();
-      node.values.push(valueNode);
-      updateLoc(valueNode, curr);
-    }
-
+    valueNode = ensureTextNode(node.values);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -489,12 +404,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
       return false;
     }
 
-    if (!valueNode) {
-      valueNode = new TextNode();
-      node.values.push(valueNode);
-      updateLoc(valueNode, curr);
-    }
-
+    valueNode = ensureTextNode(node.values);
     appendTextValue(valueNode, curr);
     return true;
   } else {
@@ -518,10 +428,8 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
 
   if (curr.type === tks.PAREN_OPEN && !node._waitingForEndQuote) {
     // New explicit expression
-    valueNode = new ExplicitExpressionNode();
-    node.values.push(valueNode);
+    valueNode = this.openNode(new ExplicitExpressionNode(), node.values);
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
     // And do nothing with the token (mark as consumed)
     return true;
   }
@@ -535,18 +443,13 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
   }
 
   if (curr.type === tks.FUNCTION && !node._waitingForEndQuote) {
-    valueNode = new BlockNode();
-    node.values.push(valueNode);
+    valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
     return false;
   }
 
   // Default
-  if (!valueNode || valueNode.type !== 'VashText') {
-    valueNode = new TextNode();
-    node.values.push(valueNode);
-  }
+  valueNode = ensureTextNode(node.values);
 
   if (
     !node._waitingForEndQuote
@@ -555,7 +458,6 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     this.lg('Now waiting for end quote with value %s', curr.val);
     node._waitingForEndQuote = curr.val;
     appendTextValue(valueNode, curr);
-    updateLoc(valueNode, curr);
     return true;
   }
 
@@ -566,12 +468,10 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     node._waitingForEndQuote = null;
     this.lg('Happy to find end quote with value %s', curr.val);
     appendTextValue(valueNode, curr);
-    updateLoc(valueNode, curr);
     return true;
   }
 
   appendTextValue(valueNode, curr);
-  updateLoc(valueNode, curr);
   return true;
 }
 
@@ -590,10 +490,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   ) {
     // Assume something like if (test) expressionstatement;
     node.hasBraces = false;
-    valueNode = new BlockNode();
+    valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
-    node.values.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
@@ -604,10 +502,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    valueNode = new BlockNode();
+    valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
-    node.values.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
@@ -617,10 +513,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    valueNode = new BlockNode();
+    valueNode = this.openNode(new BlockNode(), node.tail);
     updateLoc(valueNode, curr);
-    node.tail.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
@@ -640,10 +534,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    valueNode = new BlockNode();
+    valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
-    node.values.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
@@ -666,10 +558,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    valueNode = new MarkupNode();
+    valueNode = this.openNode(new MarkupNode(), node.values);
     updateLoc(valueNode, curr);
-    node.values.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
@@ -688,11 +578,9 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
       || next.type === tks.FUNCTION)
   ) {
     // Backwards compatibility, allowing for @for() { @for() { @{ } } }
-    valueNode = new BlockNode();
+    valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
     // TODO: shouldn't this need a more accurate target (tail, values, head)?
-    node.values.push(valueNode);
-    this.openNode(valueNode);
     return true;
   }
 
@@ -723,19 +611,12 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.PAREN_OPEN) {
-    valueNode = new ExplicitExpressionNode();
+    valueNode = this.openNode(new ExplicitExpressionNode(), attachmentNode);
     updateLoc(valueNode, curr);
-    attachmentNode.push(valueNode);
-    this.openNode(valueNode);
     return false;
   }
 
-  if (!valueNode || valueNode.type !== 'VashText') {
-    valueNode = new TextNode();
-    attachmentNode.push(valueNode);
-    updateLoc(valueNode, curr);
-  }
-
+  valueNode = ensureTextNode(attachmentNode);
   appendTextValue(valueNode, curr);
   return true;
 }
@@ -750,7 +631,6 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
       node._waitingForEndQuote = null;
     }
 
-    updateLoc(valueNode, curr);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -770,31 +650,24 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.PAREN_OPEN) {
-    valueNode = new ExplicitExpressionNode();
-    node.values.push(valueNode);
+    valueNode = this.openNode(new ExplicitExpressionNode(), node.values);
     updateLoc(valueNode, curr);
-    this.openNode(valueNode);
     return false;
   }
 
-  if (!valueNode || valueNode.type !== 'VashText') {
-    valueNode = new TextNode();
-    node.values.push(valueNode);
-  }
+  valueNode = ensureTextNode(node.values);
 
   if (!node._waitingForEndQuote
     && (curr.type === tks.DOUBLE_QUOTE
     || curr.type === tks.SINGLE_QUOTE)
   ) {
     node._waitingForEndQuote = curr.val;
-    updateLoc(valueNode, curr);
     appendTextValue(valueNode, curr);
     return true;
   }
 
   // Default.
 
-  updateLoc(valueNode, curr);
   appendTextValue(valueNode, curr);
   return true;
 }
@@ -810,6 +683,17 @@ function updateLoc(node, token) {
   }
 
   node.endloc = loc;
+}
+
+function ensureTextNode(valueList) {
+  var valueNode = valueList[valueList.length-1];
+
+  if (!valueNode || valueNode.type !== 'VashText') {
+    valueNode = new TextNode();
+    valueList.push(valueNode);
+  }
+
+  return valueNode;
 }
 
 function appendTextValue(textNode, token) {
