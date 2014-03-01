@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.7
+ * Vash - JavaScript Template Parser, v0.7.8-2
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -144,12 +144,17 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 	};
 
 	Buffer.prototype.pushConcat = function( buffer ){
-		if( buffer instanceof Array ) {
-			this._vo.push.apply( this._vo, buffer );
+		var buffers;
+		if (Array.isArray(buffer)) {
+			buffers = buffer;
 		} else if ( arguments.length > 1 ) {
-			this._vo.push.apply( this._vo, Array.prototype.slice.call( arguments ));
+			buffers = Array.prototype.slice.call( arguments );
 		} else {
-			this._vo.push( buffer );
+			buffers = [buffer];
+		}
+
+		for (var i = 0; i < buffers.length; i++) {
+			this._vo.push( buffers[i] );
 		}
 
 		return this.__vo;
@@ -634,12 +639,10 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 
 			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
-			// grab rendered content
-			content = this.buffer.fromMark( m );
-
-			// inject it at the right position (mark)...
-			content.unshift( injectMark, 0 );
-			this.buffer.spliceMark.apply( this.buffer, content );
+			// grab rendered content, immediately join to prevent needing to use
+			// .apply.
+			content = this.buffer.fromMark( m ).join('');
+			this.buffer.spliceMark( injectMark, 0, content );
 		}
 
 		for( name in this.blockMarks ){
