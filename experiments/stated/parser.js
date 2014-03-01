@@ -73,6 +73,23 @@ Parser.prototype.read = function() {
   }
 }
 
+Parser.prototype.checkStack = function() {
+  // Throw if something is unclosed that should be.
+  var i = this.stack.length-1;
+  var node;
+  var msg;
+  while(i >= 1) {
+    node = this.stack[i];
+    if (node.endOk && !node.endOk()) {
+      msg = 'Found unclosed ' + node.type + ' starting at line '
+        + node.startloc.line + ', column ' + node.startloc.column + '.\n\n'
+        + 'Node: ' + JSON.stringify(node, null, '  ');
+      throw new Error(msg);
+    }
+    i--;
+  }
+}
+
 Parser.prototype.dumpAST = function() {
   if (!this.stack.length) {
     var msg = 'No AST to dump.';
@@ -501,6 +518,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     && (curr.type === tks.AT || curr.type === tks.PAREN_OPEN)
   ) {
     // This is the beginning of the explicit (mark as consumed)
+    node._waitingForParenClose = true;
     updateLoc(node, curr);
     return true;
   }
@@ -515,6 +533,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
 
   if (curr.type === tks.PAREN_CLOSE && !node._waitingForEndQuote) {
     // Close current explicit expression
+    node._waitingForParenClose = false;
     updateLoc(node, curr);
     this.closeNode(node);
     // And do nothing with the token (mark as consumed)
@@ -735,11 +754,13 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
     curr.type === tks.HARD_PAREN_OPEN
     && !valueNode
   ) {
+    node._waitingForHardParenClose = true;
     updateLoc(node, curr);
     return true;
   }
 
   if (curr.type === tks.HARD_PAREN_CLOSE) {
+    node._waitingForHardParenClose = false;
     this.closeNode(node);
     updateLoc(node, curr);
     return true;

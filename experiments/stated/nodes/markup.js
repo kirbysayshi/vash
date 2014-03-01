@@ -1,4 +1,4 @@
-module.exports = function MarkupNode() {
+var Node = module.exports = function MarkupNode() {
   this.type = 'VashMarkup';
   this.name = null;
   this.expression = null; // or ExpressionNode
@@ -10,6 +10,7 @@ module.exports = function MarkupNode() {
   this.endloc = null;
 
   this._finishedOpen = false;
+  // Waiting for the finishing > of the </close>
   this._waitingForFinishedClose = false;
 }
 
@@ -23,6 +24,18 @@ var voids = module.exports.voids = [
   'link', 'meta', 'param', 'source', 'track', 'wbr'
 ];
 
-module.exports.isVoid = function(name) {
+Node.isVoid = function(name) {
   return voids.indexOf(name) > -1;
+}
+
+Node.prototype.endOk = function() {
+
+  if (
+    (this._finishedOpen && !this._waitingForFinishedClose)
+    || (this._finishedOpen && Node.isVoid(this.name))
+  ) {
+    return true;
+  }
+
+  return false;
 }
