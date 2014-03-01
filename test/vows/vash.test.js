@@ -1954,6 +1954,17 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
+		,'containing BOM': {
+			topic: '\uFEFF<p></p>'
+
+			,'is stripped': function(topic) {
+				var tpl = vash.compile(topic)
+					, actual = tpl();
+
+				assert.equal( actual, '<p></p>');
+			}
+		}
+
 	}
 
 	/*,'implicit compilation': {

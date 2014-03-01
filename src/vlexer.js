@@ -162,7 +162,9 @@ var TESTS = [
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
-	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
+	this.input = this.originalInput = str
+		.replace(/^\uFEFF/, '') // Kill BOM
+		.replace(/\r\n|\r/g, '\n');
 	this.lineno = 1;
 	this.charno = 0;
 }
