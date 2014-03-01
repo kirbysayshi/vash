@@ -282,7 +282,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     && next.type !== tks.HTML_TAG_VOID_CLOSE
   ) {
     // enter attribute
-    this.openNode(new MarkupAttributeNode(), node.attributes);
+    valueNode = this.openNode(new MarkupAttributeNode(), node.attributes);
+    updateLoc(valueNode, curr);
     return true;
   }
 
@@ -391,7 +392,8 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     curr.type === tks.AT
     && next.type === tks.BRACE_OPEN
   ) {
-    this.openNode(new BlockNode(), node.values);
+    valueNode = this.openNode(new BlockNode(), node.values);
+    updateLoc(valueNode, curr);
     return true;
   }
 
@@ -400,7 +402,8 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     && (next.type === tks.BLOCK_KEYWORD
       || next.type === tks.FUNCTION)
   ) {
-    this.openNode(new BlockNode(), node.values);
+    valueNode = this.openNode(new BlockNode(), node.values);
+    updateLoc(valueNode, curr);
     return true;
   }
 
