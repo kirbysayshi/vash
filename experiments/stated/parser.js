@@ -129,12 +129,14 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
       || next.type === tks.BRACE_OPEN
       || next.type === tks.FUNCTION)
   ) {
-    this.openNode(new BlockNode(), node.body);
+    valueNode = this.openNode(new BlockNode(), node.body);
+    updateLoc(valueNode, curr);
     return true;
   }
 
   if (curr.type === tks.AT) {
-    this.openNode(new ExpressionNode(), node.body);
+    valueNode = this.openNode(new ExpressionNode(), node.body);
+    updateLoc(valueNode, curr);
     return true;
   }
 
@@ -160,6 +162,7 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
 
   valueNode = ensureTextNode(node.body);
   appendTextValue(valueNode, curr);
+  updateLoc(node, curr);
   return true;
 }
 
