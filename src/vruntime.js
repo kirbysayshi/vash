@@ -135,12 +135,17 @@
 	};
 
 	Buffer.prototype.pushConcat = function( buffer ){
-		if( buffer instanceof Array ) {
-			this._vo.push.apply( this._vo, buffer );
+		var buffers;
+		if (Array.isArray(buffer)) {
+			buffers = buffer;
 		} else if ( arguments.length > 1 ) {
-			this._vo.push.apply( this._vo, Array.prototype.slice.call( arguments ));
+			buffers = Array.prototype.slice.call( arguments );
 		} else {
-			this._vo.push( buffer );
+			buffers = [buffer];
+		}
+
+		for (var i = 0; i < buffers.length; i++) {
+			this._vo.push( buffers[i] );
 		}
 
 		return this.__vo;

@@ -123,12 +123,10 @@
 
 			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
-			// grab rendered content
-			content = this.buffer.fromMark( m );
-
-			// inject it at the right position (mark)...
-			content.unshift( injectMark, 0 );
-			this.buffer.spliceMark.apply( this.buffer, content );
+			// grab rendered content, immediately join to prevent needing to use
+			// .apply.
+			content = this.buffer.fromMark( m ).join('');
+			this.buffer.spliceMark( injectMark, 0, content );
 		}
 
 		for( name in this.blockMarks ){

@@ -231,6 +231,30 @@ vows.describe('vash templating library layout').addBatch({
 				assert.equal( actual, ctnB );
 			}
 
+			,'can handle really long buffers': function( maker ) {
+
+				// Note: this is not as much to handle a long list of items as to
+				// ensure that the runtime functions do not exceed the maximum call
+				// stack size, which varies per JS engine / platform.
+				// See: https://bugzilla.mozilla.org/show_bug.cgi?id=607371
+				// and: https://github.com/kirbysayshi/vash/issues/29
+
+				var block = '@html.block("content", function(){'
+						+ '@html.include("listitems")'
+						+ '})'
+
+				var count = 100000;
+
+				var expected = '';
+				for(var i = 0; i < count; i++) {
+					expected += '<li>a</li>';
+				}
+
+				var actual = maker(block)( this.opts({ count: count }) )
+
+				assert.equal( actual, expected );
+			}
+
 			,'deep': {
 
 				topic: function(maker){
