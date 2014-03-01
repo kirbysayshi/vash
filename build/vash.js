@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.8-2
+ * Vash - JavaScript Template Parser, v0.7.9-1
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -186,7 +186,9 @@ var TESTS = [
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
 function VLexer(str){
-	this.input = this.originalInput = str.replace(/\r\n|\r/g, '\n');
+	this.input = this.originalInput = str
+		.replace(/^\uFEFF/, '') // Kill BOM
+		.replace(/\r\n|\r/g, '\n');
 	this.lineno = 1;
 	this.charno = 0;
 }
@@ -2275,4 +2277,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.8-2" }));
+}({ "version": "0.7.9-1" }));
