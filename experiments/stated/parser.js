@@ -731,6 +731,25 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   valueNode = attachmentNode[attachmentNode.length-1];
 
   if (
+    curr.type === tks.AT
+    && next.type === tks.IDENTIFIER
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+  ) {
+    // @for() { @i } used to be valid.
+    var msg = '@expressions are only valid within'
+      + ' markup tags (<p>@exp</p>),'
+      + ' text tags (<text>@exp</text>), or'
+      + ' @ escapes (@:@exp\\n) ';
+    console.error(this.decorateError(new Error(msg), curr.line, curr.chr).message);
+
+    if (node._reachedCloseBrace) {
+      this.closeNode(node);
+      return false;
+    }
+  }
+
+  if (
     curr.type !== tks.BLOCK_KEYWORD
     && curr.type !== tks.PAREN_OPEN
     && curr.type !== tks.WHITESPACE
