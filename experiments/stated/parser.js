@@ -746,7 +746,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
         + ' markup tags (<p>@exp</p>),'
         + ' text tags (<text>@exp</text>), or'
         + ' @ escapes (@:@exp\\n) ';
-      console.error(this.decorateError(new Error(msg), curr.line, curr.chr).message);
+      console.error('Warning: '
+        + this.decorateError(new Error(msg), curr.line, curr.chr).message);
     }
   }
 
