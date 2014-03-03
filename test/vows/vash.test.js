@@ -917,7 +917,7 @@ vows.describe('vash templating library').addBatch({
 	,'regex': {
 
 		'simple expression': {
-			topic: '<span>@a.replace(/a/gi, "o")</span>'
+			topic: '<span>@a.replace(/)a"\'/gi, "o")</span>'
 			,'replaces': function( topic ){
 				var tpl = vash.compile( topic, { useWith: true } );
 				assert.equal( tpl({ a: 'a' }), '<span>o</span>');
@@ -925,7 +925,7 @@ vows.describe('vash templating library').addBatch({
 		}
 
 		,'period meta character': {
-			topic: '<span>@a.replace(/./gi, "o")</span>'
+			topic: '<span>@a.replace(/)"\'./gi, "o")</span>'
 			,'replaces': function( topic ){
 				var tpl = vash.compile( topic, { useWith: true } );
 				assert.equal( tpl({ a: 'a' }), '<span>o</span>')
@@ -933,7 +933,7 @@ vows.describe('vash templating library').addBatch({
 		}
 
 		,'within BLK': {
-			topic: '@{ var re = /[@\'"]/gi; }<span>@a.replace(re, "o")</span>'
+			topic: '@{ var re = /[@}\'"]/gi; }<span>@a.replace(re, "o")</span>'
 			,'replaces': function( topic ){
 				var tpl = vash.compile( topic, { useWith: true } );
 				assert.equal( tpl({ a: '@' }), '<span>o</span>');
