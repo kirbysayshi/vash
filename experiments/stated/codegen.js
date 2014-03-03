@@ -19,9 +19,7 @@ gens.VashExplicitExpression = function(node, opts, generate) {
 
 gens.VashExpression = function(node, opts, generate) {
   var str = node.values.map(generate).join('');
-  if (parentIsContent(node)) {
-    str = bewrap(maybeHTMLEscape(node, opts, str));
-  }
+  str = bewrap(maybeHTMLEscape(node, opts, str));
   return str;
 }
 
