@@ -3,6 +3,7 @@ var debug = require('debug');
 
 var tks = require('./tokens');
 var nodestuff = require('./nodestuff');
+var error = require('./error');
 
 var ProgramNode = require('./nodes/program');
 var TextNode = require('./nodes/text');
@@ -22,13 +23,26 @@ function Parser() {
   this.deferredTokens = [];
   this.node = null;
   this.stack = [];
+  this.inputText = '';
   this.previousWasEscape = false;
 }
 
 module.exports = Parser;
 
+Parser.prototype.decorateError = function(err, line, column) {
+  err.message = 'at template line ' + line
+    + ', column ' + column + ': '
+    + err.message + '\n'
+    + 'Context: \n'
+    + error.context(this.inputText, line, column, '\n')
+    + '\n';
+
+  return err;
+}
+
 Parser.prototype.write = function(tokens) {
   if (!Array.isArray(tokens)) tokens = [tokens];
+  this.inputText += tokens.map(function(tok) { return tok.val; }).join('');
   this.tokens.unshift.apply(this.tokens, tokens.reverse());
 }
 
@@ -81,10 +95,12 @@ Parser.prototype.checkStack = function() {
   while(i >= 1) {
     node = this.stack[i];
     if (node.endOk && !node.endOk()) {
-      msg = 'Found unclosed ' + node.type + ' starting at line '
-        + node.startloc.line + ', column ' + node.startloc.column + '.\n\n'
+      msg = 'Found unclosed ' + node.type + '.\n\n'
         + 'Node: ' + JSON.stringify(node, null, '  ');
-      throw new Error(msg);
+      throw this.decorateError(
+        new Error(msg),
+        node.startloc.line,
+        node.startloc.column);
     }
     i--;
   }
