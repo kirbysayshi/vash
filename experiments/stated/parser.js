@@ -770,6 +770,22 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   valueNode = ensureTextNode(attachmentNode);
+
+  if (curr.val === node._waitingForEndQuote) {
+    node._waitingForEndQuote = null;
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  if (
+    !node._waitingForEndQuote
+    && (curr.type === tks.DOUBLE_QUOTE || curr.type === tks.SINGLE_QUOTE)
+  ) {
+    node._waitingForEndQuote = curr.val;
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
   appendTextValue(valueNode, curr);
   return true;
 }
