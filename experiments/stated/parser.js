@@ -736,16 +736,17 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    // @for() { @i } used to be valid.
-    var msg = '@expressions are only valid within'
-      + ' markup tags (<p>@exp</p>),'
-      + ' text tags (<text>@exp</text>), or'
-      + ' @ escapes (@:@exp\\n) ';
-    console.error(this.decorateError(new Error(msg), curr.line, curr.chr).message);
 
     if (node._reachedCloseBrace) {
       this.closeNode(node);
       return false;
+    } else {
+      // @for() { @i } used to be valid.
+      var msg = '@expressions are only valid within'
+        + ' markup tags (<p>@exp</p>),'
+        + ' text tags (<text>@exp</text>), or'
+        + ' @ escapes (@:@exp\\n) ';
+      console.error(this.decorateError(new Error(msg), curr.line, curr.chr).message);
     }
   }
 
