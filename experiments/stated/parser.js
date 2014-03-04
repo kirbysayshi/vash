@@ -771,7 +771,10 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.HTML_TAG_CLOSE) {
-    if (node._reachedCloseBrace || !node._reachedOpenBrace) {
+    if (
+      (node.hasBraces && node._reachedCloseBrace)
+      || !node._reachedOpenBrace
+    ) {
       updateLoc(node, curr);
       this.closeNode(node);
       return false;
