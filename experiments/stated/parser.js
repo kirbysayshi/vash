@@ -16,6 +16,7 @@ var IndexExpressionNode = require('./nodes/indexexpression');
 var LocationNode = require('./nodes/location');
 var BlockNode = require('./nodes/block');
 var CommentNode = require('./nodes/comment');
+var RegexNode = require('./nodes/regex');
 
 function Parser() {
   this.lg = debug('vash:parser');
@@ -575,6 +576,19 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     return false;
   }
 
+  var pnw = this.previousNonWhitespace;
+
+  if (
+    curr.type === tks.FORWARD_SLASH
+    && !node._waitingForEndQuote
+    && pnw
+    && pnw.type !== tks.IDENTIFIER
+  ) {
+    valueNode = this.openNode(new RegexNode(), node.values);
+    updateLoc(valueNode, curr);
+    return false;
+  }
+
   // Default
   valueNode = ensureTextNode(node.values);
 
@@ -596,6 +610,55 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     this.lg('Happy to find end quote with value %s', curr.val);
     appendTextValue(valueNode, curr);
     return true;
+  }
+
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+Parser.prototype.continueRegexNode = function(node, curr, next) {
+  var valueNode = ensureTextNode(node.values);
+
+  if (
+    curr.type === tks.FORWARD_SLASH
+    && !node._waitingForForwardSlash
+    && !curr._considerEscaped
+  ) {
+    // Start of regex.
+    node._waitingForForwardSlash = true;
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  if (
+    curr.type === tks.FORWARD_SLASH
+    && node._waitingForForwardSlash
+    && !curr._considerEscaped
+  ) {
+    // "End" of regex.
+    node._waitingForForwardSlash = null;
+    node._waitingForFlags = true;
+    appendTextValue(valueNode, curr);
+    return true;
+  }
+
+  if (node._waitingForFlags) {
+    node._waitingForFlags = null;
+    this.closeNode(node);
+
+    if (curr.type === tks.IDENTIFIER) {
+      appendTextValue(valueNode, curr);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  if (
+    curr.type === tks.BACKSLASH
+    && !curr._considerEscaped
+  ) {
+    next._considerEscaped = true;
   }
 
   appendTextValue(valueNode, curr);
@@ -796,6 +859,20 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     node._waitingForEndQuote = curr.val;
     appendTextValue(valueNode, curr);
     return true;
+  }
+
+  var pnw = this.previousNonWhitespace;
+
+  if (
+    curr.type === tks.FORWARD_SLASH
+    && !node._waitingForEndQuote
+    && pnw
+    && pnw.type !== tks.IDENTIFIER
+  ) {
+    // OH GAWD IT MIGHT BE A REGEX.
+    valueNode = this.openNode(new RegexNode(), attachmentNode);
+    updateLoc(valueNode, curr);
+    return false;
   }
 
   appendTextValue(valueNode, curr);

@@ -23,6 +23,15 @@ gens.VashExpression = function(node, opts, generate) {
   return str;
 }
 
+gens.VashRegex = function(node, opts, generate) {
+  var str = node.values.map(generate).join('');
+  str = maybeHTMLEscape(node, opts, str);
+  if (parentIsContent(node)) {
+    str = bewrap(str);
+  }
+  return str;
+}
+
 gens.VashMarkup = function(node, opts, generate) {
   var isText = node.name === 'text';
   var name = node.name ? bcwrap(node.name) : '';
