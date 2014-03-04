@@ -1149,7 +1149,7 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 	,'HTML5:': {
-		'unclosed tags': {
+		/*'unclosed tags': {
 			topic: function(){
 				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i }';
 				return str;
@@ -1158,7 +1158,7 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0 ' );
 			}
 		}
-		,'unclosed tag followed by previous closing tag does not bork': {
+		,*/'unclosed tag followed by previous closing tag does not bork': {
 			topic: function(){
 				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i </div> }';
 				return str;
@@ -1169,14 +1169,14 @@ vows.describe('vash templating library').addBatch({
 		}
 		,'self-closing tags WITHOUT /': {
 			topic: function(){
-				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <br>@i </div> }'
+				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <text><br>@i</text> } </div>'
 				return str;
 			}
 			,'does not throw UNMATCHED': function(topic){
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 			}
 		}
-		,'closing tag within block': {
+		/*,'closing tag within block': {
 			topic: function(){
 				var str = '<div>This is content @if(true){ </div> } else { </div> }';
 				return str;
@@ -1185,7 +1185,7 @@ vows.describe('vash templating library').addBatch({
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 				assert.equal( vash.compile(topic)(), '<div>This is content </div>' );
 			}
-		}
+		}*/
 
 		,'operators': {
 
