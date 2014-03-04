@@ -86,8 +86,8 @@ gens.VashMarkupAttribute = function(node, opts, generate) {
 gens.VashMarkupContent = function(node, opts, generate) {
   return ''
     + dbgstart(node, opts)
-    + node.values.map(generate).join('');
-    + dbgend(node, opts)
+    + node.values.map(generate).join('')
+    + dbgend(node, opts);
 }
 
 gens.VashBlock = function(node, opts, generate) {

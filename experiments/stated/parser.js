@@ -396,9 +396,6 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
   // Default
 
-  var leftValueNode = node.left[node.left.length-1];
-  var rightValueNode = node.right[node.right.length-1];
-
   if (!node._finishedLeft) {
     valueNode = ensureTextNode(node.left);
   } else {

@@ -5,7 +5,7 @@ var tokens = require('./tokens');
 // Jade lexer, but have been modified:
 // https://github.com/visionmedia/jade/blob/master/lib/lexer.js
 
-function VLexer(str){
+function VLexer(){
   this.lg = debug('vash:lexer');
   this.input = '';
   this.originalInput = '';
