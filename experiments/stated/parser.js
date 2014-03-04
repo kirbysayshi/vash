@@ -117,6 +117,17 @@ Parser.prototype.checkStack = function() {
   }
 }
 
+// This is purely a utility for debugging, to more easily inspect
+// what happened while parsing something.
+Parser.prototype.flag = function(node, name, value) {
+  var printVal = typeof value === 'object'
+    ? value.type
+    : value;
+  this.lg('Flag %s on node %s was %s now %s',
+    name, node.type, node[name], printVal);
+  node[name] = value;
+}
+
 Parser.prototype.dumpAST = function() {
   if (!this.stack.length) {
     var msg = 'No AST to dump.';
@@ -214,13 +225,13 @@ Parser.prototype.continueCommentNode = function(node, curr, next) {
   var valueNode = ensureTextNode(node.values);
 
   if (curr.type === tks.AT_STAR_OPEN && !node._waitingForClose) {
-    node._waitingForClose = true;
+    this.flag(node, '_waitingForClose', true)
     updateLoc(node, curr);
     return true;
   }
 
   if (curr.type === tks.AT_STAR_CLOSE && node._waitingForClose) {
-    node._waitingForClose = null;
+    this.flag(node, '_waitingForClose', null)
     updateLoc(node, curr);
     this.closeNode(node);
     return true;
@@ -249,7 +260,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     // Assume tag name
 
     if (curr.type === tks.AT) {
-      node.expression = this.openNode(new ExpressionNode());
+      this.flag(node, 'expression', this.openNode(new ExpressionNode()));
       updateLoc(node.expression, curr);
       return true;
     }
@@ -262,10 +273,10 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.GT_SIGN && !node._waitingForFinishedClose) {
-    node._finishedOpen = true;
+    this.flag(node, '_finishedOpen', true);
 
     if (MarkupNode.isVoid(node.name)) {
-      node.isVoid = true;
+      this.flag(node, 'isVoid', true);
       this.closeNode(node);
       updateLoc(node, curr);
     } else {
@@ -277,7 +288,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
   }
 
   if (curr.type === tks.GT_SIGN && node._waitingForFinishedClose) {
-    node._waitingForFinishedClose = false;
+    this.flag(node, '_waitingForFinishedClose', false);
     this.closeNode(node);
     updateLoc(node, curr);
     return true;
@@ -285,14 +296,14 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   // </
   if (curr.type === tks.HTML_TAG_CLOSE) {
-    node._waitingForFinishedClose = true;
+    this.flag(node, '_waitingForFinishedClose', true);
     return true;
   }
 
   if (curr.type === tks.HTML_TAG_VOID_CLOSE) {
     this.closeNode(node);
-    node.isVoid = true;
-    node.voidClosed = true;
+    this.flag(node, 'isVoid', true);
+    this.flag(node, 'voidClosed', true);
     updateLoc(node, curr);
     return true;
   }
@@ -352,7 +363,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
       || curr.type === tks.GT_SIGN
       || curr.type === tks.HTML_TAG_VOID_CLOSE)
   ) {
-    node._finishedLeft = true;
+    this.flag(node, '_finishedLeft', true);
     updateLoc(node, curr);
     this.closeNode(node);
     return false; // defer
@@ -360,8 +371,8 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
   // End of left.
   if (curr.type === tks.EQUAL_SIGN) {
-    node._finishedLeft = true;
-    node._expectRight = true;
+    this.flag(node, '_finishedLeft', true);
+    this.flag(node, '_expectRight', true);
     return true;
   }
 
@@ -372,7 +383,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
     && (curr.type === tks.DOUBLE_QUOTE
     || curr.type === tks.SINGLE_QUOTE)
   ) {
-    node.rightIsQuoted = curr.val;
+    this.flag(node, 'rightIsQuoted', curr.val);
     return true;
   }
 
@@ -402,13 +413,13 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
   var valueNode = ensureTextNode(node.values);
 
   if (curr.type === tks.AT_COLON && !curr._considerEscaped) {
-    node._waitingForNewline = true;
+    this.flag(node, '_waitingForNewline', true);
     updateLoc(valueNode, curr);
     return true;
   }
 
   if (curr.type === tks.NEWLINE && node._waitingForNewline === true) {
-    node._waitingForNewline = false;
+    this.flag(node, '_waitingForNewline', false);
     appendTextValue(valueNode, curr);
     updateLoc(node, curr);
     this.closeNode(node);
@@ -548,7 +559,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     && (curr.type === tks.AT || curr.type === tks.PAREN_OPEN)
   ) {
     // This is the beginning of the explicit (mark as consumed)
-    node._waitingForParenClose = true;
+    this.flag(node, '_waitingForParenClose', true);
     updateLoc(node, curr);
     return true;
   }
@@ -563,7 +574,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
 
   if (curr.type === tks.PAREN_CLOSE && !node._waitingForEndQuote) {
     // Close current explicit expression
-    node._waitingForParenClose = false;
+    this.flag(node, '_waitingForParenClose', false);
     updateLoc(node, curr);
     this.closeNode(node);
     // And do nothing with the token (mark as consumed)
@@ -597,7 +608,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     && (curr.type === tks.SINGLE_QUOTE || curr.type === tks.DOUBLE_QUOTE)
   ) {
     this.lg('Now waiting for end quote with value %s', curr.val);
-    node._waitingForEndQuote = curr.val;
+    this.flag(node, '_waitingForEndQuote', curr.val);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -606,7 +617,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
     curr.val === node._waitingForEndQuote
     && !previousWasEscape
   ) {
-    node._waitingForEndQuote = null;
+    this.flag(node, '_waitingForEndQuote', null);
     this.lg('Happy to find end quote with value %s', curr.val);
     appendTextValue(valueNode, curr);
     return true;
@@ -625,7 +636,7 @@ Parser.prototype.continueRegexNode = function(node, curr, next) {
     && !curr._considerEscaped
   ) {
     // Start of regex.
-    node._waitingForForwardSlash = true;
+    this.flag(node, '_waitingForForwardSlash', true);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -636,14 +647,14 @@ Parser.prototype.continueRegexNode = function(node, curr, next) {
     && !curr._considerEscaped
   ) {
     // "End" of regex.
-    node._waitingForForwardSlash = null;
-    node._waitingForFlags = true;
+    this.flag(node, '_waitingForForwardSlash', null);
+    this.flag(node, '_waitingForFlags', true);
     appendTextValue(valueNode, curr);
     return true;
   }
 
   if (node._waitingForFlags) {
-    node._waitingForFlags = null;
+    this.flag(node, '_waitingForFlags', null);
     this.closeNode(node);
 
     if (curr.type === tks.IDENTIFIER) {
@@ -687,7 +698,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._reachedOpenBrace
     && !node.keyword
   ) {
-    node.keyword = curr.val;
+    this.flag(node, 'keyword', curr.val);
     return true;
   }
 
@@ -696,7 +707,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._reachedOpenBrace
   ) {
     // Assume something like if (test) expressionstatement;
-    node.hasBraces = false;
+    this.flag(node, 'hasBraces', false);
     valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
     return false;
@@ -731,8 +742,8 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._waitingForEndQuote
     && !node._withinCommentLine
   ) {
-    node._reachedOpenBrace = true;
-    node.hasBraces = true;
+    this.flag(node, '_reachedOpenBrace', true);
+    this.flag(node, 'hasBraces', true);
     return true;
   }
 
@@ -754,7 +765,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._withinCommentLine
   ) {
     updateLoc(node, curr);
-    node._reachedCloseBrace = true;
+    this.flag(node, '_reachedCloseBrace', true);
     //this.closeNode(node);
     return true;
   }
@@ -850,7 +861,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   valueNode = ensureTextNode(attachmentNode);
 
   if (curr.val === node._waitingForEndQuote) {
-    node._waitingForEndQuote = null;
+    this.flag(node, '_waitingForEndQuote', null);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -859,7 +870,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     !node._waitingForEndQuote
     && (curr.type === tks.DOUBLE_QUOTE || curr.type === tks.SINGLE_QUOTE)
   ) {
-    node._waitingForEndQuote = curr.val;
+    this.flag(node, '_waitingForEndQuote', curr.val);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -889,7 +900,7 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
 
   if (node._waitingForEndQuote) {
     if (curr.val === node._waitingForEndQuote) {
-      node._waitingForEndQuote = null;
+      this.flag(node, '_waitingForEndQuote', null);
     }
 
     appendTextValue(valueNode, curr);
@@ -900,13 +911,13 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
     curr.type === tks.HARD_PAREN_OPEN
     && !valueNode
   ) {
-    node._waitingForHardParenClose = true;
+    this.flag(node, '_waitingForHardParenClose', true);
     updateLoc(node, curr);
     return true;
   }
 
   if (curr.type === tks.HARD_PAREN_CLOSE) {
-    node._waitingForHardParenClose = false;
+    this.flag(node, '_waitingForHardParenClose', false);
     this.closeNode(node);
     updateLoc(node, curr);
     return true;
@@ -924,7 +935,7 @@ Parser.prototype.continueIndexExpressionNode = function(node, curr, next) {
     && (curr.type === tks.DOUBLE_QUOTE
     || curr.type === tks.SINGLE_QUOTE)
   ) {
-    node._waitingForEndQuote = curr.val;
+    this.flag(node, '_waitingForEndQuote', curr.val);
     appendTextValue(valueNode, curr);
     return true;
   }
