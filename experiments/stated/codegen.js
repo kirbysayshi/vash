@@ -212,7 +212,7 @@ function tail(opts){
         + '  : HELPERSNAME.toString(); \n' )
     + (opts.useWith ? '} \n' : '')
     + (opts.debug ? '} catch( e ){ \n'
-      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP", true ); \n'
+      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP", "!LB!", true ); \n'
       + '} \n' : '');
 
   str = replaceDevTokens(str, opts)
@@ -224,7 +224,7 @@ function tail(opts){
  function helperTail(opts){
   var str = ''
     + (opts.debug ? '} catch( e ){ \n'
-      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP", true ); \n'
+      + '  HELPERSNAME.reportError( e, HELPERSNAME.vl, HELPERSNAME.vc, "ORIGINALMARKUP", "!LB!", true ); \n'
       + '} \n' : '');
 
   str = replaceDevTokens(str, opts)
