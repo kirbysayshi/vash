@@ -49,6 +49,16 @@ var TESTS = [
   , 'LT_SIGN', (/^(<)/)
   , 'GT_SIGN', (/^(>)/)
 
+  , 'ASSIGNMENT_OPERATOR', (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=)\b/) // Also =
+  , 'EQUALITY_OPERATOR', (/^(===|==|!==|!=)\b/)
+  , 'BITWISE_SHIFT_OPERATOR', (/^(<<|>>>|>>)/)
+  , 'UNARY_OPERATOR', (/^(delete|typeof|void|\+\+|--|\+|-|~|!)\b/)
+  , 'RELATIONAL_OPERATOR', (/^(<=|>=|instanceof|in)\b/) // Also <, >
+  , 'BINARY_LOGICAL_OPERATOR', (/^(&&|\|\|)\b/)
+  , 'BINARY_BITWISE_OPERATOR', (/^(&|\^|\|)\b/)
+  , 'NEW_OPERATOR', (/^(new)\b/)
+  , 'COMMA_OPERATOR', (/^(,)/)
+
   , 'EQUAL_SIGN', (/^(=)/)
   , 'PERIOD', (/^(\.)/)
   , 'NEWLINE', function(){
@@ -62,7 +72,7 @@ var TESTS = [
   , 'WHITESPACE', (/^(\s)/)
   , 'FUNCTION', (/^(function)(?![\d\w])/)
   , 'BLOCK_KEYWORD', (/^(catch|do|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
-  , 'KEYWORD', (/^(break|case|continue|instanceof|return|typeof|var)(?![\d\w])/)
+  , 'KEYWORD', (/^(break|case|continue|instanceof|return|var)(?![\d\w])/)
   , 'IDENTIFIER', (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
   , 'FORWARD_SLASH', (/^(\/)/)
