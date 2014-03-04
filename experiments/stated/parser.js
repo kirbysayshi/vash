@@ -120,7 +120,7 @@ Parser.prototype.checkStack = function() {
 // This is purely a utility for debugging, to more easily inspect
 // what happened while parsing something.
 Parser.prototype.flag = function(node, name, value) {
-  var printVal = typeof value === 'object'
+  var printVal = (value && typeof value === 'object')
     ? value.type
     : value;
   this.lg('Flag %s on node %s was %s now %s',
