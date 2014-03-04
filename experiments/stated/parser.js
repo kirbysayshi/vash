@@ -25,6 +25,7 @@ function Parser() {
   this.stack = [];
   this.inputText = '';
   this.previousWasEscape = false;
+  this.previousNonWhitespace = null
 }
 
 module.exports = Parser;
@@ -77,6 +78,15 @@ Parser.prototype.read = function() {
     this.lg('Deferring curr %s', curr);
     this.deferredTokens.push(curr);
   } else {
+
+    if (curr.type !== tks.WHITESPACE) {
+      this.previousNonWhitespace = curr;
+    }
+
+    // Poor man's ASI.
+    if (curr.type === tks.NEWLINE) {
+      this.previousNonWhitespace = null;
+    }
 
     if (!this.previousWasEscape && curr.type === tks.BACKSLASH) {
       this.previousWasEscape = true;
