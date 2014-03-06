@@ -87,7 +87,7 @@ Vash is a template engine that offers a swift flow between code and content usin
 - [License](#license) 
 
 
-Features <a name="features"></a>
+<a name="features"></a>Features 
 ================
 
 * Mix code and content without ugly delineators, like `<?`, `<%`, or `{{`.
@@ -97,7 +97,7 @@ Features <a name="features"></a>
 * Works in the browser or in node.
 * Comes with a Jade-inspired layout engine (block, include, extend, append/prepend), which even works in the browser.
 
-Syntax Example <a name="syntax-example"></a>
+<a name="syntax-example"></a>Syntax Example 
 ======================
 
 	<p>How are you @model.name? Today is a sunny day on the planet Gunsmoke.</p>
@@ -108,10 +108,10 @@ Syntax Example <a name="syntax-example"></a>
 		})
 	</ul>
 
-Quick Start <a name="quick-start"></a>
+<a name="quick-start"></a>Quick Start 
 ===================
 
-nodejs <a name="nodejs"></a>
+<a name="nodejs"></a>nodejs 
 --------------
 
 	var vash = require('vash');
@@ -120,7 +120,7 @@ nodejs <a name="nodejs"></a>
 	var out = tpl({ t: 'template' });
 	// <p>I am a template!</p>
 
-express <a name="express"></a>
+<a name="express"></a>express 
 --------------------
 
 Check out [vash-express-example][] for a full example of hooking up vash as a view engine for express 3. But it's basically as simple as:
@@ -134,7 +134,7 @@ More information is also available in the [Layout Helpers][] sections.
 
 [vash-express-example]: https://github.com/kirbysayshi/vash-express-example
 
-Browser - Vanilla <a name="browser---vanilla"></a>
+<a name="browser---vanilla"></a>Browser - Vanilla 
 -------------------------
 
 	<script type="text/javascript" src="vash.min.js"></script>
@@ -142,7 +142,7 @@ Browser - Vanilla <a name="browser---vanilla"></a>
 	var tpl = vash.compile( '<p>I am a @model.t!</p>' );
 	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
-Browser - RequireJS <a name="browser---requirejs"></a>
+<a name="browser---requirejs"></a>Browser - RequireJS 
 ---------------------------
 
 Be sure to configure paths appropriately, but vash is AMD ready.
@@ -152,7 +152,7 @@ Be sure to configure paths appropriately, but vash is AMD ready.
 		document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 	})
 
-Playground <a name="playground"></a>
+<a name="playground"></a>Playground 
 ==================
 
 Vash now has [a playground][] of sorts at [CodePen.io][]. It uses the current version of `vash.js` from the `build` folder. Fork it to test your own template ideas!
@@ -160,19 +160,19 @@ Vash now has [a playground][] of sorts at [CodePen.io][]. It uses the current ve
 [a playground]: http://codepen.io/kirbysayshi/full/IjrFw
 [CodePen.io]: http://codepen.io
 
-Syntax <a name="syntax"></a>
+<a name="syntax"></a>Syntax 
 ==============
 
 For the following examples, assume a model is passed into the compiled function. If a model is explicitly defined, it will appear as:
 
 	// model = { what: 'hello!' }
 
-The Transition Character: @ <a name="the-transition-character"></a>
+<a name="the-transition-character"></a>The Transition Character: @ 
 ------------------------------------
 
 Vash uses the `@` symbol to transition between code and markup. To escape and print a literal `@`, use a double `@`, like this: `@@`.
 
-Expressions <a name="expressions"></a>
+<a name="expressions"></a>Expressions 
 -------------------
 
 The most basic usage of Vash is an implicit expression. Vash is smart enough to know what's valid JS and what's not, and can usually do what you want it to do. An expression is an @ followed by a valid JS identifier. This is then interpolated automatically.
@@ -201,7 +201,7 @@ output:
 As you can see, the output is exactly the same. The name used to reference the model is configurable via [vash.config.modelName][]. Typical values are `model` and `it`.
 
 
-Advanced Expressions <a name="advanced-expressions"></a>
+<a name="advanced-expressions"></a>Advanced Expressions 
 ----------------------------
 
 Vash typically knows when an expression ends, even when the expression is complex. For example:
@@ -265,7 +265,7 @@ If you have a complex email address that confuses Vash, then you should use an [
 
 [really hard to validate]: http://www.regular-expressions.info/email.html
 
-Explicit Expressions <a name="explicit-expressions"></a>
+<a name="explicit-expressions"></a>Explicit Expressions 
 ----------------------------
 
 An explicit expression is simply an expression that, instead of being composed of `@` and a valid JS identifier, is surrounded by parenthesis.
@@ -301,7 +301,7 @@ output:
 
 As you can see, Vash does not require a model to be referenced, or even passed in.
 
-Code Blocks <a name="code-blocks"></a>
+<a name="code-blocks"></a>Code Blocks 
 -------------------
 
 Sometimes, AGAINST ALL ODDS, a template may need some quick computation of values to avoid repeating yourself. Unlike expressions and explicit expressions, a code block does not directly output. To compare to PHP, expressions are like `<?= $what ?>`, while a code block is like `<? $what = 'what' ?>`.
@@ -340,7 +340,7 @@ output:
 
 A code block just tells Vash, "expect the next stuff to be code until otherwise".
 
-Keyword Blocks <a name="keyword-blocks"></a>
+<a name="keyword-blocks"></a>Keyword Blocks 
 ----------------------
 
 Vash is aware of keywords, and will open a code block automatically for you.
@@ -373,7 +373,7 @@ output:
 
 	<p></p>
 
-Comments <a name="comments"></a>
+<a name="comments"></a>Comments 
 ----------------
 
 Vash also supports comments that are not compiled into the template. These are delineated with `@*` and `*@`
@@ -388,7 +388,7 @@ output:
 
 	<p>BANANA!</p>
 
-HTML Escaping <a name="html-escaping"></a>
+<a name="html-escaping"></a>HTML Escaping 
 ---------------------
 
 By default, Vash escapes any HTML-like values before outputting them.
@@ -415,7 +415,7 @@ output:
 
 This behavior can be disabled using [vash.config.htmlEscape][].
 
-Explicit Markup <a name="explicit-markup"></a>
+<a name="explicit-markup"></a>Explicit Markup 
 -----------------------
 
 Sometimes you may wish to tell Vash that what you're typing is markup or content, as opposed to code. Take the following example:
@@ -463,7 +463,7 @@ output:
 	apparently wanted on multiple lines,
 	multiple times! Indeed!
 
-Configuration <a name="configuration"></a>
+<a name="configuration"></a>Configuration 
 =====================
 
 Vash has a few compilation options that are configurable either by setting the relevant value in `vash.config` or by passing in an object with that key/value to [vash.compile][], [vash.compileBatch][], or [vash.compileHelper][].
@@ -476,7 +476,7 @@ Is the global version of:
 
 	vash.compile('<p>My tpl</p>', { debug: true });
 
-vash.config.useWith <a name="vash-config-usewith"></a>
+<a name="vash-config-usewith"></a>vash.config.useWith 
 ---------------------------
 
 	Default: false
@@ -499,7 +499,7 @@ Rendering is the same regardless:
 
 _Tech note: using a `with` block comes at a severe performance penalty (at least 25x slower!)._
 
-vash.config.modelName <a name="vash-config-modelname"></a>
+<a name="vash-config-modelname"></a>vash.config.modelName 
 -----------------------------
 
 	Default: 'model'
@@ -523,7 +523,7 @@ Again, rendering is the same regardless:
 
 A common alternative to `model` is `it`.
 
-vash.config.helpersName <a name="vash-config-helpersname"></a>
+<a name="vash-config-helpersname"></a>vash.config.helpersName 
 -------------------------------
 
 	Default: 'html'
@@ -543,7 +543,7 @@ Again, rendering is the same regardless:
 	// outputs:
 	// <li><strong>Raw</strong> content!</li>
 
-vash.config.htmlEscape <a name="vash-config-htmlescape"></a>
+<a name="vash-config-htmlescape"></a>vash.config.htmlEscape 
 ------------------------------
 
 	Default: true
@@ -552,7 +552,7 @@ As of version 0.4x, Vash automatically HTML encodes values generated by an expli
 
 If a value _should not_ be escaped, simply wrap it in a call to [vash.helpers.raw][].
 
-vash.config.debug <a name="vash-config-debug"></a>
+<a name="vash-config-debug"></a>vash.config.debug 
 -------------------------
 
 	Default: true
@@ -600,7 +600,7 @@ And that same template with `debug` set to `false`:
 
 As you can see, the difference, especially in code size and instruction size is significant. For production apps, templates should be precompiled with `debug` as `false`.
 
-vash.config.debugParser <a name="vash-config-debugparser"></a>
+<a name="vash-config-debugparser"></a>vash.config.debugParser 
 -------------------------------
 
 	Default: false
@@ -610,7 +610,7 @@ Vash's parser will output useful debugging infomation if `debugParser` is `true`
 * Tokens and what mode they were processed as
 * A textual representation of the fully parsed AST
 
-vash.config.debugCompiler <a name="vash-config-debugcompiler"></a>
+<a name="vash-config-debugcompiler"></a>vash.config.debugCompiler 
 ---------------------------------
 
 	Default: false
@@ -620,7 +620,7 @@ Vash's compiler will output useful debugging information if `debugCompiler` is `
 * The text content of the template function before it is passed into [vash.link][] for actual evaluation
 * The options passed into the compiler. This is useful for debugging [vash.compileBatch][] and [vash.compileHelper][].
 
-vash.config.simple <a name="vash-config-simple"></a>
+<a name="vash-config-simple"></a>vash.config.simple 
 --------------------------
 
 	Default: false
@@ -641,7 +641,7 @@ While standard Vash templates are definitely not slow, using `true` for this opt
 
 	node benches.js --tinclude 004.vash,007.vash --vinclude '0.6.2-2482' --chart vashv,ops
 
-vash.config.favorText <a name="vash-config-favortext"></a>
+<a name="vash-config-favortext"></a>vash.config.favorText 
 -----------------------------
 
 	Default: false
@@ -660,7 +660,7 @@ When `favorText` is set to `true`, Vash will instead assume that most things are
 
 This option is __EXPERIMENTAL__, and should be treated as such. It allows Vash to be used in a context like [Markdown](http://daringfireball.net/projects/markdown/syntax), where HTML tags, which typically help Vash tell the difference between code and content, are rare.
 
-Template Options <a name="template-options"></a>
+<a name="template-options"></a>Template Options 
 ========================
 
 These options concern rendering a template, after it has already been compiled. For options related to compiling templates, see [Configuration][].
@@ -679,14 +679,14 @@ The second form accepts a function callback as its second parameter, which is ca
 
 The third form allows for options in addition to [onRenderEnd][]. There are two options that can affect a template while rendering:
 
-asContext <a name="ascontext"></a>
+<a name="ascontext"></a>asContext 
 -----------------
 
 	tpl(model, { asContext: true }) -> vash.helpers.constructor
 
 This option tells the template that instead of returning a string, it should return the "render context", otherwise known as an instance of `vash.helpers.constructor` ([Helper System][]).
 
-onRenderEnd <a name="onrenderend"></a>
+<a name="onrenderend"></a>onRenderEnd 
 -------------------
 
 	tpl(model, { onRenderEnd: function(){} }) -> string
@@ -697,7 +697,7 @@ This option is effectively a callback for once primary execution of the renderin
 
 	var model = { hey: 'what', onRenderEnd: function(err, ctx){ ... } }
 
-Helper System <a name="helper-system"></a>
+<a name="helper-system"></a>Helper System 
 ===============
 
 Vash's primary point of expandability lies in its Helper API. When a template is rendering, there is a free variable avaiable. This variable is, by default, named `html`. This name can be changed with the [vash.config.helpersName][] option. `html` is an instance of the prototype that is attached to `vash.helpers`. It's a bit confusing, but this is how it kind of works:
@@ -730,25 +730,25 @@ Here is a simple helper that converts text like "This is a holdup!" to "this-is-
 
 Notice how it's just JavaScript. Within a template, it could be accessed via `html.mdHref("This is a holdup!")`.
 
-Built-in Helpers <a name="built-in-helpers"></a>
+<a name="built-in-helpers"></a>Built-in Helpers 
 ========================
 
-vash.helpers.raw <a name="vash-helpers-raw"></a>
+<a name="vash-helpers-raw"></a>vash.helpers.raw 
 ------------------------
 
 Available as `html.raw` within an executing template. By default, all content that passes from a model to a template is HTML encoded. In the event that the text is trusted (or is already encoded), wrap the text in this function. For an example, see [HTML Escaping][];
 
-vash.helpers.escape <a name="vash-helpers-escape"></a>
+<a name="vash-helpers-escape"></a>vash.helpers.escape 
 ---------------------------
 
 Available as `html.escape` within an executing template, this is the method Vash uses to HTML encode model values. It can also be used manually.
 
-vash.helpers.tplcache <a name="vash-helpers-tplcache"></a>
+<a name="vash-helpers-tplcache"></a>vash.helpers.tplcache 
 -----------------------------
 
 The `tplcache` is just that, a place to put a global index of templates. This is used primarily for the more "view engine" aspects that Vash provides, as well as a default location for [precompiled templates][--target-namespace] using [vash(1)][].
 
-Layout Helpers <a name="layout-helpers"></a>
+<a name="layout-helpers"></a>Layout Helpers 
 ======================
 
 Vash provides a relatively simple but powerful view engine whose API is borrowed directly from [Jade][]. Below is the API, but an example can be found at [vash-express-example][].
@@ -767,7 +767,7 @@ When running in [nodejs][] and using [express][], Vash will automatically resolv
 
 
 
-vash.helpers.extend <a name="vash-helpers-extend"></a>
+<a name="vash-helpers-extend"></a>vash.helpers.extend 
 ---------------------------
 
 	vash.helpers.extend(parent_path, cb)
@@ -787,7 +787,7 @@ In the following example, this template extends another named [layout.vash][]. [
 _Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
 
 
-vash.helpers.block <a name="vash-helpers-block"></a>
+<a name="vash-helpers-block"></a>vash.helpers.block 
 --------------------------
 
 	vash.helpers.block(name)
@@ -805,7 +805,7 @@ If `cb` is defined, then it becomes default content for the block. The eventual 
 _Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
 
 
-vash.helpers.append <a name="vash-helpers-append"></a>
+<a name="vash-helpers-append"></a>vash.helpers.append 
 ---------------------------
 
 	vash.helpers.append(name, cb)
@@ -836,7 +836,7 @@ This would output when fully rendered:
 _Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
 
 
-vash.helpers.prepend <a name="vash-helpers-prepend"></a>
+<a name="vash-helpers-prepend"></a>vash.helpers.prepend 
 ----------------------------
 
 	vash.helpers.prepend(name, cb)
@@ -849,14 +849,14 @@ vash.helpers.prepend <a name="vash-helpers-prepend"></a>
 _Tech note: due to the way JS scoping works, the `model` parameter of the `cb` function must be explicitely defined as above if it is referenced in the content. This may change in a future version of Vash._
 
 
-vash.helpers.include <a name="vash-helpers-include"></a>
+<a name="vash-helpers-include"></a>vash.helpers.include 
 ----------------------------
 
 	vash.helpers.include(name, model)
 
 This grabs the template `name` and executes it using `model` as the... model. [vash.helpers.include][] is used to literally include the contents of another template. It is analogous to a "partial" in other view engines. Except that there is a hidden power here... as included templates share the same "view engine scope" as other templates, and can thus call all of the layout helper functions, and it will _just work_. Thus, a block within an included template can append to a block defined in a parent. It can even use [vash.helpers.extend][]!
 
-Compiled Helpers <a name="compiled-helpers"></a>
+<a name="compiled-helpers"></a>Compiled Helpers 
 ========================
 
 A relatively new feature in Vash (added in 0.6), compiled helpers are a bit meta. They allow a developer to write a helper using Vash syntax instead of the manual buffer API. The below buffer API example `imgfigure` could be rewritten:
@@ -872,7 +872,7 @@ A relatively new feature in Vash (added in 0.6), compiled helpers are a bit meta
 
 There are two ways to compile a helper. The first is using [vash.compileHelper][], the second is using [vash(1)][]'s [--helper][] option.
 
-Buffer API <a name="buffer-api"></a>
+<a name="buffer-api"></a>Buffer API 
 ==================
 
 Within a helper (not a template), `this` refers to the current `Helpers` instance. Every instance has a `Buffer` that has methods to help easily add, subtract, or mark content put there by the rendering template.
@@ -942,7 +942,7 @@ TODO: Explain the Buffer methods:
 * toString
 * toHtmlString
 
-Precompiling Templates <a name="precompiling-templates"></a>
+<a name="precompiling-templates"></a>Precompiling Templates 
 ==============================
 
 To save both processing time (compiling templates is not trivial) as well as bandwidth (no need to send the whole compiler to the client), Vash supports precompilation of templates. Any template that Vash compiles is given a method called `toClientString`. This method returns a string that can either be `eval`ed or sent to a remote client. For example:
@@ -977,7 +977,7 @@ If `toClientString` is called on that function, the following is returned:
 
 This string could then be sent to the client (probably prefixed with something like `TPLCACHE["name-of-template"] = `). [vash(1)][] helps to automate this easily.
 
-Vash Runtime (Browser) <a name="vash-runtime-browser"></a>
+<a name="vash-runtime-browser"></a>Vash Runtime (Browser) 
 ====================
 
 The Vash runtime is a set of functions that every executing template expects to be available. The runtime is automatically packaged with full Vash builds. However, if only precompiled templates are sent to the browser, then only the runtime must be sent. The runtime includes all helpers and a few standard functions, such as [HTML Escaping][].
@@ -990,24 +990,24 @@ There are two runtime builds:
 [vash-runtime.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime.min.js
 [vash-runtime-all.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime-all.min.js
 
-Compile-time API <a name="compile-time-api"></a>
+<a name="compile-time-api"></a>Compile-time API 
 =============
 
-vash.compile <a name="vash-compile"></a>
+<a name="vash-compile"></a>vash.compile 
 -----------------------------------------------
 
 	vash.compile(str_template, opt_options) -> Function
 
 At its core, Vash has a `compile` function that accepts a string and options, and returns a function, otherwise known as a compiled template. That function, when called with a parameter (otherwise known as a _model_), will use that parameter to fill in the template. A model can be any value, including `undefined`, objects, arrays, strings, and booleans.
 
-vash.compileHelper <a name="vash-compilehelper"></a>
+<a name="vash-compilehelper"></a>vash.compileHelper 
 -----------------------------------------------------
 
 	vash.compileHelper(str_template, opt_options) -> Object
 
 See [Compiled Helpers][] for more detail.
 
-vash.compileBatch <a name="vash-compilebatch"></a>
+<a name="vash-compilebatch"></a>vash.compileBatch 
 ----------------------------------------------------
 
 	vash.compileBatch(str_template, opt_options) -> Object
@@ -1039,10 +1039,10 @@ Aside from the newline following the "name" of the template, whitespace is ignor
 
 Each is treated the same.
 
-Runtime API <a name="runtime-api"></a>
+<a name="runtime-api"></a>Runtime API 
 ===================
 
-vash.link <a name="vash-link"></a>
+<a name="vash-link"></a>vash.link 
 ---------------------------------------------------------
 
 	vash.link(str_tpl, options) -> Function
@@ -1052,7 +1052,7 @@ This is primarily an internal function, and has relatively complex behavioral di
 
 [source itself]: https://github.com/kirbysayshi/vash/blob/master/src/vruntime.js
 
-vash.lookup <a name="vash-lookup"></a>
+<a name="vash-lookup"></a>vash.lookup 
 -------------------
 
 	vash.lookup(str_path) -> Function
@@ -1063,7 +1063,7 @@ Attempts to grab a template from `vash.helpers.tplcache[str_path]`, and throws a
 
 If `model` is passed and the template is found, the template is automatically executed and returned using `model` as the model.
 
-vash.install <a name="vash-install"></a>
+<a name="vash-install"></a>vash.install 
 --------------------
 
 `vash.install` accepts a few signatures:
@@ -1080,7 +1080,7 @@ If `vash.compile` is available (meaning the entire compiler is available, not ju
 
 If an object containing string keys pointing at template functions is passed, then the object's keys are used as the keys for `vash.helpers.tplcache`. This is especially useful when using [vash.compileBatch][], as the result can be directly passed.
 
-vash.uninstall <a name="vash-uninstall"></a>
+<a name="vash-uninstall"></a>vash.uninstall 
 ----------------------
 
 	vash.uninstall(str_path) -> bool
@@ -1091,7 +1091,7 @@ Deletes the key named `str_path` from `vash.helpers.tplcache`.
 
 Loops through all templates in `vash.helpers.tplcache`, and if a strict equality is successful, deletes that reference.
 
-vash(1) <a name="vash-1"></a>
+<a name="vash-1"></a>vash(1) 
 ===============
 
 Vash also includes a commandline tool that enables easy integration of templates into a unix toolchain. For example, to compile this documentation, the following command is used:
@@ -1119,14 +1119,14 @@ In short, this loads and compiles helpers necessary for this document, grabs the
 
 Some of the options are explained in greater detail below.
 
-Installation <a name="installation"></a>
+<a name="installation"></a>Installation 
 --------------------
 
 [vash(1)][] comes with Vash, so it will always be within `node_modules/vash/bin/`. However, a global install is also supported, which can be accomplished via:
 
 	npm install -g vash
 
---target-namespace <a name="vash1--target-namespace"></a>
+<a name="vash1--target-namespace"></a>--target-namespace 
 ---------------------------------------------------
 
 Assigns the compiled template to a specific "namespace". This value only supports simple namespaces, such as `blah.who.what.something`.
@@ -1144,12 +1144,12 @@ Example:
 	vash.helpers.tplcache = vash.helpers.tplcache || {};
 	vash.helpers.tplcache["myTpl"]=vash.link( ... )
 
---property-name <a name="vash1--property-name"></a>
+<a name="vash1--property-name"></a>--property-name 
 -----------------------------------------------
 
 Specifies what name to use when assigning the compiled template. Defaults to the filename specified with `--file`. If content is piped into [vash(1)][], then this option is __MANDATORY__.
 
---helper <a name="vash1--helper"></a>
+<a name="vash1--helper"></a>--helper 
 ----------------
 
 This instructs [vash(1)][] to call [vash.compileHelper][] instead of [vash.compile][], and assumes the input is a template that is meant to be a compiled helper.
@@ -1180,19 +1180,19 @@ And without `--helper`, `vash(1)` just outputs an empty template:
 	  : html.toString();
 	}, {"simple":false,"modelName":"model","helpersName":"html"} )
 
-Contributing / Building <a name="contributing-building"></a>
+<a name="contributing-building"></a>Contributing / Building 
 ====================
 
 Please see [CONTRIBUTING.md][]. In general, if you want something that Vash doesn't have, file a ticket. Pull Requests are also _always_ welcome!
 
 [CONTRIBUTING.md]: https://github.com/kirbysayshi/vash/CONTRIBUTING.md
 
-Getting Help <a name="getting-help"></a>
+<a name="getting-help"></a>Getting Help 
 ====================
 
 File a ticket! Or hit me up on Twitter: @KirbySaysHi
 
-Special Thanks <a name="special-thanks"></a>
+<a name="special-thanks"></a>Special Thanks 
 ======================
 
 Extreme thanks goes to TJ Holowaychuck and his template engine [Jade](http://jade-lang.org). It was the original inspiration for Vash's lexer, [Layout Helpers][], and error reporting, and has been a constant source of inspiration and motivation.
@@ -1205,7 +1205,7 @@ And of course to Vash's [contributors][].
 
 [contributors]: https://github.com/kirbysayshi/vash/AUTHORS
 
-License <a name="license"></a>
+<a name="license"></a>License 
 ===============
 
 [MIT](https://github.com/kirbysayshi/vash/LICENSE)
