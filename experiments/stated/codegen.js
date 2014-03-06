@@ -143,7 +143,7 @@ var BUFFER_TAIL = ');\n';
 
 // buffer content wrap
 function bcwrap(str) {
-  return BUFFER_HEAD + '\'' + str + '\'' + BUFFER_TAIL;
+  return BUFFER_HEAD + '\'' + str.replace(/\n/, '\\n') + '\'' + BUFFER_TAIL;
 }
 
 // buffer expression wrap
