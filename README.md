@@ -104,7 +104,7 @@ Syntax Example <a name="syntax-example"></a>
 
 	<ul class="@(model.active ? 'highlight' : '')">
 		@model.forEach(function(m){
-			<li>m.name</li>
+			<li>@m.name</li>
 		})
 	</ul>
 

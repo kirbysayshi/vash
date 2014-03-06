@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.9-1
+ * Vash - JavaScript Template Parser, v0.7.9-4
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -2277,4 +2277,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.9-1" }));
+}({ "version": "0.7.9-4" }));
