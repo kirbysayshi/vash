@@ -97,8 +97,8 @@ vash.helpers.mdTocLvlX = function(lvl, id){
 	this._mdTocEntries = this._mdTocEntries || [];
 	this._mdTocEntries.push({ lvl: lvl, href: href, text: text, id: id });
 
-	this.buffer.push(text);
 	<a name="@id"></a>
+	this.buffer.push(text);
 }
 
 
