@@ -254,6 +254,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     && curr.type !== tks.GT_SIGN
     && curr.type !== tks.LT_SIGN
     && curr.type !== tks.WHITESPACE
+    && curr.type !== tks.NEWLINE
     && curr.type !== tks.HTML_TAG_VOID_CLOSE
   ) {
 
@@ -315,7 +316,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
   }
 
   if (
-    curr.type === tks.WHITESPACE
+    (curr.type === tks.WHITESPACE || curr.type === tks.NEWLINE)
     && !node._finishedOpen
     && next.type !== tks.HTML_TAG_VOID_CLOSE
   ) {
@@ -327,7 +328,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
 
   // Whitespace between attributes should be ignored.
   if (
-    curr.type === tks.WHITESPACE
+    (curr.type === tks.WHITESPACE || curr.type === tks.NEWLINE)
     && !node._finishedOpen
   ) {
     updateLoc(node, curr);
