@@ -22,14 +22,15 @@
     "node": ">= 0.8"
   },
   "scripts": {
-    "test-coverage": "browserify -t coverify experiments/stated/test.js --bare | node | coverify",
+    "coverage": "VASHPATH=../../experiments/stated/index.js VASHRUNTIMEPATH=../../experiments/stated/runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
     "build": "make build",
     "test": "make test && make test-min",
     "docs": "make docs"
   },
   "dependencies": {
     "commander": "~1.1.1",
-    "uglify-js": "1.0.6"
+    "uglify-js": "1.0.6",
+    "debug": "^0.7.4"
   },
   "devDependencies": {
     "vows": "~0.7.0",
@@ -37,6 +38,7 @@
     "jshint": "0.8.0",
     "marked": "~0.2.8",
     "coverify": "~1.0.6",
-    "browserify": "~3.30.2"
+    "browserify": "^3.32.0",
+    "envify": "^1.2.1"
   }
 }
