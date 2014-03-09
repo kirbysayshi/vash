@@ -1146,7 +1146,7 @@ vows.describe('vash templating library').addBatch({
 			return vash.compile(str);
 		}
 		,'renders': function(topic){
-			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div></div>' );
+			assert.equal( topic(), '<div class="how"> <div class="item-0">I be an item!</div> </div>' );
 		}
 	}
 	,'unclosed block': {
@@ -1214,10 +1214,10 @@ vows.describe('vash templating library').addBatch({
 			topic: '<span>@model<span\n></span></span>'
 
 			,'does not prevent HTML matching': function(topic) {
-				var tpl = vash.compile(topic)
+				var tpl = vash.compile(topic, {useWith: false})
 					, actual = tpl('1');
 
-				assert.equal( '<span>1<span\n></span></span>', actual )
+				assert.equal( '<span>1<span></span></span>', actual )
 			}
 		}
 
@@ -1251,7 +1251,7 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)(), 'what' );
+			assert.equal( vash.compile(topic)(), ' what' );
 		}
 	}
 	,'@function with markup': {
@@ -1260,7 +1260,7 @@ vows.describe('vash templating library').addBatch({
 			assert.doesNotThrow( function(){ vash.compile(topic) }, Error );
 		}
 		,'can be called': function(topic){
-			assert.equal( vash.compile(topic)({ name: 'what' }), '<li>what</li>' );
+			assert.equal( vash.compile(topic)({ name: 'what' }), ' <li>what</li>' );
 		}
 	}
 

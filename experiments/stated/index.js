@@ -66,8 +66,6 @@ exports.compile = function(markup, options) {
   var more = true;
   while(more !== null) more = p.read();
 
-  // TODO: add a p.checkStack() that will throw if unclosed nodes
-  // are encountered. Not sure how to handle HTML5.
   p.checkStack();
 
   // Stash the original input (new lines normalized by the lexer).

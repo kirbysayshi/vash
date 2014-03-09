@@ -329,6 +329,7 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     (curr.type === tks.WHITESPACE || curr.type === tks.NEWLINE)
     && !node._finishedOpen
     && next.type !== tks.HTML_TAG_VOID_CLOSE
+    && next.type !== tks.GT_SIGN
   ) {
     // enter attribute
     valueNode = this.openNode(new MarkupAttributeNode(), node.attributes);
@@ -693,7 +694,7 @@ Parser.prototype.continueRegexNode = function(node, curr, next) {
   return true;
 }
 
-Parser.prototype.continueBlockNode = function(node, curr, next) {
+Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
 
   var valueNode = node.values[node.values.length-1];
 
@@ -787,7 +788,17 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   ) {
     updateLoc(node, curr);
     this.flag(node, '_reachedCloseBrace', true);
-    //this.closeNode(node);
+
+    // Try to leave whitespace where it belongs.
+    if (
+      next
+      && (next.type === tks.WHITESPACE || next.type === tks.NEWLINE)
+      && ahead
+      && ahead.type !== tks.BLOCK_KEYWORD
+    ) {
+      this.closeNode(node);
+    }
+
     return true;
   }
 
