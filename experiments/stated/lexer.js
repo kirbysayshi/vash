@@ -19,6 +19,12 @@ VLexer.prototype = {
 
   write: function(input) {
     var normalized = input.replace(/\r\n|\r/g, '\n');
+
+    // Kill BOM if this is the first chunk.
+    if (this.originalInput.length == 0) {
+      normalized = normalized.replace(/^\uFEFF/, '');
+    }
+
     this.input += normalized;
     this.originalInput += normalized;
     return true;
