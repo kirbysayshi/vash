@@ -134,7 +134,7 @@ var reOriginalMarkup = /ORIGINALMARKUP/g;
 
 function escapeMarkupContent(str) {
   return str
-    .replace(reEscapedQuote, '\\\\$1')
+    .replace(/\\/, '\\\\')
     .replace(reQuote, '\\$1')
     .replace(reLineBreak, '\\n');
 }
