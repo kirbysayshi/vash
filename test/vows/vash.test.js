@@ -1499,7 +1499,7 @@ vows.describe('vash templating library').addBatch({
 		}
 		,"style tag with two id rule": {
 			topic: function(){
-				return '<style type="text/css">#parallax_field #parallax_bg { position: absolute; top: -20px; left: -20px; width: 110%; height: 425px; z-index: 1; }'
+				return '<style type="text/css">#parallax_field #parallax_bg { position: absolute; top: -20px; left: -20px; width: 110%; height: 425px; z-index: 1; }</style>'
 			}
 			,"is unchanged": function(topic){
 				var tpl = vash.compile(topic);
