@@ -61,7 +61,7 @@ exports.compile = function(markup, options) {
   l.write(markup);
   var tokens = l.read();
 
-  var p = new Parser();
+  var p = new Parser(opts);
   p.write(tokens);
   var more = true;
   while(more !== null) more = p.read();

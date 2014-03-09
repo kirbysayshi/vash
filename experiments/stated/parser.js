@@ -18,13 +18,14 @@ var BlockNode = require('./nodes/block');
 var CommentNode = require('./nodes/comment');
 var RegexNode = require('./nodes/regex');
 
-function Parser() {
+function Parser(opts) {
   this.lg = debug('vash:parser');
   this.tokens = [];
   this.deferredTokens = [];
   this.node = null;
   this.stack = [];
   this.inputText = '';
+  this.opts = opts || {};
   this.previousWasEscape = false;
   this.previousNonWhitespace = null
 }
@@ -466,7 +467,16 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     return true;
   }
 
-  if (curr.type === tks.HTML_TAG_CLOSE) {
+  var parent = this.stack[this.stack.length-2];
+
+  // If this MarkupContent is the direct child of a block, it has no way to
+  // know when to close. So in this case it should assume a } means it's
+  // done. Or if it finds a closing html tag, of course.
+  if (
+    curr.type === tks.HTML_TAG_CLOSE
+    || (curr.type === tks.BRACE_CLOSE
+      && parent && parent.type === 'VashBlock')
+  ) {
     this.closeNode(node);
     updateLoc(node, curr);
     return false;
@@ -750,6 +760,10 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   ) {
     this.flag(node, '_reachedOpenBrace', true);
     this.flag(node, 'hasBraces', true);
+    if (this.opts.favorText) {
+      valueNode = this.openNode(new MarkupContentNode(), node.values);
+      updateLoc(valueNode, curr);
+    }
     return true;
   }
 
