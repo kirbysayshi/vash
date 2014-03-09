@@ -773,6 +773,19 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && (next.type === tks.AT || next.type === tks.IDENTIFIER)
     && !node._waitingForEndQuote
     && !node._withinCommentLine
+    && node._reachedCloseBrace
+  ) {
+    this.closeNode(node);
+    updateLoc(node, curr);
+    return false;
+  }
+
+  if (
+    curr.type === tks.LT_SIGN
+    && (next.type === tks.AT || next.type === tks.IDENTIFIER)
+    && !node._waitingForEndQuote
+    && !node._withinCommentLine
+    && !node._reachedCloseBrace
   ) {
     valueNode = this.openNode(new MarkupNode(), node.values);
     updateLoc(valueNode, curr);

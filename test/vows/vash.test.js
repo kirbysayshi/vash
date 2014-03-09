@@ -1346,7 +1346,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'multiple nested function calls': {
 			topic: function(){
-				return vash.compile( '@function f(i){ <b>@i</b> function d(i){ <b>@i</b> } @d(model.it) }<span>@f(model.it)</span>@f(model.it)' );
+				return vash.compile( '@function f(i){ <b>@i</b> function d(i){ <b>@i</b> } d(model.it) }<span>@f(model.it)</span>@f(model.it)' );
 			}
 			,'are escaped': function(topic){
 				assert.equal( topic({ it: '<b>texted</b>' }),
