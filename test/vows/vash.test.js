@@ -1933,25 +1933,28 @@ vows.describe('vash templating library').addBatch({
 
 		,'self-closing tag within tag': {
 
-			topic: '@if(true){ <a><br /></a> }'
+			topic: '@if(true){<a><br /></a>}'
 
 			,'does not close parent tag': function(topic){
-				var p = this.parse(this.lex(topic));
 
-				var flattened = p.ast.flatten()
-					// this is like "indexOf" for a complex object
-					,openIdx = flattened.reduce(function(prev, curr, i){
-						return prev !== undefined
-							? prev
-							: curr.type === 'HTML_TAG_OPEN' && curr.val === '<a>'
-								? i
-								: undefined;
-					}, undefined);
+				var Lexer = require('../../experiments/stated/lexer');
+				var Parser = require('../../experiments/stated/parser');
+				var l = new Lexer();
 
-				assert.equal( flattened[openIdx].type, 'HTML_TAG_OPEN' );
-				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_OPEN' );
-				assert.equal( flattened[openIdx+3].type, 'HTML_TAG_VOID_CLOSE' );
-				assert.equal( flattened[openIdx+5].type, 'HTML_TAG_CLOSE' );
+				l.write(topic);
+				var tokens = l.read();
+
+				var p = new Parser();
+				p.write(tokens);
+				var more = true;
+				while(more !== null) more = p.read();
+
+				var root = p.stack[0];
+				assert.equal( root.body[0].type, 'VashBlock' );
+				assert.equal( root.body[0].values[0].type, 'VashMarkup' );
+				assert.equal( root.body[0].values[0].values[0].type, 'VashMarkupContent' );
+				assert.equal( root.body[0].values[0].values[0].values[1].type, 'VashMarkup' );
+				assert.equal( root.body[0].values[0].values[0].values[1].isVoid, true );
 			}
 		}
 	}
