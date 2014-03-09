@@ -57,18 +57,25 @@ Parser.prototype.read = function() {
 
   var curr = this.deferredTokens.pop() || this.tokens.pop();
   var next = this.deferredTokens.pop() || this.tokens.pop();
+  var ahead = this.deferredTokens.pop() || this.tokens.pop();
 
   var dispatch = 'continue' + this.node.constructor.name;
 
   this.lg('Read: %s', dispatch);
   this.lg('  curr %s', curr);
   this.lg('  next %s', next);
+  this.lg('  ahead %s', ahead);
 
   if (curr._considerEscaped) {
     this.lg('  Previous token was marked as escaping');
   }
 
-  var consumed = this[dispatch](this.node, curr, next);
+  var consumed = this[dispatch](this.node, curr, next, ahead);
+
+  if (ahead) {
+    // ahead may be undefined when about to run out of tokens.
+    this.deferredTokens.push(ahead);
+  }
 
   if (next) {
     // Next may be undefined when about to run out of tokens.
