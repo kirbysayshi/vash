@@ -26,7 +26,6 @@ function Parser(opts) {
   this.stack = [];
   this.inputText = '';
   this.opts = opts || {};
-  this.previousWasEscape = false;
   this.previousNonWhitespace = null
 }
 
@@ -65,11 +64,11 @@ Parser.prototype.read = function() {
   this.lg('  curr %s', curr);
   this.lg('  next %s', next);
 
-  if (this.previousWasEscape) {
-    this.lg('  Previous token was an escaping backslash');
+  if (curr._considerEscaped) {
+    this.lg('  Previous token was marked as escaping');
   }
 
-  var consumed = this[dispatch](this.node, curr, next, this.previousWasEscape);
+  var consumed = this[dispatch](this.node, curr, next);
 
   if (next) {
     // Next may be undefined when about to run out of tokens.
@@ -90,12 +89,9 @@ Parser.prototype.read = function() {
       this.previousNonWhitespace = null;
     }
 
-    if (!this.previousWasEscape && curr.type === tks.BACKSLASH) {
-      this.previousWasEscape = true;
-    } else {
-      this.previousWasEscape = false;
+    if (!curr._considerEscaped && curr.type === tks.BACKSLASH) {
+      next._considerEscaped = true;
     }
-
   }
 }
 
@@ -564,7 +560,7 @@ Parser.prototype.continueExpressionNode = function(node, curr, next) {
   }
 }
 
-Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, previousWasEscape) {
+Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
 
   var valueNode = node.values[node.values.length-1];
 
@@ -629,7 +625,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next, pre
 
   if (
     curr.val === node._waitingForEndQuote
-    && !previousWasEscape
+    && !curr._considerEscaped
   ) {
     this.flag(node, '_waitingForEndQuote', null);
     this.lg('Happy to find end quote with value %s', curr.val);
