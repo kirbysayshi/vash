@@ -25,6 +25,17 @@ var tryCompile = function(str){
 	return ret;
 };
 
+// SUPER HACK:
+var aeToStringVows = assert.AssertionError.prototype.toString;
+assert.AssertionError.prototype.toString = function wrapper() {
+	// ...Put the default back to get around vows#278 caused by recursively
+	// calling itself.
+	assert.AssertionError.prototype.toString = Error.prototype.toString;
+	var out = aeToStringVows.call(this);
+	assert.AssertionError.prototype.toString = wrapper;
+	return out;
+}
+
 vows.describe('vash templating library').addBatch({
 
 	'a plain text template': {
