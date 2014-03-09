@@ -75,6 +75,8 @@ var TESTS = [
   , 'KEYWORD', (/^(break|case|continue|instanceof|return|var)(?![\d\w])/)
   , 'IDENTIFIER', (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
+  , 'DOUBLE_FORWARD_SLASH', (/^(\/\/)/)
+
   , 'FORWARD_SLASH', (/^(\/)/)
 
   , 'BACKSLASH', (/^(\\)/)

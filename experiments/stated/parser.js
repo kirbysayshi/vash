@@ -225,15 +225,21 @@ Parser.prototype.continueCommentNode = function(node, curr, next) {
   var valueNode = ensureTextNode(node.values);
 
   if (curr.type === tks.AT_STAR_OPEN && !node._waitingForClose) {
-    this.flag(node, '_waitingForClose', true)
+    this.flag(node, '_waitingForClose', tks.AT_STAR_CLOSE)
     updateLoc(node, curr);
     return true;
   }
 
-  if (curr.type === tks.AT_STAR_CLOSE && node._waitingForClose) {
+  if (curr.type === node._waitingForClose) {
     this.flag(node, '_waitingForClose', null)
     updateLoc(node, curr);
     this.closeNode(node);
+    return true;
+  }
+
+  if (curr.type === tks.DOUBLE_FORWARD_SLASH && !node._waitingForClose){
+    this.flag(node, '_waitingForClose', tks.NEWLINE);
+    updateLoc(node, curr);
     return true;
   }
 
@@ -683,6 +689,11 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     return false;
   }
 
+  if (curr.type === tks.DOUBLE_FORWARD_SLASH && !node._waitingForEndQuote) {
+    this.openNode(new CommentNode(), node.body);
+    return false;
+  }
+
   if (
     curr.type === tks.AT_COLON
     && (!node.hasBraces || node._reachedOpenBrace)
@@ -716,7 +727,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && !node._reachedCloseBrace
     && node.hasBraces
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
     valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
@@ -727,7 +737,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     (curr.type === tks.BLOCK_KEYWORD || curr.type === tks.FUNCTION)
     && node._reachedCloseBrace
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
     valueNode = this.openNode(new BlockNode(), node.tail);
     updateLoc(valueNode, curr);
@@ -738,7 +747,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     curr.type === tks.BRACE_OPEN
     && !node._reachedOpenBrace
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
     this.flag(node, '_reachedOpenBrace', true);
     this.flag(node, 'hasBraces', true);
@@ -748,7 +756,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
   if (
     curr.type === tks.BRACE_OPEN
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
     valueNode = this.openNode(new BlockNode(), node.values);
     updateLoc(valueNode, curr);
@@ -760,7 +767,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     && node.hasBraces
     && !node._reachedCloseBrace
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
     updateLoc(node, curr);
     this.flag(node, '_reachedCloseBrace', true);
@@ -772,7 +778,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     curr.type === tks.LT_SIGN
     && (next.type === tks.AT || next.type === tks.IDENTIFIER)
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
     && node._reachedCloseBrace
   ) {
     this.closeNode(node);
@@ -784,7 +789,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     curr.type === tks.LT_SIGN
     && (next.type === tks.AT || next.type === tks.IDENTIFIER)
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
     && !node._reachedCloseBrace
   ) {
     valueNode = this.openNode(new MarkupNode(), node.values);
@@ -832,7 +836,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next) {
     curr.type === tks.AT
     && next.type === tks.IDENTIFIER
     && !node._waitingForEndQuote
-    && !node._withinCommentLine
   ) {
 
     if (node._reachedCloseBrace) {
