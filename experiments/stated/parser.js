@@ -207,7 +207,7 @@ Parser.prototype.continueProgramNode = function(node, curr, next) {
   // Special case for ProgramNode:
   // allow for keywords to not need to be prefixed with @,
   // like `catch (e) {}`.
-  if (curr.type === tks.KEYWORD) {
+  if (curr.type === tks.KEYWORD || curr.type === tks.BLOCK_KEYWORD) {
     this.openNode(new BlockNode(), node.body);
     return false;
   }
@@ -625,7 +625,6 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     !node._waitingForEndQuote
     && (curr.type === tks.SINGLE_QUOTE || curr.type === tks.DOUBLE_QUOTE)
   ) {
-    this.lg('Now waiting for end quote with value %s', curr.val);
     this.flag(node, '_waitingForEndQuote', curr.val);
     appendTextValue(valueNode, curr);
     return true;
@@ -636,7 +635,6 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     && !curr._considerEscaped
   ) {
     this.flag(node, '_waitingForEndQuote', null);
-    this.lg('Happy to find end quote with value %s', curr.val);
     appendTextValue(valueNode, curr);
     return true;
   }
@@ -871,12 +869,16 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
       return false;
     } else {
       // @for() { @i } used to be valid.
-      var msg = '@expressions are only valid within'
-        + ' markup tags (<p>@exp</p>),'
-        + ' text tags (<text>@exp</text>), or'
-        + ' @ escapes (@:@exp\\n) ';
-      console.error('Warning: '
+      var msg = '@expressions are only necessary within'
+        + ' markup tags <p>@exp</p>,'
+        + ' text tags <text>@exp</text>, or'
+        + ' @ escapes @:@exp\\n. ';
+      console.error('DeprecationWarning: '
         + this.decorateError(new Error(msg), curr.line, curr.chr).message);
+
+      valueNode = this.openNode(new MarkupContentNode(), attachmentNode);
+      updateLoc(valueNode, curr);
+      return false;
     }
   }
 
