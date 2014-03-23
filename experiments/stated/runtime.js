@@ -1,4 +1,6 @@
 
+var error = require('./error');
+
 vash = typeof vash === 'undefined' ? {} : vash;
 
 // TODO: add this as part of the build step, since all this needs to
@@ -257,20 +259,7 @@ helpers.constructor.reportError = function(e, lineno, chr, orig, lb, atRenderTim
 
   lb = lb || '!LB!';
 
-  var lines = orig.split(lb)
-    ,contextSize = lineno === 0 && chr === 0 ? lines.length - 1 : 3
-    ,start = Math.max(0, lineno - contextSize)
-    ,end = Math.min(lines.length, lineno + contextSize);
-
-  var contextStr = lines.slice(start, end).map(function(line, i, all){
-    var curr = i + start + 1;
-
-    return (curr === lineno ? '  > ' : '    ')
-      + (curr < 10 ? ' ' : '')
-      + curr
-      + ' | '
-      + line;
-  }).join('\n');
+  var contextStr = error.context(orig, lineno, chr, lb);
 
   e.vashlineno = lineno;
   e.vashcharno = chr;
