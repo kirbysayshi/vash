@@ -494,6 +494,20 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next) {
     return false;
   }
 
+  // Ignore whitespace if the direct parent is a block. This is for backwards
+  // compatibility with { @what() }, where the ' ' between ) and } should not
+  // be included as content. This rule should not be followed if the
+  // whitespace is contained within an @: escape or within favorText mode.
+  if (
+    curr.type === tks.WHITESPACE
+    && !node._waitingForNewline
+    && !this.opts.favorText
+    && parent
+    && parent.type === 'VashBlock'
+  ) {
+    return true;
+  }
+
   appendTextValue(valueNode, curr);
   return true;
 }
