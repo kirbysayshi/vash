@@ -10,6 +10,8 @@ var vows = require('vows')
 vash.config.useWith = false;
 vash.config.debug = false;
 
+require('../../experiments/stated/helpers/');
+
 vows.describe('vash templating library runtime').addBatch({
 
 	'default runtime helpers': {
@@ -17,7 +19,6 @@ vows.describe('vash templating library runtime').addBatch({
 		'highlight': {
 			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
 			,'wraps with <pre><code>': function( topic ){
-				require('../../experiments/stated/helpers/highlight');
 				var tpl = vash.compile( topic );
 				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
 			}
@@ -175,6 +176,13 @@ vows.describe('vash templating library runtime').addBatch({
 		// must exist within the first 3 lines of the template
 
 		topic: function(){
+
+			// Trick the runtime into thinking it's the full thing.
+			vruntime.compile = vash.compile;
+			vruntime.compileBatch = vash.compileBatch;
+			vruntime.compileHelper = vash.compileHelper;
+			vruntime.config = vash.config;
+
 			return {
 
 				getError: function(str, model){

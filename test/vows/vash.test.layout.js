@@ -7,6 +7,15 @@ var vows = require('vows')
 	,vash = require( process.env.VASHPATH )
 	,vruntime = require( process.env.VASHRUNTIMEPATH )
 
+var copyrtl = require('../../experiments/stated/util/copyrtl');
+require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'helpers', 'layout'));
+
+vash.loadFile = vruntime.loadFile;
+vash.renderFile = vruntime.renderFile;
+vash.helpers = vruntime.helpers;
+
+vruntime.compile = vash.compile;
+
 vash.config.useWith = false;
 vash.config.debug = false;
 
@@ -17,7 +26,7 @@ vows.describe('vash templating library layout').addBatch({
 		topic: function(){
 
 			this.opts = function(model){
-				return vash.vQuery.extend( model || {}, {
+				return copyrtl( model || {}, {
 					// mock up express settings
 					settings: {
 						views: __dirname + '/../fixtures/views',
@@ -185,8 +194,12 @@ vows.describe('vash templating library layout').addBatch({
 					,include = '@html.include("footerappend")'
 					,block = '@html.block("content", function(){ ' + include + ' })'
 
-					,actual = maker( footer + block )( this.opts() )
+					,actual = maker( footer + block )( this.opts() );
 
+				console.log('UNCOMPILED', footer + block + 'END');
+				console.log('FN', maker( footer + block ))
+
+				console.log('actual', 'START', actual, 'END');
 				assert.equal( actual, '<footer></footer><footer2></footer2>' )
 			}
 
@@ -341,7 +354,6 @@ vows.describe('vash templating library layout').addBatch({
 						,tpl = vash.compile( '@html.extend("layout",function(){ @html.append("footer", function(){ @html.include("i") }) })' )
 
 					var actual = tpl( this.opts({ cache: true }) )
-
 					assert.equal( actual, '<p></p>' );
 
 					this.uninstallTplAt( includedPath )
