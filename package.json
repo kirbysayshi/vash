@@ -1,7 +1,7 @@
 {
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.7.10-2",
+  "version": "0.8.0-beta",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -23,8 +23,8 @@
   },
   "scripts": {
     "coverage": "VASHPATH=../../experiments/stated/index.js VASHRUNTIMEPATH=../../experiments/stated/runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
-    "build": "make build",
-    "test": "make test && make test-min",
+    "build": "browserify experiments/stated/index.js --standalone vash > build/vash.js && browserify --standalone vash experiments/stated/runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path experiments/stated/helpers/index.js > build/vash-runtime-all.js",
+    "test": "VASHPATH=../../experiments/stated/index.js VASHRUNTIMEPATH=../../experiments/stated/runtime.js vows test/vows/vash.*.js --spec",
     "docs": "make docs"
   },
   "dependencies": {
@@ -38,7 +38,7 @@
     "jshint": "0.8.0",
     "marked": "~0.2.8",
     "coverify": "~1.0.6",
-    "browserify": "^3.32.0",
+    "browserify": "^3.33.0",
     "envify": "^1.2.1"
   }
 }
