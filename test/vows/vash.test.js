@@ -817,7 +817,7 @@ vows.describe('vash templating library').addBatch({
 
 		,'when preceeded by tag with whitespace': function(topic) {
 			var tpl = vash.compile(topic)
-				, expected = '<b ></b><img />'
+				, expected = '<b></b><img />'
 
 			assert.equal(tpl(), expected);
 		}
