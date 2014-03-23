@@ -7,7 +7,7 @@ var vows = require('vows')
 	,vash = require( process.env.VASHPATH )
 
 vash.config.useWith = false;
-vash.config.debug = false;
+vash.config.debug = true;
 
 var tryCompile = function(str){
 	vash.config.useWith = true;

@@ -116,8 +116,12 @@ gens.VashIndexExpression = function(node, opts, generate) {
 }
 
 gens.VashText = function(node, opts, generate) {
+  if (!node.value.length) return '';
   return parentIsContent(node)
-    ? bcwrap(escapeMarkupContent(node.value))
+    ? ''
+      + dbgstart(node, opts)
+      + bcwrap(escapeMarkupContent(node.value))
+      + dbgend(node, opts)
     : node.value;
 }
 
