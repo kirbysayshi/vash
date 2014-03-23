@@ -17,6 +17,7 @@ vows.describe('vash templating library runtime').addBatch({
 		'highlight': {
 			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
 			,'wraps with <pre><code>': function( topic ){
+				require('../../experiments/stated/helpers/highlight');
 				var tpl = vash.compile( topic );
 				assert.equal( tpl(), '<pre><code>I am code</code></pre>' );
 			}
@@ -77,8 +78,18 @@ vows.describe('vash templating library runtime').addBatch({
 		}
 
 		,'installing with string auto-compiles': function(){
+
+			// Trick the runtime into thinking it's the full thing.
+			vruntime.compile = vash.compile;
+			vruntime.compileBatch = vash.compileBatch;
+			vruntime.compileHelper = vash.compileHelper;
+
 			var  str = '<p></p>'
 				,tpl = vash.install('testpath', str);
+
+			delete vruntime.compile;
+			delete vruntime.compileBatch;
+			delete vruntime.compileHelper;
 
 			assert.equal( tpl(), str );
 		}
