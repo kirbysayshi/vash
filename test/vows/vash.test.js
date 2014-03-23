@@ -786,6 +786,18 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'self-closing tag does not grab too much': {
+
+		topic: '@{{<b ></b>}<img />}'
+
+		,'when preceeded by tag with whitespace': function(topic) {
+			var tpl = vash.compile(topic)
+				, expected = '<b ></b><img />'
+
+			assert.equal(tpl(), expected);
+		}
+	}
+
 	,'markup with numbers': {
 		topic: function(){
 			var str = "<div>"
@@ -1912,7 +1924,7 @@ vows.describe('vash templating library').addBatch({
 					}, undefined);
 
 				assert.equal( flattened[openIdx].type, 'HTML_TAG_OPEN' );
-				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_VOID_OPEN' );
+				assert.equal( flattened[openIdx+2].type, 'HTML_TAG_OPEN' );
 				assert.equal( flattened[openIdx+3].type, 'HTML_TAG_VOID_CLOSE' );
 				assert.equal( flattened[openIdx+5].type, 'HTML_TAG_CLOSE' );
 			}

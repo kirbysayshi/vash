@@ -19,7 +19,6 @@ var  AT = 'AT'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
 	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
 	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
 	,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
 	,IDENTIFIER = 'IDENTIFIER'
 	,KEYWORD = 'KEYWORD'
@@ -108,10 +107,8 @@ var TESTS = [
 
 		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?["a-zA-Z]*>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
-			,reSelfClosing = /^(<[a-zA-Z@]+(?:\s+\S+)*\s*\/>)/
 
-		var tok = this.scan( reSelfClosing, HTML_TAG_VOID_OPEN )
-			|| this.scan( reHtml, HTML_TAG_OPEN );
+		var tok = this.scan( reHtml, HTML_TAG_OPEN );
 
 		if( tok ){
 			this.spewIf( tok, reEmail );

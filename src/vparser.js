@@ -236,7 +236,6 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
-			case HTML_TAG_VOID_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
 
 				if(tagName === null && next && next.type === AT && ahead){
@@ -250,15 +249,8 @@ VParser.prototype = {
 					this.ast.tagName = tagName[1];
 				}
 
-				// mark this ast as void, to enable recognition of HTML_TAG_VOID_CLOSE,
-				// which is otherwise generic
-				if(curr.type === HTML_TAG_VOID_OPEN){
-					this.ast.tagVoid = this.ast.tagName;
-				}
-
 				if(
-					HTML_TAG_VOID_OPEN === curr.type
-					|| HTML_TAG_OPEN === curr.type
+					HTML_TAG_OPEN === curr.type
 					|| this.options.saveTextTag
 				){
 					this.ast.push(curr);
@@ -297,16 +289,8 @@ VParser.prototype = {
 				break;
 
 			case HTML_TAG_VOID_CLOSE:
-
-				// this should only be a valid token if tagVoid is defined, meaning
-				// HTML_TAG_VOID_OPEN was previously found within this markup block
-				if(this.ast.tagVoid){
-					this.ast.push(curr);
-					this.ast = this.ast.parent;
-				} else {
-					this.tokens.push(curr); // defer
-				}
-
+				this.ast.push(curr);
+				this.ast = this.ast.parent;
 				break;
 
 			case BACKSLASH:
@@ -358,7 +342,6 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case TEXT_TAG_CLOSE:
-			case HTML_TAG_VOID_OPEN:
 			case HTML_TAG_OPEN:
 			case HTML_TAG_CLOSE:
 				this.ast = this.ast.beget(MKP);
