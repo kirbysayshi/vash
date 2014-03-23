@@ -240,7 +240,10 @@ Mark.prototype.findInBuffer = function(){
     return this.markedIndex;
   }
 
-  return this.markedIndex = this.buffer.indexOf( this.uid );
+  // The mark may be within a string due to block manipulation shenanigans.
+  var escaped = this.uid.replace(/(\[|\])/g, '\\$1');
+  var re = new RegExp(escaped);
+  return this.markedIndex = this.buffer.indexOf( re );
 }
 
 // MARKS
