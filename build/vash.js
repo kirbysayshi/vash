@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.9-7
+ * Vash - JavaScript Template Parser, v0.7.10-2
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -43,7 +43,6 @@ var  AT = 'AT'
 	,HARD_PAREN_OPEN = 'HARD_PAREN_OPEN'
 	,HTML_TAG_CLOSE = 'HTML_TAG_CLOSE'
 	,HTML_TAG_OPEN = 'HTML_TAG_OPEN'
-	,HTML_TAG_VOID_OPEN = 'HTML_TAG_VOID_OPEN'
 	,HTML_TAG_VOID_CLOSE = 'HTML_TAG_VOID_CLOSE'
 	,IDENTIFIER = 'IDENTIFIER'
 	,KEYWORD = 'KEYWORD'
@@ -132,10 +131,8 @@ var TESTS = [
 
 		var  reHtml = /^(<[a-zA-Z@]+?[^>]*?["a-zA-Z]*>)/
 			,reEmail = /([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4})\b/
-			,reSelfClosing = /^(<[a-zA-Z@]+(?:\s+\S+)*\s*\/>)/
 
-		var tok = this.scan( reSelfClosing, HTML_TAG_VOID_OPEN )
-			|| this.scan( reHtml, HTML_TAG_OPEN );
+		var tok = this.scan( reHtml, HTML_TAG_OPEN );
 
 		if( tok ){
 			this.spewIf( tok, reEmail );
@@ -283,7 +280,6 @@ vQuery.fn.length = 0;
 vQuery.fn.parent = null;
 vQuery.fn.mode = null;
 vQuery.fn.tagName = null;
-vQuery.fn.tagVoid = null;
 
 vQuery.fn.beget = function(mode, tagName){
 	var child = vQuery(mode);
@@ -737,7 +733,6 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case HTML_TAG_OPEN:
-			case HTML_TAG_VOID_OPEN:
 				tagName = curr.val.match(/^<([^\/ >]+)/i);
 
 				if(tagName === null && next && next.type === AT && ahead){
@@ -751,15 +746,8 @@ VParser.prototype = {
 					this.ast.tagName = tagName[1];
 				}
 
-				// mark this ast as void, to enable recognition of HTML_TAG_VOID_CLOSE,
-				// which is otherwise generic
-				if(curr.type === HTML_TAG_VOID_OPEN){
-					this.ast.tagVoid = this.ast.tagName;
-				}
-
 				if(
-					HTML_TAG_VOID_OPEN === curr.type
-					|| HTML_TAG_OPEN === curr.type
+					HTML_TAG_OPEN === curr.type
 					|| this.options.saveTextTag
 				){
 					this.ast.push(curr);
@@ -798,16 +786,8 @@ VParser.prototype = {
 				break;
 
 			case HTML_TAG_VOID_CLOSE:
-
-				// this should only be a valid token if tagVoid is defined, meaning
-				// HTML_TAG_VOID_OPEN was previously found within this markup block
-				if(this.ast.tagVoid){
-					this.ast.push(curr);
-					this.ast = this.ast.parent;
-				} else {
-					this.tokens.push(curr); // defer
-				}
-
+				this.ast.push(curr);
+				this.ast = this.ast.parent;
 				break;
 
 			case BACKSLASH:
@@ -859,7 +839,6 @@ VParser.prototype = {
 
 			case TEXT_TAG_OPEN:
 			case TEXT_TAG_CLOSE:
-			case HTML_TAG_VOID_OPEN:
 			case HTML_TAG_OPEN:
 			case HTML_TAG_CLOSE:
 				this.ast = this.ast.beget(MKP);
@@ -2277,4 +2256,4 @@ exports["vQuery"] = vQuery;
 }());
 exports.__express = exports.renderFile;
 	return exports;
-}({ "version": "0.7.9-7" }));
+}({ "version": "0.7.10-2" }));
