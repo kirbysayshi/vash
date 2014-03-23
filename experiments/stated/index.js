@@ -6,12 +6,11 @@ var Parser = require('./parser');
 var codegen = require('./codegen');
 var runtime = require('./runtime');
 var helperbatch = require('./helperbatch');
+var copyrtl = require('./util/copyrtl');
 
 // Attach all runtime exports to enable backwards compatible behavior,
 // like `vash.install` to still be accessible in a full build.
-Object.keys(runtime).forEach(function(key) {
-  exports[key] = runtime[key];
-});
+copyrtl(exports, runtime);
 
 exports.config = {
 
@@ -47,14 +46,7 @@ exports.compile = function(markup, options) {
     throw new Error('Empty or non-string cannot be compiled');
   }
 
-  options = options || {};
-
-  var opts = {};
-  Object.keys(exports.config).forEach(function(prop) {
-    opts[prop] = prop in options
-      ? options[prop]
-      : exports.config[prop];
-  });
+  var opts = copyrtl({}, exports.config, options || {});
 
   var l = new Lexer();
 
