@@ -123,10 +123,17 @@
 
 			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
-			// grab rendered content, immediately join to prevent needing to use
-			// .apply.
-			content = this.buffer.fromMark( m ).join('');
-			this.buffer.spliceMark( injectMark, 0, content );
+			// grab rendered content
+			content = this.buffer.fromMark( m )
+
+			// Join, but split out the VASHMARKS so further buffer operations are still
+			// sane. Join is required to prevent max argument errors when large templates
+			// are being used.
+			content = compactContent(content);
+
+			// Prep for apply, ensure the right location (mark) is used for injection.
+			content.unshift( injectMark, 0 );
+			this.buffer.spliceMark.apply( this.buffer, content );
 		}
 
 		for( name in this.blockMarks ){
@@ -143,6 +150,29 @@
 
 		// and return the whole thing
 		return this.toString();
+	}
+
+	// Given an array, condense all the strings to as few array elements
+	// as possible, while preserving `Mark`s as individual elements.
+	function compactContent(content) {
+		var re = vash.Mark.re;
+		var parts = [];
+		var str = '';
+
+		content.forEach(function(part) {
+			if (re.exec(part)) {
+				parts.push(str, part);
+				str = '';
+			} else {
+				// Ensure `undefined`s are not `toString`ed
+				str += (part || '');
+			}
+		});
+
+		// And don't forget the rest.
+		parts.push(str);
+
+		return parts;
 	}
 
 	helpers.extend = function(path, ctn){

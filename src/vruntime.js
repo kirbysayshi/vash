@@ -155,7 +155,7 @@
 
 		for( var i = 0; i < this._vo.length; i++ ){
 			if(
-				( str.test && this._vo[i].search(str) > -1 )
+				( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
 				|| this._vo[i] == str
 			){
 				return i;
@@ -170,7 +170,7 @@
 
 		while( --i >= 0 ){
 			if(
-				( str.test && this._vo[i].search(str) > -1 )
+				( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
 				|| this._vo[i] == str
 			){
 				return i;
@@ -216,7 +216,7 @@
 		this.destroyed = false;
 	}
 
-	var reMark = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
+	var reMark = Mark.re = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
 
 	// tests if a string has a mark-like uid within it
 	Mark.uidLike = function( str ){
@@ -245,7 +245,13 @@
 			return this.markedIndex;
 		}
 
-		return this.markedIndex = this.buffer.indexOf( this.uid );
+		// The mark may be within a string due to string shenanigans. If this is
+		// true this is bad, because all the Mark manipulation commands assume
+		// that the Mark is the only content at that index in the buffer, which
+		// means that splice commands will result in lost content.
+		var escaped = this.uid.replace(/(\[|\])/g, '\\$1');
+		var re = new RegExp(escaped);
+		return this.markedIndex = this.buffer.indexOf( re );
 	}
 
 	// MARKS
