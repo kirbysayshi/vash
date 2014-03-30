@@ -1,5 +1,5 @@
 /**
- * Vash - JavaScript Template Parser, v0.7.10-2
+ * Vash - JavaScript Template Parser, v0.7.11-3
  *
  * https://github.com/kirbysayshi/vash
  *
@@ -164,7 +164,7 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 
 		for( var i = 0; i < this._vo.length; i++ ){
 			if(
-				( str.test && this._vo[i].search(str) > -1 )
+				( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
 				|| this._vo[i] == str
 			){
 				return i;
@@ -179,7 +179,7 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 
 		while( --i >= 0 ){
 			if(
-				( str.test && this._vo[i].search(str) > -1 )
+				( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
 				|| this._vo[i] == str
 			){
 				return i;
@@ -225,7 +225,7 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 		this.destroyed = false;
 	}
 
-	var reMark = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
+	var reMark = Mark.re = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
 
 	// tests if a string has a mark-like uid within it
 	Mark.uidLike = function( str ){
@@ -254,7 +254,13 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 			return this.markedIndex;
 		}
 
-		return this.markedIndex = this.buffer.indexOf( this.uid );
+		// The mark may be within a string due to string shenanigans. If this is
+		// true this is bad, because all the Mark manipulation commands assume
+		// that the Mark is the only content at that index in the buffer, which
+		// means that splice commands will result in lost content.
+		var escaped = this.uid.replace(/(\[|\])/g, '\\$1');
+		var re = new RegExp(escaped);
+		return this.markedIndex = this.buffer.indexOf( re );
 	}
 
 	// MARKS
@@ -639,10 +645,17 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 
 			appends && appends.forEach(function(a){ self.buffer.pushConcat( a ); });
 
-			// grab rendered content, immediately join to prevent needing to use
-			// .apply.
-			content = this.buffer.fromMark( m ).join('');
-			this.buffer.spliceMark( injectMark, 0, content );
+			// grab rendered content
+			content = this.buffer.fromMark( m )
+
+			// Join, but split out the VASHMARKS so further buffer operations are still
+			// sane. Join is required to prevent max argument errors when large templates
+			// are being used.
+			content = compactContent(content);
+
+			// Prep for apply, ensure the right location (mark) is used for injection.
+			content.unshift( injectMark, 0 );
+			this.buffer.spliceMark.apply( this.buffer, content );
 		}
 
 		for( name in this.blockMarks ){
@@ -659,6 +672,29 @@ void(0); // hack for https://github.com/mishoo/UglifyJS/issues/465
 
 		// and return the whole thing
 		return this.toString();
+	}
+
+	// Given an array, condense all the strings to as few array elements
+	// as possible, while preserving `Mark`s as individual elements.
+	function compactContent(content) {
+		var re = vash.Mark.re;
+		var parts = [];
+		var str = '';
+
+		content.forEach(function(part) {
+			if (re.exec(part)) {
+				parts.push(str, part);
+				str = '';
+			} else {
+				// Ensure `undefined`s are not `toString`ed
+				str += (part || '');
+			}
+		});
+
+		// And don't forget the rest.
+		parts.push(str);
+
+		return parts;
 	}
 
 	helpers.extend = function(path, ctn){
