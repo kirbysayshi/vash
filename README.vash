@@ -1047,7 +1047,7 @@ In short, this loads and compiles helpers necessary for this document, grabs the
     -o, --out <path>                    Write template into <path> directory
     -u, --uglify                        Uglify the template, safely
     -a, --no-autolink                   Wrap each template in `vash.link`.
-    -r, --render [json]                 Render the template using <json> as the model
+    -r, --render [json]                 Render the template using <json> as the model. If <json> is not valid json, assume a filename and load those contents as json.
     -s, --separator [separator]         Templates are auto-named by concatenating the file path with [separator]
     --helper                            Assume the input is a to-be-compiled helper
     --helpers <file>                    Execute these compiled helpers
