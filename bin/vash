@@ -34,7 +34,7 @@ function prefix(tplStr, options){
 function ugly(tplStr, options){
 
 	var  ast
-	 	,jsp = uglify.parser
+		,jsp = uglify.parser
 		,pro = uglify.uglify;
 
 	if( options.uglify ){
@@ -52,8 +52,14 @@ function render(tpl, options){
 
 	if( options.render ){
 
-		if( options.render !== true ){
+		try {
 			model = JSON.parse( options.render );
+		} catch(e) {
+			try {
+				model = JSON.parse(fs.readFileSync(options.render));
+			} catch(e) {
+
+			}
 		}
 
 		return tpl(model);
@@ -143,7 +149,7 @@ cli
 	.option('-u, --uglify', 'Uglify the template, safely')
 	.option('-a, --no-autolink', 'Do not wrap each template in `vash.link`.')
 	//.option('-d, --prepend-runtime', 'Include the required Vash runtime')
-	.option('-r, --render [json]', 'Render the template using <json> as the model')
+	.option('-r, --render [json]', 'Render the template using <json> as the model. If <json> is not valid json, assume a filename and load those contents as json.')
 	.option('-s, --separator [separator]', 'Templates are auto-named by concatenating the file path with [separator]', '/')
 	.option('--helper', 'Assume the input is a to-be-compiled helper')
 	.option('--helpers <file>', 'Execute these compiled helpers')

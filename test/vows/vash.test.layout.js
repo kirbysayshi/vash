@@ -360,6 +360,57 @@ vows.describe('vash templating library layout').addBatch({
 				}
 			}
 		}
+
+		,'extended include': function( opts ){
+
+			// Scenario:
+			// A -> index <- included <- B
+			//
+			//   A         B
+			//   |         |
+			//   v         |
+			//   index     v
+			//        included
+
+			var layout = '@html.block(\'bob\')';
+			var index = ''
+				+ '@html.extend(\'layout\', function(model) {'
+					+ '@html.block(\'bob\', function(model) {'
+						+ '<h1>Hello from [index.bob]</h1>'
+						+ '@html.include(\'templateToInclude\', model)'
+						+ '<p></p>'
+					+ '})'
+				+ '})'
+			var include = ''
+				+ '@html.extend(\'extendableTemplate\', function(model) {'
+					+ '@html.block(\'mary\', function(model) {'
+						+ '<h1>Hello from [templateToInclude.mary]</h1>'
+					+ '})'
+				+ '})'
+			var extendable = ''
+				+ '<h1>Hello from [extendableTemplate]</h1>'
+				+ '@html.block(\'mary\')'
+
+			var a = this.installTplAt('layout.vash', layout);
+			var b = this.installTplAt('templateToInclude.vash', include);
+			var c = this.installTplAt('extendableTemplate.vash', extendable);
+
+			var opts = this.opts( { cache: true, debug: true })
+			var tpl = vash.compile(index, opts);
+			var actual = tpl(opts);
+			var expected = ''
+				+ '<h1>Hello from [index.bob]</h1>'
+				+ '<h1>Hello from [extendableTemplate]</h1>'
+				+ '<h1>Hello from [templateToInclude.mary]</h1>'
+				+ '<p></p>'
+
+			assert.equal(actual, expected);
+
+			this.uninstallTplAt(a);
+			this.uninstallTplAt(b);
+			this.uninstallTplAt(c);
+		}
+
 	}
 
 	,'view lookups': {
