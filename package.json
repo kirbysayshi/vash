@@ -33,13 +33,13 @@
     "debug": "^0.7.4"
   },
   "devDependencies": {
-    "vows": "~0.7.0",
-    "semver": "~1",
+    "browserify": "^3.33.0",
+    "coverify": "~1.0.6",
+    "envify": "^1.2.1",
     "jshint": "0.8.0",
     "marked": "~0.2.8",
-    "coverify": "~1.0.6",
-    "browserify": "^3.33.0",
-    "envify": "^1.2.1",
-    "uglify-js": "^2.4.13"
+    "semver": "~1",
+    "uglify-js": "^2.4.13",
+    "vows": "^0.8.1"
   }
 }
