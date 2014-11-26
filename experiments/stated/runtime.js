@@ -137,12 +137,17 @@ Buffer.prototype.push = function( buffer ) {
 };
 
 Buffer.prototype.pushConcat = function( buffer ){
-  if( buffer instanceof Array ) {
-    this._vo.push.apply( this._vo, buffer );
+  var buffers;
+  if (Array.isArray(buffer)) {
+    buffers = buffer;
   } else if ( arguments.length > 1 ) {
-    this._vo.push.apply( this._vo, Array.prototype.slice.call( arguments ));
+    buffers = Array.prototype.slice.call( arguments );
   } else {
-    this._vo.push( buffer );
+    buffers = [buffer];
+  }
+
+  for (var i = 0; i < buffers.length; i++) {
+    this._vo.push( buffers[i] );
   }
 
   return this.__vo;
@@ -152,7 +157,7 @@ Buffer.prototype.indexOf = function( str ){
 
   for( var i = 0; i < this._vo.length; i++ ){
     if(
-      ( str.test && this._vo[i].search(str) > -1 )
+      ( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
       || this._vo[i] == str
     ){
       return i;
@@ -167,7 +172,7 @@ Buffer.prototype.lastIndexOf = function( str ){
 
   while( --i >= 0 ){
     if(
-      ( str.test && this._vo[i].search(str) > -1 )
+      ( str.test && this._vo[i] && this._vo[i].search(str) > -1 )
       || this._vo[i] == str
     ){
       return i;
@@ -213,7 +218,7 @@ var Mark = vash['Mark'] = function( buffer, debugName ){
   this.destroyed = false;
 }
 
-var reMark = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
+var reMark = Mark.re = /\[VASHMARK\-\d{1,8}(?::[\s\S]+?)?]/g
 
 // tests if a string has a mark-like uid within it
 Mark.uidLike = function( str ){
