@@ -22,10 +22,11 @@
     "node": ">= 0.8"
   },
   "scripts": {
-    "coverage": "VASHPATH=../../experiments/stated/index.js VASHRUNTIMEPATH=../../experiments/stated/runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
-    "build": "browserify experiments/stated/index.js --standalone vash > build/vash.js && browserify --standalone vash experiments/stated/runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path experiments/stated/helpers/index.js > build/vash-runtime-all.js",
-    "test": "VASHPATH=../../experiments/stated/index.js VASHRUNTIMEPATH=../../experiments/stated/runtime.js vows test/vows/vash.*.js --spec",
-    "docs": "make docs"
+    "coverage": "VASHPATH=../../lib/index.js VASHRUNTIMEPATH=../../lib/runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
+    "build": "browserify lib/index.js --standalone vash > build/vash.js && browserify --standalone vash lib/runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path lib/helpers/index.js > build/vash-runtime-all.js",
+    "test": "VASHPATH=../../lib/index.js VASHRUNTIMEPATH=../../lib/runtime.js vows test/vows/vash.*.js --spec",
+    "docs": "scripts/docs.sh",
+    "docs-dev": "scripts/docs-dev.sh"
   },
   "dependencies": {
     "commander": "~1.1.1",

@@ -7,7 +7,7 @@ var vows = require('vows')
 	,vash = require( process.env.VASHPATH )
 	,vruntime = require( process.env.VASHRUNTIMEPATH )
 
-var copyrtl = require('../../experiments/stated/util/copyrtl');
+var copyrtl = require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'util', 'copyrtl'));
 require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'helpers', 'layout'));
 
 vash.loadFile = vruntime.loadFile;

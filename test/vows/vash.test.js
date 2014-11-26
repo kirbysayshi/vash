@@ -1937,8 +1937,8 @@ vows.describe('vash templating library').addBatch({
 
 			,'does not close parent tag': function(topic){
 
-				var Lexer = require('../../experiments/stated/lexer');
-				var Parser = require('../../experiments/stated/parser');
+				var Lexer = require('../../lib/lexer');
+				var Parser = require('../../lib/parser');
 				var l = new Lexer();
 
 				l.write(topic);
