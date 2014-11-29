@@ -1,12 +1,12 @@
 var debug = require('debug')
 var lg = debug('vash:');
 
-var Lexer = require('./lexer');
-var Parser = require('./parser');
-var codegen = require('./codegen');
+var Lexer = require('./lib/lexer');
+var Parser = require('./lib/parser');
+var codegen = require('./lib/codegen');
 var runtime = require('./runtime');
-var helperbatch = require('./helperbatch');
-var copyrtl = require('./util/copyrtl');
+var helperbatch = require('./lib/helperbatch');
+var copyrtl = require('./lib/util/copyrtl');
 
 // Attach all runtime exports to enable backwards compatible behavior,
 // like `vash.install` to still be accessible in a full build.
@@ -33,6 +33,8 @@ exports.config = {
   asHelper: false,
   args: null // Internal, for compiled helpers
 }
+
+exports.version = require('./package.json').version;
 
 exports.compileStream = function() {
   // This could eventually handle waiting until a `null`

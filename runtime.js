@@ -1,7 +1,9 @@
 
-var error = require('./error');
+var error = require('./lib/error');
 
 vash = typeof vash === 'undefined' ? {} : vash;
+
+vash.version = require('./package.json').version;
 
 // TODO: add this as part of the build step, since all this needs to
 // in a closure anyway.

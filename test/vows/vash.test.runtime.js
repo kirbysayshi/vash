@@ -10,7 +10,7 @@ var vows = require('vows')
 vash.config.useWith = false;
 vash.config.debug = false;
 
-require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'helpers'));
+require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'lib', 'helpers'));
 
 vows.describe('vash templating library runtime').addBatch({
 
