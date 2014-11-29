@@ -14,7 +14,20 @@ require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'lib', 'helpers'));
 
 vows.describe('vash templating library runtime').addBatch({
 
-	'default runtime helpers': {
+	// TODO:
+	/*'requiring': {
+		'does not expose global': function() {
+			var ctx = {};
+			vm.runInNewContext( 'var vash = require("vash/runtime")', ctx );
+			assert.equal(ctx.vash, undefined);
+		}
+
+		,'does not have full vash': function() {
+			assert.equal(vruntime.compile, undefined);
+		}
+	}
+
+	,*/'default runtime helpers': {
 
 		'highlight': {
 			topic: "@html.highlight('javascript', function(){<text>I am code</text>})"
