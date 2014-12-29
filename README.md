@@ -297,7 +297,7 @@ input:
 
 output:
 
-	banana creme
+	banana cream
 
 As you can see, Vash does not require a model to be referenced, or even passed in.
 
