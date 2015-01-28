@@ -28,6 +28,7 @@ Vash is a template engine that offers a swift flow between code and content usin
   - [express](#express) 
   - [Browser - Vanilla](#browser---vanilla) 
   - [Browser - RequireJS](#browser---requirejs) 
+  - [Browser - Browserify](#browser---browserify) 
 - [Playground](#playground) 
 - [Syntax](#syntax) 
   - [The Transition Character: @](#the-transition-character) 
@@ -151,6 +152,14 @@ Be sure to configure paths appropriately, but vash is AMD ready.
 		var tpl = vash.compile( '<p>I am a @model.t!</p>' );
 		document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 	})
+	
+<a name="browser---browserify"></a>Browser - Browserify 
+---------------------------
+
+Run `npm install vashify` and run browserify with `-t vasify`.  Then you can directly require any .vash file and it will be resolved as compiled template.
+
+	var tpl = require('my-awesome-template.vash');
+	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
 <a name="playground"></a>Playground 
 ==================
