@@ -190,10 +190,9 @@ vows.describe('vash templating library layout').addBatch({
 
 					,actual = maker( footer + block )( this.opts() );
 
-				console.log('UNCOMPILED', footer + block + 'END');
-				console.log('FN', maker( footer + block ))
-
-				console.log('actual', 'START', actual, 'END');
+				//console.log('UNCOMPILED', footer + block + 'END');
+				//console.log('FN', maker( footer + block ))
+				//console.log('actual', 'START', actual, 'END');
 				assert.equal( actual, '<footer></footer><footer2></footer2>' )
 			}
 
