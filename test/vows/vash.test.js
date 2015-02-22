@@ -1278,6 +1278,28 @@ vows.describe('vash templating library').addBatch({
 		}
 
 	}
+
+	,'unbalanced characters are ok': {
+		// https://github.com/kirbysayshi/vash/issues/26
+
+		'open paren': {
+			topic: '@("(")'
+			,'outputs': function( topic ) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '(' );
+			}
+		}
+
+		,'open paren within markup within block': {
+			topic: '@(function(model) { <p>(</p> }())'
+			,'outputs': function( topic ) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<p>(</p>' );
+			}
+		}
+
+	}
+
 	,'simple expression followed by @()': {
 
 		topic: function(){
