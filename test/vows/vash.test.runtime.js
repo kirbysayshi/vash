@@ -200,6 +200,10 @@ vows.describe('vash templating library runtime').addBatch({
 
 				getError: function(str, model){
 					var tpl = vash.compile(str, { debug: true });
+					model = model || {};
+					model.settings = model.settings || {};
+					model.settings.views = __dirname + '/../fixtures/views/';
+					model.settings['view engine'] = 'vash';
 					try {
 						tpl(model);
 					} catch(e) {
@@ -229,7 +233,7 @@ vows.describe('vash templating library runtime').addBatch({
 						,reported = topic.lineIndexOf(e.message, badtext)
 
 					// when debugging, dumping this is useful to clearly see the mismatch
-					//console.log(e.message);
+					// console.log(e.message);
 
 					assert.equal( e.vashlineno, actualLine, 'expected error line ' + actualLine + ', got ' + e.vashlineno );
 					assert.equal( marked, e.vashlineno, 'expected marked line ' + e.vashlineno + ', got ' + marked );

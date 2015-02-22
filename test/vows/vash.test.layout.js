@@ -10,12 +10,6 @@ var vows = require('vows')
 var copyrtl = require(path.join(path.dirname(process.env.VASHPATH), 'lib', 'util', 'copyrtl'));
 require(path.join(path.dirname(process.env.VASHRUNTIMEPATH), 'lib', 'helpers', 'layout'));
 
-vash.loadFile = vruntime.loadFile;
-vash.renderFile = vruntime.renderFile;
-vash.helpers = vruntime.helpers;
-
-vruntime.compile = vash.compile;
-
 vash.config.useWith = false;
 vash.config.debug = false;
 
@@ -409,6 +403,20 @@ vows.describe('vash templating library layout').addBatch({
 			this.uninstallTplAt(a);
 			this.uninstallTplAt(b);
 			this.uninstallTplAt(c);
+		}
+
+		,'empty include throws': function() {
+			var str = '@html.include("empty.include.vash")';
+			var opts = this.opts();
+			var tpl = vash.compile(str);
+			assert.throws(function() { tpl(opts) }, /Empty or non\-string/g);
+		}
+
+		,'empty layout throws': function() {
+			var str = '@html.extend("empty.layout.vash")';
+			var opts = this.opts();
+			var tpl = vash.compile(str);
+			assert.throws(function() { tpl(opts) }, /Empty or non\-string/g);
 		}
 
 	}
