@@ -508,14 +508,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic(), '<a><b>YES</b></a>' )
 		}
 	}
-	//,'array literal': {
-	//	topic: function(){
-	//		return vash.compile('<a>@["a", "b", "c"]</a>');
-	//	}
-	//	,'toStrings': function(topic){
-	//		assert.equal( topic(), '<a>a,b,c</a>' );
-	//	}
-	//}
+
+	,'array literal within markup': {
+		topic: '<a>@["a", "b", "c"].join("")</a>'
+		,'outputs': function(topic){
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '<a>abc</a>' );
+		}
+	}
+
 	,'function invocation within expression buffers': {
 		topic: function(){
 			var str = '<a>@model.map(function(l){ return "__" + l + "__";  }).forEach(function(l){ <b>@l</b> })</a>';
