@@ -1,26 +1,14 @@
 
 var error = require('./lib/error');
+var runtime = {
+  version: require('./package.json').version
+};
 
-vash = typeof vash === 'undefined' ? {} : vash;
+var helpers = runtime['helpers'];
 
-vash.version = require('./package.json').version;
+module.exports = runtime;
 
-// TODO: add this as part of the build step, since all this needs to
-// in a closure anyway.
-// only fully define if this is standalone
-if(!vash.compile){
-  if(typeof define === 'function' && define['amd']){
-    define(function(){ return vash }); // AMD
-  } else if(typeof module === 'object' && module['exports']){
-    module['exports'] = vash; // NODEJS
-  } else {
-    window['vash'] = vash; // BROWSER
-  }
-}
-
-var helpers = vash['helpers'];
-
-var Helpers = function ( model ) {
+function Helpers( model ) {
   this.buffer = new Buffer();
   this.model  = model;
   this.options = null; // added at render time
@@ -29,7 +17,7 @@ var Helpers = function ( model ) {
   this.vc = 0;
 };
 
-vash['helpers']
+runtime['helpers']
   = helpers
   = Helpers.prototype
   = { constructor: Helpers, config: {}, tplcache: {} };
@@ -210,7 +198,7 @@ Buffer.prototype.toString = Buffer.prototype.toHtmlString = function(){
 // These can be used to manipulate the existing entries in the rendering
 // context. For an example, see the highlight helper.
 
-var Mark = vash['Mark'] = function( buffer, debugName ){
+var Mark = runtime['Mark'] = function( buffer, debugName ){
   this.uid = '[VASHMARK-'
     + ~~( Math.random() * 10000000 )
     + (debugName ? ':' + debugName : '')
@@ -294,10 +282,10 @@ helpers['reportError'] = function() {
 // proper decompilation via `toClientString`.
 //
 // If `options.asHelper` and `options.args` are defined, the `cmpFunc` is
-// interpreted as a compiled helper, and is attached to `vash.helpers` at
+// interpreted as a compiled helper, and is attached to `runtime.helpers` at
 // a property name equal to `options.asHelper`.
 
-vash['link'] = function( cmpFunc, options ){
+runtime['link'] = function( cmpFunc, options ){
 
   // TODO: allow options.filename to be used as sourceUrl?
 
@@ -306,7 +294,7 @@ vash['link'] = function( cmpFunc, options ){
 
   if( !options.args ){
     // every template has these arguments
-    options.args = [options.modelName, options.helpersName, '__vopts', 'vash'];
+    options.args = [options.modelName, options.helpersName, '__vopts', 'runtime'];
   }
 
   if( typeof cmpFunc === 'string' ){
@@ -353,11 +341,11 @@ vash['link'] = function( cmpFunc, options ){
           ,escape: Helpers.prototype.escape
           ,raw: Helpers.prototype.raw
         }
-        return cmpFunc( model, ctx, opts, vash );
+        return cmpFunc( model, ctx, opts, runtime );
       }
 
       opts = divineRuntimeTplOptions( model, opts );
-      return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, vash );
+      return cmpFunc( model, (opts && opts.context) || new Helpers( model ), opts, runtime );
     }
   }
 
@@ -367,6 +355,8 @@ vash['link'] = function( cmpFunc, options ){
   // shortcut to show the actual linked function
   linked['_toString'] = function(){ return Function.prototype.toString.call(linked) }
 
+  // This assumes a vash global, and should be deprecated.
+  // TODO: @deprecate
   linked['toClientString'] = function(){
     return 'vash.link( '
       + cmpFunc.toString() + ', '
@@ -416,18 +406,25 @@ var slice = Array.prototype.slice;
 ///////////////////////////////////////////////////////////////////////////
 // TPL CACHE
 
-vash['lookup'] = function( path, model ){
-  var tpl = vash.helpers.tplcache[path];
+runtime['lookup'] = function( path, model ){
+  var tpl = runtime.helpers.tplcache[path];
   if( !tpl ){ throw new Error('Could not find template: ' + path); }
   if( model ){ return tpl(model); }
   else return tpl;
 };
 
-vash['install'] = function( path, tpl ){
-  var cache = vash.helpers.tplcache;
+runtime['install'] = function( path, tpl ){
+  var cache = runtime.helpers.tplcache;
   if( typeof tpl === 'string' ){
-    if( !vash.compile ){ throw new Error('vash.install(path, [string]) is not available in the standalone runtime.') }
-    tpl = vash.compile(tpl);
+    // Super hacky: if the calling context has a `compile` function,
+    // then `this` is likely full vash. This is simply for backwards
+    // compatibility.
+    // TODO: @deprecate
+    if ( typeof this.compile === 'function') {
+      tpl = this.compile(tpl);
+    } else {
+      throw new Error('.install(path, [string]) is not available in the standalone runtime.');
+    }
   } else if( typeof path === 'object' ){
     tpl = path;
     Object.keys(tpl).forEach(function(path){
@@ -438,8 +435,8 @@ vash['install'] = function( path, tpl ){
   return cache[path] = tpl;
 };
 
-vash['uninstall'] = function( path ){
-  var  cache = vash.helpers.tplcache
+runtime['uninstall'] = function( path ){
+  var  cache = runtime.helpers.tplcache
     ,deleted = false;
 
   if( typeof path === 'string' ){
