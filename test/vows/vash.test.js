@@ -950,6 +950,61 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl({ a: '@' }), '<span>o</span>');
 			}
 		}
+
+		,'within an expression': {
+			topic: '@(/a/.exec(\'abc\')[0])'
+			,outputs: function( topic ){
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), 'a' );
+			}
+		}
+
+		,'literal': {
+
+			'within markup': {
+				topic: '<span>@/a/.test(\'abc\')</span>'
+				,outputs: function ( topic ) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl(), '<span>true</span>' );
+				}
+			}
+
+			,'within markup attribute': {
+				topic: '<span b="@/a/.exec(\'abc\')[0]"></span>'
+				,outputs: function ( topic ) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl(), '<span b="a"></span>' );
+				}
+			}
+		}
+
+		,'following conditional': {
+			topic: '@if (true) /a/.test(\'abc\')'
+			,outputs: function ( topic ) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '' );
+			}
+		}
+
+		,'are not mistaken for': {
+
+			'division expression': {
+				topic: '@{ var test = 100/2; }<span>@test</span>'
+				,'is not mistaken for regex': function (topic) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl({}), '<span>50</span>' );
+				}
+			}
+
+			,'division within condition': {
+				topic: '@{ if(100/2) <span></span> }'
+				,'is not mistaken for regex': function (topic) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl({}), '<span></span>' );
+				}
+			}
+
+		}
 	}
 
 	,'escaping the @ symbol': {
