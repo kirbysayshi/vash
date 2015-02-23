@@ -79,15 +79,15 @@ Browser - Vanilla @lvl2()
 	var tpl = vash.compile( '<p>I am a @@model.t!</p>' );
 	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
+Browser - Browserify et al @lvl2()
+----------------------------------
+
+Just `require` Vash, and compile. If you want something fancier, try [vashify](https://www.npmjs.com/package/vashify)!
+
 Browser - RequireJS @lvl2()
 ---------------------------
 
-Be sure to configure paths appropriately, but vash is AMD ready.
-
-	require(['vash'], function(vash){
-		var tpl = vash.compile( '<p>I am a @@model.t!</p>' );
-		document.querySelector('#content').innerHTML = tpl({ t: 'template' });
-	})
+RequireJS support has been recently dropped. However Vash does support CJS environments, so as long as you configure RequireJS to consume Vash as a CJS project (including `node_modules` resolution), everything should work.
 
 Playground @lvl1()
 ==================
@@ -912,6 +912,8 @@ If `toClientString` is called on that function, the following is returned:
 
 This string could then be sent to the client (probably prefixed with something like `TPLCACHE["name-of-template"] = `). [vash(1)][] helps to automate this easily.
 
+Note: this assumes that `vash` is available globally. A future version of Vash will hopefully remove this assumption.
+
 Vash Runtime (Browser) @lvl1()
 ====================
 
@@ -921,6 +923,14 @@ There are two runtime builds:
 
 * [vash-runtime.min.js][]: This is the basic runtime. It contains everything a standard Vash template needs to execute.
 * [vash-runtime-all.min.js][]: This also includes the [Layout Helpers][]. It is roughly twice as large as `vash-runtime.min.js`. Unless you're using the Vash view system in the browser, this is probably not necessary.
+
+If you're in a Browserify-like environemnt, you should be able to:
+
+```js
+var vashruntime = require('vash/runtime');
+```
+
+..and have access to the [Runtime API][].
 
 [vash-runtime.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime.min.js
 [vash-runtime-all.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime-all.min.js
