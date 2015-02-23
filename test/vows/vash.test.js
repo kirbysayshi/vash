@@ -1028,6 +1028,76 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl(), 'Twitter: @KirbySaysHi' );
 			}
 		}
+
+		,'within ProgramNode (root) in front of keywords': {
+			topic: ''
+			  + '@@if(model.type){\n'
+			  + '  <p>I\'m a @@model.type!</p>\n'
+			  + '} else if(model.name){\n'
+			  + '  <p>My name is @@model.name.</p>\n'
+			  + '} else {\n'
+			  + '  <p>I DON\'T KNOW WHO OR WHAT I AM...</p>\n'
+			  + '}\n'
+			,'outputs': function(topic) {
+				var tpl = vash.compile( topic );
+				assert.equal( tpl(), ''
+				  + '@if(model.type){\n'
+					+ '  <p>I\'m a @model.type!</p>\n'
+					+ '} else if(model.name){\n'
+					+ '  <p>My name is @model.name.</p>\n'
+					+ '} else {\n'
+					+ '  <p>I DON\'T KNOW WHO OR WHAT I AM...</p>\n'
+					+ '}\n');
+			}
+		}
+
+		,'within markup attribute': {
+			topic: '<figure id="fig-@@(figcount++)"></figure>'
+			,outputs: function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<figure id="fig-@(figcount++)"></figure>' );
+			}
+		}
+
+		,'within markup node': {
+			topic: '<f@@e></f@@e>'
+			,outputs: function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<f@e></f@e>' );
+			}
+		}
+
+		,'<ul class="@@(model.active ? \'highlight\' : \'\')"></ul>': {
+			topic: '<ul class="@@(model.active ? \'highlight\' : \'\')">'
+			,outputs: function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '<ul class="@(model.active ? \'highlight\' : \'\')"></ul>' );
+			}
+		}
+
+		,'@@@@' : {
+			topic: '`@@@@`'
+			,outputs: function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '`@@`' );
+			}
+		}
+
+		,'@@{  }': {
+			topic: '@@{  }'
+			,outputs: function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), '@{  }' );
+			}
+		}
+	}
+
+	,'PHP-like tags are not confused for attributes': {
+		topic: '<? $what = \'what\' ?>'
+		,outputs: function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '<? $what = \'what\' ?>' );
+		}
 	}
 
 	,'"server-side" comments': {
@@ -1079,6 +1149,13 @@ vows.describe('vash templating library').addBatch({
 			}
 			,'throws exception': function(topic){
 				assert.throws( function(){ vash.compile(topic) }, Error );
+			}
+		}
+		,'can be escaped': {
+			topic: 'with `@@*` and `*@@`'
+			,'successfully': function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal( tpl(), 'with `@*` and `*@`' );
 			}
 		}
 	}
