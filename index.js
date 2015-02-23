@@ -1,5 +1,5 @@
 var debug = require('debug')
-var lg = debug('vash:');
+var lg = debug('vash:main');
 
 var Lexer = require('./lib/lexer');
 var Parser = require('./lib/parser');
@@ -10,6 +10,7 @@ var copyrtl = require('./lib/util/copyrtl');
 
 // Attach all runtime exports to enable backwards compatible behavior,
 // like `vash.install` to still be accessible in a full build.
+require('./lib/helpers');
 copyrtl(exports, runtime);
 
 exports.config = {
