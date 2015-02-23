@@ -1772,6 +1772,16 @@ vows.describe('vash templating library').addBatch({
 
 				assert.equal( actual, expected );
 			}
+
+			,'within content regex': {
+				topic: '/^([a-zA-Z0-9.%]+@@[a-zA-Z0-9.\\-]+\\.(?:ca|co\\.uk|com|edu|net|org))\\b/'
+				,outputs: function(topic) {
+					var tpl = vash.compile(topic);
+					console.log(topic);
+					console.log(tpl())
+					assert.equal( tpl(), '/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\\-]+\\.(?:ca|co\\.uk|com|edu|net|org))\\b/' );
+				}
+			}
 		}
 
 		,'in expression': {
