@@ -1252,6 +1252,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( vash.compile(topic)(), '<li><img src="" /></li>' );
 		}
 	}
+
+	,'content following parens preserves whitespace': {
+		topic: '<(bin/vash <docs/helpers/* --helper) > README2.md'
+		,outputs: function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '<(bin/vash <docs/helpers/* --helper) > README2.md' );
+		}
+	}
+
 	,'content } in closed markup': {
 		topic: function(){
 			var str = '@if(true) { <li> } </li> }';
@@ -1777,8 +1786,6 @@ vows.describe('vash templating library').addBatch({
 				topic: '/^([a-zA-Z0-9.%]+@@[a-zA-Z0-9.\\-]+\\.(?:ca|co\\.uk|com|edu|net|org))\\b/'
 				,outputs: function(topic) {
 					var tpl = vash.compile(topic);
-					console.log(topic);
-					console.log(tpl())
 					assert.equal( tpl(), '/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\\-]+\\.(?:ca|co\\.uk|com|edu|net|org))\\b/' );
 				}
 			}
@@ -2115,11 +2122,13 @@ vows.describe('vash templating library').addBatch({
 				while(more !== null) more = p.read();
 
 				var root = p.stack[0];
-				assert.equal( root.body[0].type, 'VashBlock' );
-				assert.equal( root.body[0].values[0].type, 'VashMarkup' );
-				assert.equal( root.body[0].values[0].values[0].type, 'VashMarkupContent' );
-				assert.equal( root.body[0].values[0].values[0].values[1].type, 'VashMarkup' );
-				assert.equal( root.body[0].values[0].values[0].values[1].isVoid, true );
+				assert.equal( root.body[0].type, 'VashMarkup' );
+				assert.equal( root.body[0].values[0].type, 'VashMarkupContent' );
+				assert.equal( root.body[0].values[0].values[1].type, 'VashBlock' );
+				assert.equal( root.body[0].values[0].values[1].values[0].type, 'VashMarkup' );
+				assert.equal( root.body[0].values[0].values[1].values[0].values[0].type, 'VashMarkupContent' );
+				assert.equal( root.body[0].values[0].values[1].values[0].values[0].values[0].type, 'VashText' );
+				assert.equal( root.body[0].values[0].values[1].values[0].values[0].values[1].isVoid, true );
 			}
 		}
 	}
