@@ -80,7 +80,7 @@ vash.helpers.mdTocRefs = function(){
 }
 
 vash.helpers.mdTocLvlX = function(lvl, id){
-	var  text = this.grabUntilPrevLine().join('')
+	var  text = this.grabUntilPrevLine()
 		,href = '#' + id
 
 	if(!id){
@@ -103,28 +103,18 @@ vash.helpers.mdTocLvlX = function(lvl, id){
 
 
 vash.helpers.grabUntilPrevLine = function(){
-	var  reNL = /([^\n]*\n)(.*)$/
-		,entry
-		,entries
-		,match
-
+	var  reNL = /\n/;
 	var lastNL = this.buffer.lastIndexOf(reNL);
 
 	if(lastNL > -1){
-		entry = this.buffer.index(lastNL);
-		match = reNL.exec(entry);
-		entries = this.buffer.splice(lastNL, this.buffer._vo.length - lastNL);
+		var entry = this.buffer.index(lastNL);
+		var entries = this.buffer.splice(lastNL, this.buffer._vo.length - lastNL);
+		var lines = entries.join('').split(/\n/);
+		var last = lines.pop();
 
-		if( match && match[1] ){
-			// make the first entry in the returned only contain the text
-			// after the line break if it exists. Also put the preceeding text
-			// back into the primary buffer (split)
-			this.buffer.push( entries[0].replace(match[2], '') );
-			entries[0] = match[2];
-		}
+		this.buffer.push( lines.join('\n') + '\n' );
+		return last;
 	}
-
-	return entries;
 }
 
 vash.helpers.mdHref = function(text){
