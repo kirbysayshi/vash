@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git://github.com/kirbysayshi/vash"
   },
-  "main": "build/vash",
+  "main": "index.js",
   "engines": {
     "node": ">= 0.8"
   },
