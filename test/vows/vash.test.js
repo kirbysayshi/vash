@@ -1068,7 +1068,7 @@ vows.describe('vash templating library').addBatch({
 		}
 
 		,'<ul class="@@(model.active ? \'highlight\' : \'\')"></ul>': {
-			topic: '<ul class="@@(model.active ? \'highlight\' : \'\')">'
+			topic: '<ul class="@@(model.active ? \'highlight\' : \'\')"></ul>'
 			,outputs: function(topic) {
 				var tpl = vash.compile(topic);
 				assert.equal( tpl(), '<ul class="@(model.active ? \'highlight\' : \'\')"></ul>' );
@@ -1329,6 +1329,13 @@ vows.describe('vash templating library').addBatch({
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 			}
 		}
+		,'explicitly unclosed tags': {
+			topic: '<a><b><c>'
+			,'do not become closed': function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal(tpl(), topic);
+			}
+		}
 		/*,'closing tag within block': {
 			topic: function(){
 				var str = '<div>This is content @if(true){ </div> } else { </div> }';
@@ -1389,7 +1396,7 @@ vows.describe('vash templating library').addBatch({
 	,'simple expression followed by @()': {
 
 		topic: function(){
-			return '<li data-score="@model.Score" class="user-panel-track @(model.i % 2 === 0 ? \'even\' : \'odd\')">';
+			return '<li data-score="@model.Score" class="user-panel-track @(model.i % 2 === 0 ? \'even\' : \'odd\')"></li>';
 		}
 		,'renders': function(topic){
 			assert.equal( vash.compile(topic)({ Score: '1', i: 0 })
