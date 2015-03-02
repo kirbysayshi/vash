@@ -4,7 +4,7 @@ var  fs = require('fs')
 	,path = require('path')
 	,uglify = require('uglify-js')
 	,cli = require('commander')
-	,vash = require('../build/vash')
+	,vash = require('../index')
 
 function prefix(tplStr, options){
 
