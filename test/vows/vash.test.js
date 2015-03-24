@@ -1100,6 +1100,12 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'attribute parsing allows for quoted = (equal) signs': function() {
+		var topic = '<meta name="viewport" content="width=device-width, initial-scale=1">';
+		var tpl = vash.compile(topic);
+		assert.equal( tpl(), topic );
+	}
+
 	,'"server-side" comments': {
 
 		'multiline': {
