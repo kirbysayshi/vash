@@ -1,3 +1,9 @@
+v0.8.1
+======
+
+* Reinstate `__express`
+* Quoted attribute values containing a `=` were causing the current attribute to prematurely be closed when parsing.
+
 v0.8.0
 ======
 
