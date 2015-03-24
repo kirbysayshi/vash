@@ -1,3 +1,17 @@
+v0.8.0
+======
+
+* Complete rewrite of parser and compiler (codegen)
+* Restructure files to use CJS
+* Fix numerous "unfixable" bugs
+* Runtime is now `require('vash/runtime')`
+* No longer provide minified builds (assume consumer will)
+* Simplify build system to be npm-driven
+* [`debug`](https://github.com/visionmedia/debug) module used throughout lexer/parser/codegen
+* Completely new AST format
+* Markup parsing is now more strict, and vash knows about attributes, quotes, etc
+* Much more internally.
+
 v0.7.4-19 / 05-21-2013
 ======================
 
