@@ -15,7 +15,14 @@ vash.config.debug = false;
 
 vows.describe('vash templating library layout').addBatch({
 
-	'layout helpers':{
+	'express support': {
+
+		'is present via __express': function() {
+			assert.ok(vash.__express);
+		}
+	}
+
+	,'layout helpers':{
 
 		topic: function(){
 
