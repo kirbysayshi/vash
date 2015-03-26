@@ -666,7 +666,7 @@ vash.loadFile = function(filepath, options, cb){
   }
 }
 
-vash.renderFile = function(filepath, options, cb){
+vash.renderFile = vash.__express = function(filepath, options, cb){
 
   vash.loadFile(filepath, options, function(err, tpl){
     // auto setup an `onRenderEnd` callback to seal the layout
@@ -1573,7 +1573,7 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
   }
 
   // End of left.
-  if (curr.type === tks.EQUAL_SIGN) {
+  if (curr.type === tks.EQUAL_SIGN && !node._finishedLeft) {
     this.flag(node, '_finishedLeft', true);
     this.flag(node, '_expectRight', true);
     return true;
@@ -2127,14 +2127,7 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
       this.closeNode(node);
       return false;
     } else {
-      // @for() { @i } used to be valid.
-      var msg = '@expressions are only necessary within'
-        + ' markup tags <p>@exp</p>,'
-        + ' text tags <text>@exp</text>, or'
-        + ' @ escapes @:@exp\\n. ';
-      console.error('DeprecationWarning: '
-        + this.decorateError(new Error(msg), curr.line, curr.chr).message);
-
+      // something like @for() { @i }
       valueNode = this.openNode(new MarkupContentNode(), attachmentNode);
       updateLoc(valueNode, curr);
       return false;
@@ -2827,7 +2820,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.8.0-beta",
+  "version": "0.8.2",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
