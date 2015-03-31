@@ -761,7 +761,7 @@ When running in [nodejs][] and using [express][], Vash will automatically resolv
 [nodejs]: http://nodejs.org
 [express]: http://expressjs.com
 [app.engine]: http://expressjs.com/api.html#app.engine
-[Jade]: http://jade-lang.org
+[Jade]: http://jade-lang.com
 [vash-express-example]: https://github.com/kirbysayshi/vash-express-example/tree/master/views
 [layout.vash]: https://github.com/kirbysayshi/vash-express-example/blob/master/views/layout.vash
 [Layout.vash]: https://github.com/kirbysayshi/vash-express-example/blob/master/views/layout.vash
@@ -1206,7 +1206,7 @@ File a ticket! Or hit me up on Twitter: @KirbySaysHi
 <a name="special-thanks"></a>Special Thanks 
 ======================
 
-Extreme thanks goes to TJ Holowaychuck and his template engine [Jade](http://jade-lang.org). It was the original inspiration for Vash's lexer, [Layout Helpers][], and error reporting, and has been a constant source of inspiration and motivation.
+Extreme thanks goes to TJ Holowaychuck and his template engine [Jade](http://jade-lang.com). It was the original inspiration for Vash's lexer, [Layout Helpers][], and error reporting, and has been a constant source of inspiration and motivation.
 
 Some of the techniques Vash's compiler uses were directly inspired from [doT](https://github.com/olado/doT).
 
