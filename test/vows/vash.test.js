@@ -1376,6 +1376,17 @@ vows.describe('vash templating library').addBatch({
 			}
 		}
 
+		,'dashes within tag names': {
+			topic: '<accordion-group>hey</accordion-group>'
+
+			,'are included as the tag': function(topic) {
+				var tpl = vash.compile(topic, {useWith: false})
+					, actual = tpl();
+
+				assert.equal( actual, topic )
+			}
+		}
+
 	}
 
 	,'unbalanced characters are ok': {
