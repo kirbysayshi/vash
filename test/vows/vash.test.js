@@ -2056,6 +2056,14 @@ vows.describe('vash templating library').addBatch({
 
 	}
 
+	,'html comments': {
+		topic: '<!--li><a href="#features">Features</a></li-->'
+		,'do not break parsing': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), topic );
+		}
+	}
+
 	,'single line comments': {
 		'near markup': {
 			topic: ' // this is a comment\n'
