@@ -1452,6 +1452,14 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'this was an infinite parser bug #68 at some point': {
+		topic: '@:Some Text\n@html.block(\'test\')\n'
+		,'does not hang': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.ok( tpl );
+		}
+	}
+
 	/*,'fat arrow': {
 
 		'with single parameter': {
