@@ -24,7 +24,7 @@ exports.context = function(input, lineno, columnno, linebreak) {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.8.8",
+  "version": "0.9.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -45,6 +45,7 @@ module.exports={
     "node": ">= 0.8"
   },
   "scripts": {
+    "prepublish": "npm run test && npm run build",
     "coverage": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
     "build": "browserify index.js --standalone vash > build/vash.js && browserify --standalone vash runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path lib/helpers/index.js > build/vash-runtime-all.js",
     "test": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js vows test/vows/vash.*.js --spec",

@@ -1125,8 +1125,8 @@ Node.isImplied = function(name) {
 Node.prototype.endOk = function() {
 
   if (
-    (this._finishedOpen && !this._waitingForFinishedClose)
-    || (this._finishedOpen && Node.isVoid(this.name))
+    this._finishedOpen
+    && (this.isClosed || this.voidClosed)
   ) {
     return true;
   }
@@ -1274,9 +1274,10 @@ function Parser(opts) {
 module.exports = Parser;
 
 Parser.prototype.decorateError = function(err, line, column) {
-  err.message = 'at template line ' + line
-    + ', column ' + column + ': '
-    + err.message + '\n'
+  err.message = ''
+    + err.message
+    + ' at template line ' + line
+    + ', column ' + column + '\n\n'
     + 'Context: \n'
     + error.context(this.inputText, line, column, '\n')
     + '\n';
@@ -1357,13 +1358,18 @@ Parser.prototype.checkStack = function() {
   var i = this.stack.length-1;
   var node;
   var msg;
-  while(i >= 1) {
+  // A full AST is always:
+  // Program, Markup, MarkupContent, ...
+  while(i >= 2) {
     node = this.stack[i];
     if (node.endOk && !node.endOk()) {
-      msg = 'Found unclosed ' + node.type + '.\n\n'
-        + 'Node: ' + JSON.stringify(node, null, '  ');
+      // Attempt to make the error readable
+      delete node.values;
+      msg = 'Found unclosed ' + node.type;
+      var err = new Error(msg);
+      err.name = 'UnclosedNodeError';
       throw this.decorateError(
-        new Error(msg),
+        err,
         node.startloc.line,
         node.startloc.column);
     }
@@ -2636,7 +2642,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.8.8",
+  "version": "0.9.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -2657,6 +2663,7 @@ module.exports={
     "node": ">= 0.8"
   },
   "scripts": {
+    "prepublish": "npm run test && npm run build",
     "coverage": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
     "build": "browserify index.js --standalone vash > build/vash.js && browserify --standalone vash runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path lib/helpers/index.js > build/vash-runtime-all.js",
     "test": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js vows test/vows/vash.*.js --spec",
