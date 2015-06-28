@@ -1317,13 +1317,13 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( vash.compile(topic)(), '<div class="how what">This is content <p>0 ' );
 			}
 		}
-		,*/'unclosed tag followed by previous closing tag does not bork': {
+		,*/'unclosed tag followed by previous closing tag': {
 			topic: function(){
 				var str = '<div class="how what">This is content @for(var i = 0; i < 1; i++){ <p>@i </div> }';
 				return str;
 			}
-			,'throws UNMATCHED': function(topic){
-				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
+			,'throws': function(topic){
+				assert.throws( function(){ vash.compile(topic)() }, Error );
 			}
 		}
 		,'self-closing tags WITHOUT /': {
@@ -1335,11 +1335,12 @@ vows.describe('vash templating library').addBatch({
 				assert.doesNotThrow( function(){ vash.compile(topic)() }, Error );
 			}
 		}
-		,'explicitly unclosed tags': {
+		,'explicitly unclosed, non-void tags': {
 			topic: '<a><b><c>'
-			,'do not become closed': function(topic) {
-				var tpl = vash.compile(topic);
-				assert.equal(tpl(), topic);
+			,'throw': function(topic) {
+				assert.throws(function() {
+					var tpl = vash.compile(topic);
+				}, Error);
 			}
 		}
 		/*,'closing tag within block': {
