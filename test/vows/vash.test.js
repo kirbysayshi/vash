@@ -2064,6 +2064,14 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'html comments with unclosed tags within': {
+		topic: '<!--<a><b>c</b>-->'
+		,'are not interpreted as tags': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal( tpl(), '<!--<a><b>c</b>-->' );
+		}
+	}
+
 	,'single line comments': {
 		'near markup': {
 			topic: ' // this is a comment\n'
