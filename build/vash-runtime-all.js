@@ -1519,6 +1519,13 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  // -->
+  if (curr.type === tks.HTML_COMMENT_CLOSE) {
+    this.flag(node, '_waitingForFinishedClose', false);
+    this.closeNode(node);
+    return false;
+  }
+
   if (curr.type === tks.HTML_TAG_VOID_CLOSE) {
     this.closeNode(node);
     this.flag(node, 'isVoid', true);
@@ -2629,7 +2636,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
