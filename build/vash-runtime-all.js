@@ -115,7 +115,7 @@ exports['compileHelper'] = helperbatch.bind(null, 'helper', exports.compile);
 //
 // Returns the compiled templates as named properties of an object.
 exports['compileBatch'] = exports['batch'] = helperbatch.bind(null, 'batch', exports.compile);
-},{"./lib/codegen":2,"./lib/helperbatch":4,"./lib/helpers":6,"./lib/lexer":9,"./lib/parser":23,"./lib/util/copyrtl":25,"./package.json":27,"./runtime":28,"debug":26}],2:[function(_dereq_,module,exports){
+},{"./lib/codegen":2,"./lib/helperbatch":4,"./lib/helpers":6,"./lib/lexer":9,"./lib/parser":24,"./lib/util/copyrtl":26,"./package.json":29,"./runtime":30,"debug":28}],2:[function(_dereq_,module,exports){
 
 var debug = _dereq_('debug');
 var lg = debug('vash:codegen');
@@ -208,6 +208,15 @@ gens.VashMarkupContent = function(node, opts, generate) {
     + dbgend(node, opts);
 }
 
+gens.VashMarkupComment = function(node, opts, generate) {
+  return ''
+    + bcwrap('<!--')
+    + dbgstart(node, opts)
+    + node.values.map(generate).join('')
+    + dbgend(node, opts)
+    + bcwrap('-->');
+}
+
 gens.VashBlock = function(node, opts, generate) {
   var hasValues = node.values.length > 0;
   var unsafeForDbg = node.keyword === 'switch'
@@ -277,6 +286,7 @@ function bewrap(str) {
 function parentIsContent(node) {
   return node.parent.type === 'VashMarkup'
     || node.parent.type === 'VashMarkupContent'
+    || node.parent.type === 'VashMarkupComment'
     || node.parent.type === 'VashMarkupAttribute'
     || node.parent.type === 'VashProgram';
 }
@@ -410,7 +420,7 @@ function generate(node, opts) {
 }
 
 module.exports = generate;
-},{"debug":26}],3:[function(_dereq_,module,exports){
+},{"debug":28}],3:[function(_dereq_,module,exports){
 
 exports.context = function(input, lineno, columnno, linebreak) {
   linebreak = linebreak || '!LB!';
@@ -587,12 +597,12 @@ helpers.highlight = function(lang, cb){
   // returning is allowed, but could cause surprising effects. A return
   // value will be directly added to the output directly following the above.
 }
-},{"../../runtime":28}],6:[function(_dereq_,module,exports){
+},{"../../runtime":30}],6:[function(_dereq_,module,exports){
 _dereq_('./trim');
 _dereq_('./highlight');
 _dereq_('./layout');
 module.exports = _dereq_('../../runtime');
-},{"../../runtime":28,"./highlight":5,"./layout":7,"./trim":8}],7:[function(_dereq_,module,exports){
+},{"../../runtime":30,"./highlight":5,"./layout":7,"./trim":8}],7:[function(_dereq_,module,exports){
 var helpers = _dereq_('../../runtime').helpers;
 var copyrtl = _dereq_('../util/copyrtl');
 
@@ -885,14 +895,14 @@ helpers.prepend = function(name, ctn){
   this._handlePrependAppend( 'prepends', name, ctn );
 }
 
-},{"../../index":1,"../../runtime":28,"../util/copyrtl":25,"fs":"liyfGr","path":"TJ6g6r"}],8:[function(_dereq_,module,exports){
+},{"../../index":1,"../../runtime":30,"../util/copyrtl":26,"fs":"liyfGr","path":"TJ6g6r"}],8:[function(_dereq_,module,exports){
 var helpers = _dereq_('../../runtime').helpers;
 
 // Trim whitespace from the start and end of a string
 helpers.trim = function(val){
   return val.replace(/^\s*|\s*$/g, '');
 }
-},{"../../runtime":28}],9:[function(_dereq_,module,exports){
+},{"../../runtime":30}],9:[function(_dereq_,module,exports){
 var debug = _dereq_('debug');
 var tokens = _dereq_('./tokens');
 
@@ -986,7 +996,7 @@ VLexer.prototype = {
   }
 }
 
-},{"./tokens":24,"debug":26}],10:[function(_dereq_,module,exports){
+},{"./tokens":25,"debug":28}],10:[function(_dereq_,module,exports){
 var Node = module.exports = function BlockNode() {
   this.type = 'VashBlock';
   this.keyword = null;
@@ -1143,6 +1153,22 @@ Node.prototype.endOk = function() {
     : false;
 }
 },{}],18:[function(_dereq_,module,exports){
+var Node = module.exports = function MarkupCommentNode() {
+  this.type = 'VashMarkupComment';
+  this.values = [];
+  this.startloc = null;
+  this.endloc = null;
+
+  this._finishedOpen = false
+  this._waitingForClose = null;
+}
+
+Node.prototype.endOk = function() {
+  return this._waitingForClose || this._finishedOpen
+    ? false
+    : true;
+}
+},{}],19:[function(_dereq_,module,exports){
 var Node = module.exports = function MarkupContentNode() {
   this.type = 'VashMarkupContent';
   this.values = [];
@@ -1157,12 +1183,12 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],19:[function(_dereq_,module,exports){
+},{}],20:[function(_dereq_,module,exports){
 module.exports = function ProgramNode() {
   this.type = 'VashProgram';
   this.body = [];
 }
-},{}],20:[function(_dereq_,module,exports){
+},{}],21:[function(_dereq_,module,exports){
 
 // Need to handle:
 // if (true) /abc/.test()
@@ -1187,14 +1213,14 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],21:[function(_dereq_,module,exports){
+},{}],22:[function(_dereq_,module,exports){
 module.exports = function TextNode() {
   this.type = 'VashText';
   this.value = '';
   this.startloc = null;
   this.endloc = null;
 }
-},{}],22:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 function clean(node) {
   return Object.keys(node).reduce(function(out, key) {
     var value = node[key];
@@ -1211,26 +1237,28 @@ function clean(node) {
 
 exports.clean = clean;
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],24:[function(_dereq_,module,exports){
 
 var debug = _dereq_('debug');
 
 var tks = _dereq_('./tokens');
 var nodestuff = _dereq_('./nodestuff');
 var error = _dereq_('./error');
+var namer = _dereq_('./util/fn-namer');
 
-var ProgramNode = _dereq_('./nodes/program');
-var TextNode = _dereq_('./nodes/text');
-var MarkupNode = _dereq_('./nodes/markup');
-var MarkupContentNode = _dereq_('./nodes/markupcontent');
-var MarkupAttributeNode = _dereq_('./nodes/markupattribute');
-var ExpressionNode = _dereq_('./nodes/expression');
-var ExplicitExpressionNode = _dereq_('./nodes/explicitexpression');
-var IndexExpressionNode = _dereq_('./nodes/indexexpression');
-var LocationNode = _dereq_('./nodes/location');
-var BlockNode = _dereq_('./nodes/block');
-var CommentNode = _dereq_('./nodes/comment');
-var RegexNode = _dereq_('./nodes/regex');
+var ProgramNode = namer(_dereq_('./nodes/program'));
+var TextNode = namer(_dereq_('./nodes/text'));
+var MarkupNode = namer(_dereq_('./nodes/markup'));
+var MarkupCommentNode = namer(_dereq_('./nodes/markupcomment'));
+var MarkupContentNode = namer(_dereq_('./nodes/markupcontent'));
+var MarkupAttributeNode = namer(_dereq_('./nodes/markupattribute'));
+var ExpressionNode = namer(_dereq_('./nodes/expression'));
+var ExplicitExpressionNode = namer(_dereq_('./nodes/explicitexpression'));
+var IndexExpressionNode = namer(_dereq_('./nodes/indexexpression'));
+var LocationNode = namer(_dereq_('./nodes/location'));
+var BlockNode = namer(_dereq_('./nodes/block'));
+var CommentNode = namer(_dereq_('./nodes/comment'));
+var RegexNode = namer(_dereq_('./nodes/regex'));
 
 function Parser(opts) {
   this.lg = debug('vash:parser');
@@ -1527,6 +1555,14 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  // Can't really have non-markupcontent within markup, so implicitly open
+  // a node. #68.
+  if (node._finishedOpen) {
+    valueNode = this.openNode(new MarkupContentNode(), this.node.values);
+    updateLoc(valueNode, curr);
+    return false; // defer
+  }
+
   // Default
 
   //valueNode = ensureTextNode(node.values);
@@ -1611,6 +1647,18 @@ Parser.prototype.continueMarkupAttributeNode = function(node, curr, next) {
 
 Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
   var valueNode = ensureTextNode(node.values);
+
+  if (curr.type === tks.HTML_COMMENT_OPEN) {
+    valueNode = this.openNode(new MarkupCommentNode(), node.values);
+    updateLoc(valueNode, curr);
+    return false;
+  }
+
+  if (curr.type === tks.HTML_COMMENT_CLOSE) {
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return false;
+  }
 
   if (curr.type === tks.AT_COLON && !curr._considerEscaped) {
     this.flag(node, '_waitingForNewline', true);
@@ -1699,6 +1747,7 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
       // <identifer morestuff (whitespace)
       // <identifier\n
       // <identifier@
+      // <identifier-
       (next.type === tks.IDENTIFIER
         && ahead
         && (
@@ -1706,6 +1755,7 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
           || ahead.type === tks.WHITESPACE
           || ahead.type === tks.NEWLINE
           || ahead.type === tks.AT
+          || ahead.type === tks.UNARY_OPERATOR
         )
       )
       || next.type === tks.AT)
@@ -1731,6 +1781,29 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
     return true;
   }
 
+  appendTextValue(valueNode, curr);
+  return true;
+}
+
+Parser.prototype.continueMarkupCommentNode = function(node, curr, next) {
+  var valueNode = node.values[node.values.length-1];
+
+  if (curr.type === tks.HTML_COMMENT_OPEN) {
+    this.flag(node, '_finishedOpen', true);
+    this.flag(node, '_waitingForClose', tks.HTML_COMMENT_CLOSE);
+    updateLoc(node, curr);
+    valueNode = this.openNode(new MarkupContentNode(), node.values);
+    return true;
+  }
+
+  if (curr.type === tks.HTML_COMMENT_CLOSE && node._finishedOpen) {
+    this.flag(node, '_waitingForClose', null);
+    updateLoc(node, curr);
+    this.closeNode(node);
+    return true;
+  }
+
+  valueNode = ensureTextNode(node.values);
   appendTextValue(valueNode, curr);
   return true;
 }
@@ -2279,7 +2352,7 @@ function appendTextValue(textNode, token) {
   updateLoc(textNode, token);
 }
 
-},{"./error":3,"./nodes/block":10,"./nodes/comment":11,"./nodes/explicitexpression":12,"./nodes/expression":13,"./nodes/indexexpression":14,"./nodes/location":15,"./nodes/markup":16,"./nodes/markupattribute":17,"./nodes/markupcontent":18,"./nodes/program":19,"./nodes/regex":20,"./nodes/text":21,"./nodestuff":22,"./tokens":24,"debug":26}],24:[function(_dereq_,module,exports){
+},{"./error":3,"./nodes/block":10,"./nodes/comment":11,"./nodes/explicitexpression":12,"./nodes/expression":13,"./nodes/indexexpression":14,"./nodes/location":15,"./nodes/markup":16,"./nodes/markupattribute":17,"./nodes/markupcomment":18,"./nodes/markupcontent":19,"./nodes/program":20,"./nodes/regex":21,"./nodes/text":22,"./nodestuff":23,"./tokens":25,"./util/fn-namer":27,"debug":28}],25:[function(_dereq_,module,exports){
 // The order of these is important, as it is the order in which
 // they are run against the input string.
 // They are separated out here to allow for better minification
@@ -2328,13 +2401,15 @@ var TESTS = [
 
   , 'HTML_TAG_VOID_CLOSE', (/^(\/>)/)
   , 'HTML_TAG_CLOSE', (/^(<\/)/)
+  , 'HTML_COMMENT_OPEN', (/^(<!--+)/)
+  , 'HTML_COMMENT_CLOSE', (/^(--+>)/)
   , 'LT_SIGN', (/^(<)/)
   , 'GT_SIGN', (/^(>)/)
 
   , 'ASSIGNMENT_OPERATOR', (/^(\|=|\^=|&=|>>>=|>>=|<<=|-=|\+=|%=|\/=|\*=)\b/) // Also =
   , 'EQUALITY_OPERATOR', (/^(===|==|!==|!=)\b/)
   , 'BITWISE_SHIFT_OPERATOR', (/^(<<|>>>|>>)/)
-  , 'UNARY_OPERATOR', (/^(delete|typeof|void|\+\+|--|\+|-|~|!)\b/)
+  , 'UNARY_OPERATOR', (/^(delete\b|typeof\b|void|\+\+|--|\+|-|~|!)/)
   , 'RELATIONAL_OPERATOR', (/^(<=|>=|instanceof|in)\b/) // Also <, >
   , 'BINARY_LOGICAL_OPERATOR', (/^(&&|\|\|)\b/)
   , 'BINARY_BITWISE_OPERATOR', (/^(&|\^|\|)\b/)
@@ -2377,7 +2452,7 @@ exports.tests = TESTS;
 for(var i = 0; i < TESTS.length; i += 2) {
   exports[TESTS[i]] = TESTS[i];
 }
-},{}],25:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 module.exports = function(obj) {
   // extend works from right to left, using first arg as target
   var next, i, p;
@@ -2392,7 +2467,26 @@ module.exports = function(obj) {
 
   return obj;
 }
-},{}],26:[function(_dereq_,module,exports){
+},{}],27:[function(_dereq_,module,exports){
+var lg = _dereq_('debug')('vash:fn-namer');
+var reName = /^function\s+([A-Za-z0-9_]+)\s*\(/;
+
+module.exports = function(fn) {
+  if (fn.name) {
+    lg('bailing, found .name %s', fn.name);
+    return fn;
+  }
+  var fnstr = fn.toString();
+  var match = reName.exec(fnstr);
+  if (!match) {
+    lg('bailing, could not match within %s', fnstr);
+    return fn;
+  }
+  fn.name = match[1];
+  lg('set .name as %s', fn.name);
+  return fn;
+}
+},{"debug":28}],28:[function(_dereq_,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -2531,11 +2625,11 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.8.2",
+  "version": "0.8.7",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -2579,7 +2673,7 @@ module.exports={
   }
 }
 
-},{}],28:[function(_dereq_,module,exports){
+},{}],30:[function(_dereq_,module,exports){
 
 var error = _dereq_('./lib/error');
 var runtime = {
@@ -3031,6 +3125,6 @@ runtime['uninstall'] = function( path ){
   }
 };
 
-},{"./lib/error":3,"./package.json":27}]},{},[6])
+},{"./lib/error":3,"./package.json":29}]},{},[6])
 (6)
 });
