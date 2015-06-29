@@ -138,10 +138,12 @@ More information is also available in the [Layout Helpers][] sections.
 <a name="browser---vanilla"></a>Browser - Vanilla 
 -------------------------
 
-	<script type="text/javascript" src="vash.min.js"></script>
+	<script type="text/javascript" src="build/vash.js"></script>
 
 	var tpl = vash.compile( '<p>I am a @model.t!</p>' );
 	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
+
+But you should probably be precompiling your templates. See [Precompiling Templates][] for more info. Then you can just include the Vash runtime instead of the entire compiler.
 
 <a name="browser---browserify-et-al"></a>Browser - Browserify et al 
 ----------------------------------
@@ -284,11 +286,11 @@ Why would you ever need this? Perhaps you want to do something like:
 input:
 
 	// model = { hasIceCream: true }
-	<p class="@( model.hasIceCream ? 'ice-cream' : '')">Ice Cream<p>
+	<p class="@( model.hasIceCream ? 'ice-cream' : '')">Ice Cream</p>
 
 output:
 
-	<p class="ice-cream">Ice Cream<p>
+	<p class="ice-cream">Ice Cream</p>
 
 You could even create an anonymous function.
 
@@ -1117,13 +1119,13 @@ In short, this loads and compiles helpers necessary for this document, grabs the
 
     -h, --help                          output usage information
     -t, --target-namespace <namespace>  Assign template to a <namespace>. Recommended is `vash.helpers.tplcache` for view engine compatibility
-    -p, --property-name [name]          Assign template to property named <name>. Defaults to filename, and requires --target-namespace.
+    -p, --property-name [name]          Assign template to property named [name]. Defaults to filename, and requires --target-namespace.
     -f, --file <file>                   Compile the template in <file>
     -j, --json <json>                   Pass options to the Vash compiler. See docs for valid options.
-    -o, --out <path>                    Write template into <path> directory
+    -o, --out <path>                    Write template into <path>' directory
     -u, --uglify                        Uglify the template, safely
     -a, --no-autolink                   Wrap each template in `vash.link`.
-    -r, --render [json]                 Render the template using <json> as the model. If <json> is not valid json, assume a filename and load those contents as json.
+    -r, --render [json]                 Render the template using [json] as the model. If [json] is not valid json, assume a filename and load those contents as json.
     -s, --separator [separator]         Templates are auto-named by concatenating the file path with [separator]
     --helper                            Assume the input is a to-be-compiled helper
     --helpers <file>                    Execute these compiled helpers
