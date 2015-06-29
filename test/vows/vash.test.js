@@ -1343,6 +1343,23 @@ vows.describe('vash templating library').addBatch({
 				}, Error);
 			}
 		}
+		,'void tag with closing tag': {
+			topic: '<img></img>'
+			,'throws': function(topic) {
+				assert.throws(function() {
+					var tpl = vash.compile(topic);
+				}, Error)
+			}
+		}
+		,'void tag with closing tag surrounded by BLK': {
+			topic: '@{ <img></img> }'
+			,'throws': function(topic) {
+				assert.throws(function() {
+					var tpl = vash.compile(topic);
+				}, Error)
+			}
+		}
+
 		/*,'closing tag within block': {
 			topic: function(){
 				var str = '<div>This is content @if(true){ </div> } else { </div> }';
