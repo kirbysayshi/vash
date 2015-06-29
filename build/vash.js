@@ -1518,6 +1518,16 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     return true;
   }
 
+  // </VOID
+  if (
+    curr.type === tks.HTML_TAG_CLOSE
+    && next
+    && next.type === tks.IDENTIFIER
+    && MarkupNode.isVoid(next.val)
+  ) {
+    throw newUnexpectedClosingTagError(this, curr, curr.val + next.val);
+  }
+
   // </
   if (curr.type === tks.HTML_TAG_CLOSE) {
     this.flag(node, '_waitingForFinishedClose', true);
@@ -2176,6 +2186,18 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
       this.closeNode(node);
       return false;
     }
+
+    // This is likely an invalid markup configuration, something like:
+    // @if(bla) { <img></img> }
+    // where <img> is an implicit void. Try to help the user in this
+    // specific case.
+    if (
+      next
+      && next.type === tks.IDENTIFIER
+      && MarkupNode.isVoid(next.val)
+    ){
+      throw newUnexpectedClosingTagError(this, curr, curr.val + next.val);
+    }
   }
 
   if (
@@ -2364,6 +2386,18 @@ function appendTextValue(textNode, token) {
   textNode.value += token.val;
   updateLoc(textNode, token);
 }
+
+function newUnexpectedClosingTagError(parser, tok, tagName) {
+  var err = new Error(''
+    + 'Found a closing tag for a known void HTML element: '
+    + tagName + '.');
+  err.name = 'UnexpectedClosingTagError';
+  return parser.decorateError(
+    err,
+    tok.line,
+    tok.chr);
+}
+
 
 },{"./error":3,"./nodes/block":10,"./nodes/comment":11,"./nodes/explicitexpression":12,"./nodes/expression":13,"./nodes/indexexpression":14,"./nodes/location":15,"./nodes/markup":16,"./nodes/markupattribute":17,"./nodes/markupcomment":18,"./nodes/markupcontent":19,"./nodes/program":20,"./nodes/regex":21,"./nodes/text":22,"./nodestuff":23,"./tokens":25,"./util/fn-namer":27,"debug":31}],25:[function(_dereq_,module,exports){
 // The order of these is important, as it is the order in which
@@ -2927,7 +2961,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
