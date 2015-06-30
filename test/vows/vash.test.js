@@ -897,6 +897,14 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( tpl({ title: 'who' }), 'who' );
 			}
 		}
+
+		,'can have any two-letter tld-ish': {
+			topic: 'who@what.de'
+			,'and still register': function(topic) {
+				var tpl = vash.compile(topic);
+				assert.equal(tpl(), topic);
+			}
+		}
 	}
 	,'explicit expression': {
 		topic: function(){
