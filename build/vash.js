@@ -2424,7 +2424,7 @@ var TESTS = [
   // will be content, while `something@example.com` will be the email address.
   //
   // However, this is "Good Enough"© :).
-    'EMAIL', (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:ca|co\.uk|com|edu|net|org))\b/)
+    'EMAIL', (/^([a-zA-Z0-9.%]+@[a-zA-Z0-9.\-]+\.(?:[a-z]{2}|co\.uk|com|edu|net|org))\b/)
 
   , 'AT_STAR_OPEN', (/^(@\*)/)
   , 'AT_STAR_CLOSE', (/^(\*@)/)
@@ -2961,7 +2961,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
