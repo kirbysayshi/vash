@@ -651,6 +651,13 @@ vows.describe('vash templating library').addBatch({
 			assert.equal(tpl(), '<span>this is text \nthat spans multiple lines</span>');
 		}
 	}
+	,'markup within a code block with if/else on new lines': {
+		topic: '@if(true)\n{\n<strong>Hello</strong>\n}\n    else\n{\n    <strong>World!</strong>\n    }'
+		,'outputs': function(topic) {
+			var tpl = vash.compile(topic);
+			assert.equal(tpl(), '<strong>Hello</strong>');
+		}
+	}
 	,'markup within a code block followed by else with markup': {
 		topic: function(){
 			var str = '@if(false){ \n'
