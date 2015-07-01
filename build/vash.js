@@ -1305,6 +1305,31 @@ Parser.prototype.read = function() {
   }
 
   var curr = this.deferredTokens.pop() || this.tokens.pop();
+
+  // To find this value we must search through both deferred and
+  // non-deferred tokens, since there could be more than just 3
+  // deferred tokens.
+  // nextNonWhitespaceOrNewline
+  var nnwon = null;
+
+  for (var i = this.deferredTokens.length-1; i >= 0; i--) {
+    if (
+      nnwon
+      && nnwon.type !== tks.WHITESPACE
+      && nnwon.type !== tks.NEWLINE
+    ) break;
+    nnwon = this.deferredTokens[i];
+  }
+
+  for (var i = this.tokens.length-1; i >= 0; i--) {
+    if (
+      nnwon
+      && nnwon.type !== tks.WHITESPACE
+      && nnwon.type !== tks.NEWLINE
+    ) break;
+    nnwon = this.tokens[i];
+  }
+
   var next = this.deferredTokens.pop() || this.tokens.pop();
   var ahead = this.deferredTokens.pop() || this.tokens.pop();
 
@@ -1314,12 +1339,13 @@ Parser.prototype.read = function() {
   this.lg('  curr %s', curr);
   this.lg('  next %s', next);
   this.lg('  ahead %s', ahead);
+  this.lg('  nnwon %s', nnwon);
 
   if (curr._considerEscaped) {
     this.lg('  Previous token was marked as escaping');
   }
 
-  var consumed = this[dispatch](this.node, curr, next, ahead);
+  var consumed = this[dispatch](this.node, curr, next, ahead, nnwon);
 
   if (ahead) {
     // ahead may be undefined when about to run out of tokens.
@@ -2036,7 +2062,7 @@ Parser.prototype.continueRegexNode = function(node, curr, next) {
   return true;
 }
 
-Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
+Parser.prototype.continueBlockNode = function(node, curr, next, ahead, nnwon) {
 
   var valueNode = node.values[node.values.length-1];
 
@@ -2131,12 +2157,11 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead) {
     updateLoc(node, curr);
     this.flag(node, '_reachedCloseBrace', true);
 
-    // Try to leave whitespace where it belongs.
+    // Try to leave whitespace where it belongs, and allow `else {` to
+    // be continued as the tail of this block.
     if (
-      next
-      && (next.type === tks.WHITESPACE || next.type === tks.NEWLINE)
-      && ahead
-      && ahead.type !== tks.BLOCK_KEYWORD
+      nnwon
+      && nnwon.type !== tks.BLOCK_KEYWORD
     ) {
       this.closeNode(node);
     }
@@ -2473,7 +2498,7 @@ var TESTS = [
     }
     return token;
   }
-  , 'WHITESPACE', (/^(\s)/)
+  , 'WHITESPACE', (/^(\s+)/)
   , 'FUNCTION', (/^(function)(?![\d\w])/)
   , 'BLOCK_KEYWORD', (/^(catch|do|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
   , 'KEYWORD', (/^(break|case|continue|instanceof|return|var)(?![\d\w])/)
@@ -2961,7 +2986,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
