@@ -89,7 +89,10 @@ But you should probably be precompiling your templates. See [Precompiling Templa
 Browser - Browserify et al @lvl2()
 ----------------------------------
 
-Just `require` Vash, and compile. If you want something fancier, try [vashify](https://www.npmjs.com/package/vashify)!
+Just `require` Vash, and compile. If you want something fancier, try [vashify](https://www.npmjs.com/package/vashify)! Then you can directly require any `.vash` file and it will be resolved as compiled template:
+
+	var tpl = require('my-awesome-template.vash');
+	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
 Browser - RequireJS @lvl2()
 ---------------------------
