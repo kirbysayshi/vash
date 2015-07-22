@@ -427,12 +427,12 @@ input:
 
 	// model = ['a']
 	@model.forEach(function(item){
-		item
+		this should be content @item
 	})
 
 output:
 
-	(empty string)
+	(Error when compiling)
 
 In this situation, you have two options. The first is the `@:` (at colon) escape. It tells Vash that until it sees a newline, treat the input as content, not code.
 
@@ -440,12 +440,12 @@ input:
 
 	// model = ['a']
 	@model.forEach(function(item){
-		@: item
+		@: this should be content @item
 	})
 
 output:
 
-	a
+	this should be content a
 
 The other option, in the event that more than one line is needed, is by using an imaginary HTML tag named `<text>`. When Vash sees this tag, it switches to content mode, and discards the tag. This means that the tag will never be output.
 
@@ -1122,7 +1122,7 @@ In short, this loads and compiles helpers necessary for this document, grabs the
     -p, --property-name [name]          Assign template to property named [name]. Defaults to filename, and requires --target-namespace.
     -f, --file <file>                   Compile the template in <file>
     -j, --json <json>                   Pass options to the Vash compiler. See docs for valid options.
-    -o, --out <path>                    Write template into <path>' directory
+    -o, --out <path>                    Write template into <path> directory
     -u, --uglify                        Uglify the template, safely
     -a, --no-autolink                   Wrap each template in `vash.link`.
     -r, --render [json]                 Render the template using [json] as the model. If [json] is not valid json, assume a filename and load those contents as json.

@@ -368,12 +368,12 @@ input:
 
 	// model = ['a']
 	@@model.forEach(function(item){
-		item
+		this should be content @@item
 	})
 
 output:
 
-	(empty string)
+	(Error when compiling)
 
 In this situation, you have two options. The first is the `@@:` (at colon) escape. It tells Vash that until it sees a newline, treat the input as content, not code.
 
@@ -381,12 +381,12 @@ input:
 
 	// model = ['a']
 	@@model.forEach(function(item){
-		@@: item
+		@@: this should be content @@item
 	})
 
 output:
 
-	a
+	this should be content a
 
 The other option, in the event that more than one line is needed, is by using an imaginary HTML tag named `@html.raw('<text>')`. When Vash sees this tag, it switches to content mode, and discards the tag. This means that the tag will never be output.
 
