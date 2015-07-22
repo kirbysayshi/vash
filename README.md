@@ -29,7 +29,6 @@ Vash is a template engine that offers a swift flow between code and content usin
   - [Browser - Vanilla](#browser---vanilla) 
   - [Browser - Browserify et al](#browser---browserify-et-al) 
   - [Browser - RequireJS](#browser---requirejs) 
-  - [Browser - Browserify](#browser---browserify) 
 - [Playground](#playground) 
 - [Syntax](#syntax) 
   - [The Transition Character: @](#the-transition-character) 
@@ -149,19 +148,15 @@ But you should probably be precompiling your templates. See [Precompiling Templa
 <a name="browser---browserify-et-al"></a>Browser - Browserify et al 
 ----------------------------------
 
-Just `require` Vash, and compile. If you want something fancier, try [vashify](https://www.npmjs.com/package/vashify)!
+Just `require` Vash, and compile. If you want something fancier, try [vashify](https://www.npmjs.com/package/vashify)! Then you can directly require any `.vash` file and it will be resolved as compiled template:
+
+	var tpl = require('my-awesome-template.vash');
+	document.querySelector('#content').innerHTML = tpl({ t: 'template' });
 
 <a name="browser---requirejs"></a>Browser - RequireJS 
 ---------------------------
 
 RequireJS support has been recently dropped. However Vash does support CJS environments, so as long as you configure RequireJS to consume Vash as a CJS project (including `node_modules` resolution), everything should work.
-
-Be sure to configure paths appropriately, but vash is AMD ready.
-
-	require(['vash'], function(vash){
-		var tpl = vash.compile( '<p>I am a @model.t!</p>' );
-		document.querySelector('#content').innerHTML = tpl({ t: 'template' });
-	})
 
 <a name="playground"></a>Playground 
 ==================
