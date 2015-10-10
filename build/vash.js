@@ -2238,6 +2238,15 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead, nnwon) {
     return true;
   }
 
+  if (
+    curr.type === tks.AT && next.type === tks.PAREN_OPEN
+  ) {
+    // Backwards compatibility, allowing for @for() { @(exp) }
+    valueNode = this.openNode(new ExpressionNode(), node.values);
+    updateLoc(valueNode, curr);
+    return true;
+  }
+
   var attachmentNode;
 
   if (node._reachedOpenBrace && node._reachedCloseBrace) {
@@ -2500,7 +2509,7 @@ var TESTS = [
   }
   , 'WHITESPACE', (/^(\s+)/)
   , 'FUNCTION', (/^(function)(?![\d\w])/)
-  , 'BLOCK_KEYWORD', (/^(catch|do|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
+  , 'BLOCK_KEYWORD', (/^(catch|do|else if|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
   , 'KEYWORD', (/^(break|case|continue|instanceof|return|var)(?![\d\w])/)
   , 'IDENTIFIER', (/^([_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*)/)
 
@@ -2986,7 +2995,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
