@@ -1,3 +1,58 @@
+v0.9.4
+=====
+
+* Fix else if. Fix #91
+
+v0.9.3
+=====
+
+* Track next non whitespace or newline character. fix #82
+
+v0.9.2
+=====
+
+* Allow two-letter tlds for email addresses. #80
+
+v0.9.1
+=====
+
+* Throw errors when attempting to close known void tags. #67
+
+v0.9.0
+=====
+
+* BREAKING: enforce closing tags. #77
+
+v0.8.8
+=====
+
+* Ensure html comments are closed properly. #77
+
+v0.8.7
+=====
+
+* Handle html comments. #70
+
+v0.8.6
+=====
+
+* Handle markup nodes that lose their content. #68
+
+v0.8.5
+=====
+
+* Ensure .name is present on node ctors. #73
+
+v0.8.4
+=====
+
+* dashes within tag names are ok. fix #71
+
+v0.8.2
+=====
+
+* remove deprecation warnings. apparently razor allows that. #59, #62
+
 v0.8.1
 ======
 
