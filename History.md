@@ -2,6 +2,7 @@ v0.9.4
 =====
 
 * Fix else if. Fix #91
+* Allow `@{ @(exp) }` again. Fixes #89
 
 v0.9.3
 =====
