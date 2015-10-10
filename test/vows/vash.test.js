@@ -2273,6 +2273,17 @@ vows.describe('vash templating library').addBatch({
 
 	}
 
+	,'@expressions within a block': {
+
+		topic: '@{ @(model + "b") }'
+
+		,'are content': function(topic) {
+			var tpl = vash.compile(topic);
+			var actual = tpl('a');
+			assert.equal(actual, 'ab');
+		}
+	}
+
 	/*,'implicit compilation': {
 
 		'is valid': {
