@@ -1812,6 +1812,16 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'else if': {
+
+		topic: '@if (!model.w){<p>A</p>} else if (model.w) {<p>B</p>}<p>C</p>'
+
+		,'codegen': function( topic ){
+			var tpl = vash.compile(topic);
+			assert.equal( tpl({w: false}), '<p>A</p><p>C</p>' );
+		}
+	}
+
 	,'switch statement': {
 
 		'without braced cases': {
@@ -2164,21 +2174,20 @@ vows.describe('vash templating library').addBatch({
 	,'ast': {
 
 		topic: function(){
-			this.lex = function(input){
-				var  l = new vash.VLexer(input)
-					,tokens = []
-					,tok;
+			this.asAST = function (input) {
+				var Lexer = require('../../lib/lexer');
+				var Parser = require('../../lib/parser');
+				var l = new Lexer();
 
-				while(tok = l.advance()) tokens.push(tok);
-				return tokens.reverse();
-			}
+				l.write(input);
+				var tokens = l.read();
 
-			this.parse = function(tokens, opts){
-				opts = vash.vQuery.extend( opts || {}, vash.config );
+				var p = new Parser();
+				p.write(tokens);
+				var more = true;
+				while(more !== null) more = p.read();
 
-				var p = new vash.VParser(tokens, opts);
-				p.parse();
-				return p;
+				return p.stack[0];
 			}
 
 			return '';
@@ -2189,20 +2198,7 @@ vows.describe('vash templating library').addBatch({
 			topic: '@if(true){<a><br /></a>}'
 
 			,'does not close parent tag': function(topic){
-
-				var Lexer = require('../../lib/lexer');
-				var Parser = require('../../lib/parser');
-				var l = new Lexer();
-
-				l.write(topic);
-				var tokens = l.read();
-
-				var p = new Parser();
-				p.write(tokens);
-				var more = true;
-				while(more !== null) more = p.read();
-
-				var root = p.stack[0];
+				var root = this.asAST(topic);
 				assert.equal( root.body[0].type, 'VashMarkup' );
 				assert.equal( root.body[0].values[0].type, 'VashMarkupContent' );
 				assert.equal( root.body[0].values[0].values[1].type, 'VashBlock' );
@@ -2210,6 +2206,21 @@ vows.describe('vash templating library').addBatch({
 				assert.equal( root.body[0].values[0].values[1].values[0].values[0].type, 'VashMarkupContent' );
 				assert.equal( root.body[0].values[0].values[1].values[0].values[0].values[0].type, 'VashText' );
 				assert.equal( root.body[0].values[0].values[1].values[0].values[0].values[1].isVoid, true );
+			}
+		}
+
+		,'else if else if': {
+
+			topic: '@if (a){<p>A</p>} else if (b) {<p>B</p>} else {<p>C</p>}<p>D</p>'
+
+			,'has proper structure': function( topic ){
+				var tpl = vash.compile(topic);
+				var ast = this.asAST(topic);
+
+				var ifBlock = ast.body[0].values[0].values[1];
+				assert.equal(ifBlock.keyword, 'if');
+				assert.equal(ifBlock.tail[1].keyword, 'else if');
+				assert.equal(ifBlock.tail[1].tail[1].keyword, 'else');
 			}
 		}
 	}
