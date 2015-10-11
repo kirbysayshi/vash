@@ -2995,7 +2995,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -3013,7 +3013,7 @@ module.exports={
   },
   "main": "index.js",
   "engines": {
-    "node": ">= 0.8"
+    "node": ">= 0.10"
   },
   "scripts": {
     "prepublish": "npm run test && npm run build",
