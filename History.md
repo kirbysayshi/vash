@@ -1,3 +1,8 @@
+v0.10.0
+=======
+
+* cease support for node 0.8 on Travis.
+
 v0.9.4
 =====
 
