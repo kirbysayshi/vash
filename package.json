@@ -19,7 +19,7 @@
   },
   "main": "index.js",
   "engines": {
-    "node": ">= 0.8"
+    "node": ">= 0.10"
   },
   "scripts": {
     "prepublish": "npm run test && npm run build",
