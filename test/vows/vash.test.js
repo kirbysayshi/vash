@@ -1422,6 +1422,49 @@ vows.describe('vash templating library').addBatch({
 
 	}
 
+	,'xml': {
+
+		'tag namespaces parse as tags': function () {
+			var str = '<core:AnotherElement>Hello</core:AnotherElement>';
+			var tpl = vash.compile(str);
+			assert.equal( tpl(), str );
+		}
+
+		,'AT within namespaces are ok': function () {
+			var str = '<c:@model.a>Hello</c:@model.a>';
+			var tpl = vash.compile(str);
+			assert.equal( tpl({ a: 'a' }), '<c:a>Hello</c:a>' );
+		}
+
+		,'directives are ok': function () {
+			var str = '<?xml version="1.0" encoding="UTF-8"?><p></p>';
+			var tpl = vash.compile(str);
+			assert.equal( tpl(), str );
+		}
+
+		,'attribute namespaces are ok': function () {
+			var str = ''
+				+ '<ADI \n'
+				+ '  xmlns:core="blah" \n'
+				+ '  xmlns:ext="URN:NNDS:CMS:ADI3:01"\n'
+				+ '  xmlns="http://www.cablelabs.com/namespaces/metadata/xsd/vod30/1">\n'
+				+ '  @(model.what)\n'
+				+ '</ADI>';
+			var tpl = vash.compile(str);
+			var expected = ''
+				+ '<ADI '
+				+ 'xmlns:core="blah" '
+				+ 'xmlns:ext="URN:NNDS:CMS:ADI3:01" '
+				+ 'xmlns="http://www.cablelabs.com/namespaces/metadata/xsd/vod30/1">\n'
+				+ '  what\n'
+				+ '</ADI>'
+			var actual = tpl({ what: 'what' });
+			console.log('actual', actual)
+			console.log('expected', expected)
+			assert.equal( actual, expected );
+		}
+	}
+
 	,'unbalanced characters are ok': {
 		// https://github.com/kirbysayshi/vash/issues/26
 
