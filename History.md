@@ -1,3 +1,9 @@
+v0.11.0
+=======
+
+* Fix whitespace handling.
+* Support xml attributes. Fix #91.
+
 v0.10.0
 =======
 
