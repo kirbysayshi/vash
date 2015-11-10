@@ -1588,6 +1588,8 @@ Parser.prototype.continueMarkupNode = function(node, curr, next) {
     && !node._finishedOpen
     && next.type !== tks.HTML_TAG_VOID_CLOSE
     && next.type !== tks.GT_SIGN
+    && next.type !== tks.NEWLINE
+    && next.type !== tks.WHITESPACE
   ) {
     // enter attribute
     valueNode = this.openNode(new MarkupAttributeNode(), node.attributes);
@@ -1797,6 +1799,7 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
       // <identifier\n
       // <identifier@
       // <identifier-
+      // <identifier:identifier // XML namespaces etc etc
       (next.type === tks.IDENTIFIER
         && ahead
         && (
@@ -1805,6 +1808,7 @@ Parser.prototype.continueMarkupContentNode = function(node, curr, next, ahead) {
           || ahead.type === tks.NEWLINE
           || ahead.type === tks.AT
           || ahead.type === tks.UNARY_OPERATOR
+          || ahead.type === tks.COLON
         )
       )
       || next.type === tks.AT)
@@ -2498,6 +2502,7 @@ var TESTS = [
   , 'COMMA_OPERATOR', (/^(,)/)
 
   , 'EQUAL_SIGN', (/^(=)/)
+  , 'COLON', (/^(:)/)
   , 'PERIOD', (/^(\.)/)
   , 'NEWLINE', function(){
     var token = this.scan(/^(\n)/, exports.NEWLINE);
@@ -2507,7 +2512,7 @@ var TESTS = [
     }
     return token;
   }
-  , 'WHITESPACE', (/^(\s+)/)
+  , 'WHITESPACE', (/^([^\S\n]+)/) // http://stackoverflow.com/a/3469155
   , 'FUNCTION', (/^(function)(?![\d\w])/)
   , 'BLOCK_KEYWORD', (/^(catch|do|else if|else|finally|for|function|goto|if|switch|try|while|with)(?![\d\w])/)
   , 'KEYWORD', (/^(break|case|continue|instanceof|return|var)(?![\d\w])/)
@@ -2710,7 +2715,7 @@ try {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
