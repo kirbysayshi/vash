@@ -1,3 +1,8 @@
+v0.11.1
+=======
+
+* Prevent regex matching following ). Fix #98.
+
 v0.11.0
 =======
 
