@@ -1020,6 +1020,14 @@ vows.describe('vash templating library').addBatch({
 				}
 			}
 
+			,'division after expression': {
+				topic: '@(Math.round(20.22) / 100)'
+				,'is not mistaken for regex': function (topic) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl({}), '0.2' );
+				}
+			}
+
 		}
 	}
 
