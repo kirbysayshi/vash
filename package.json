@@ -31,17 +31,16 @@
   },
   "dependencies": {
     "commander": "~1.1.1",
-    "uglify-js": "1.0.6",
-    "debug": "^0.7.4"
+    "debug": "^2.2.0",
+    "uglify-js": "^2.6.2"
   },
   "devDependencies": {
-    "browserify": "^3.33.0",
-    "coverify": "~1.0.6",
-    "envify": "^1.2.1",
+    "browserify": "^13.0.0",
+    "coverify": "^1.4.1",
+    "envify": "^3.4.0",
     "jshint": "0.8.0",
     "marked": "~0.2.8",
     "semver": "~1",
-    "uglify-js": "^2.4.13",
     "vows": "^0.8.1"
   }
 }
