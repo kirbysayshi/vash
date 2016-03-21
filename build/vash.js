@@ -1,17 +1,17 @@
-!function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.vash=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-var debug = _dereq_('debug')
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.vash = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var debug = require('debug')
 var lg = debug('vash:main');
 
-var Lexer = _dereq_('./lib/lexer');
-var Parser = _dereq_('./lib/parser');
-var codegen = _dereq_('./lib/codegen');
-var runtime = _dereq_('./runtime');
-var helperbatch = _dereq_('./lib/helperbatch');
-var copyrtl = _dereq_('./lib/util/copyrtl');
+var Lexer = require('./lib/lexer');
+var Parser = require('./lib/parser');
+var codegen = require('./lib/codegen');
+var runtime = require('./runtime');
+var helperbatch = require('./lib/helperbatch');
+var copyrtl = require('./lib/util/copyrtl');
 
 // Attach all runtime exports to enable backwards compatible behavior,
 // like `vash.install` to still be accessible in a full build.
-_dereq_('./lib/helpers');
+require('./lib/helpers');
 copyrtl(exports, runtime);
 
 exports.config = {
@@ -36,7 +36,7 @@ exports.config = {
   args: null // Internal, for compiled helpers
 }
 
-exports.version = _dereq_('./package.json').version;
+exports.version = require('./package.json').version;
 
 exports.compileStream = function() {
   // This could eventually handle waiting until a `null`
@@ -115,9 +115,9 @@ exports['compileHelper'] = helperbatch.bind(null, 'helper', exports.compile);
 //
 // Returns the compiled templates as named properties of an object.
 exports['compileBatch'] = exports['batch'] = helperbatch.bind(null, 'batch', exports.compile);
-},{"./lib/codegen":2,"./lib/helperbatch":4,"./lib/helpers":6,"./lib/lexer":9,"./lib/parser":24,"./lib/util/copyrtl":26,"./package.json":32,"./runtime":33,"debug":31}],2:[function(_dereq_,module,exports){
+},{"./lib/codegen":2,"./lib/helperbatch":4,"./lib/helpers":6,"./lib/lexer":9,"./lib/parser":24,"./lib/util/copyrtl":26,"./package.json":34,"./runtime":35,"debug":29}],2:[function(require,module,exports){
 
-var debug = _dereq_('debug');
+var debug = require('debug');
 var lg = debug('vash:codegen');
 
 var gens = {}
@@ -420,7 +420,7 @@ function generate(node, opts) {
 }
 
 module.exports = generate;
-},{"debug":31}],3:[function(_dereq_,module,exports){
+},{"debug":29}],3:[function(require,module,exports){
 
 exports.context = function(input, lineno, columnno, linebreak) {
   linebreak = linebreak || '!LB!';
@@ -442,7 +442,7 @@ exports.context = function(input, lineno, columnno, linebreak) {
         + line;
     }).join('\n');
 }
-},{}],4:[function(_dereq_,module,exports){
+},{}],4:[function(require,module,exports){
 
 var slice = Array.prototype.slice
 
@@ -558,8 +558,8 @@ var compileSingleHelper = function(compile, str, options){
   return compile(body, options);
 }
 
-},{}],5:[function(_dereq_,module,exports){
-var helpers = _dereq_('../../runtime').helpers;
+},{}],5:[function(require,module,exports){
+var helpers = require('../../runtime').helpers;
 
 ///////////////////////////////////////////////////////////////////////////
 // EXAMPLE HELPER: syntax highlighting
@@ -576,7 +576,7 @@ helpers.highlight = function(lang, cb){
 
   // cb() is simply a user-defined function. It could (and should) contain
   // buffer additions, so we call it...
-  cb();
+  cb( this.model );
 
   // ... and then use fromMark() to grab the output added by cb().
   var cbOutLines = this.buffer.fromMark(startMark);
@@ -597,17 +597,18 @@ helpers.highlight = function(lang, cb){
   // returning is allowed, but could cause surprising effects. A return
   // value will be directly added to the output directly following the above.
 }
-},{"../../runtime":33}],6:[function(_dereq_,module,exports){
-_dereq_('./trim');
-_dereq_('./highlight');
-_dereq_('./layout');
-module.exports = _dereq_('../../runtime');
-},{"../../runtime":33,"./highlight":5,"./layout":7,"./trim":8}],7:[function(_dereq_,module,exports){
-var helpers = _dereq_('../../runtime').helpers;
-var copyrtl = _dereq_('../util/copyrtl');
+
+},{"../../runtime":35}],6:[function(require,module,exports){
+require('./trim');
+require('./highlight');
+require('./layout');
+module.exports = require('../../runtime');
+},{"../../runtime":35,"./highlight":5,"./layout":7,"./trim":8}],7:[function(require,module,exports){
+var helpers = require('../../runtime').helpers;
+var copyrtl = require('../util/copyrtl');
 
 // For now, using the layout helpers requires a full build. For now.
-var vash = _dereq_('../../index');
+var vash = require('../../index');
 module.exports = vash;
 
 ///////////////////////////////////////////////////////////////////////////
@@ -615,8 +616,8 @@ module.exports = vash;
 
 // semi hacky guard to prevent non-nodejs erroring
 if( typeof window === 'undefined' ){
-  var  fs = _dereq_('fs')
-    ,path = _dereq_('path')
+  var  fs = require('fs')
+    ,path = require('path')
 }
 
 // TRUE implies that all TPLS are loaded and waiting in cache
@@ -895,16 +896,16 @@ helpers.prepend = function(name, ctn){
   this._handlePrependAppend( 'prepends', name, ctn );
 }
 
-},{"../../index":1,"../../runtime":33,"../util/copyrtl":26,"fs":28,"path":30}],8:[function(_dereq_,module,exports){
-var helpers = _dereq_('../../runtime').helpers;
+},{"../../index":1,"../../runtime":35,"../util/copyrtl":26,"fs":28,"path":32}],8:[function(require,module,exports){
+var helpers = require('../../runtime').helpers;
 
 // Trim whitespace from the start and end of a string
 helpers.trim = function(val){
   return val.replace(/^\s*|\s*$/g, '');
 }
-},{"../../runtime":33}],9:[function(_dereq_,module,exports){
-var debug = _dereq_('debug');
-var tokens = _dereq_('./tokens');
+},{"../../runtime":35}],9:[function(require,module,exports){
+var debug = require('debug');
+var tokens = require('./tokens');
 
 // This pattern and basic lexer code were originally from the
 // Jade lexer, but have been modified:
@@ -996,7 +997,7 @@ VLexer.prototype = {
   }
 }
 
-},{"./tokens":25,"debug":31}],10:[function(_dereq_,module,exports){
+},{"./tokens":25,"debug":29}],10:[function(require,module,exports){
 var Node = module.exports = function BlockNode() {
   this.type = 'VashBlock';
   this.keyword = null;
@@ -1021,7 +1022,7 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],11:[function(_dereq_,module,exports){
+},{}],11:[function(require,module,exports){
 var Node = module.exports = function CommentNode() {
   this.type = 'VashComment';
   this.values = [];
@@ -1036,7 +1037,7 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],12:[function(_dereq_,module,exports){
+},{}],12:[function(require,module,exports){
 var Node = module.exports = function ExplicitExpressionNode() {
   this.type = 'VashExplicitExpression';
   this.values = [];
@@ -1052,14 +1053,14 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],13:[function(_dereq_,module,exports){
+},{}],13:[function(require,module,exports){
 var Node = module.exports = function ExpressionNode() {
   this.type = 'VashExpression';
   this.values = [];
   this.startloc = null;
   this.endloc = null;
 }
-},{}],14:[function(_dereq_,module,exports){
+},{}],14:[function(require,module,exports){
 var Node = module.exports = function IndexExpressionNode() {
   this.type = 'VashIndexExpression';
   this.values = [];
@@ -1075,12 +1076,12 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],15:[function(_dereq_,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = function LocationNode() {
   this.line = 1;
   this.column = 0;
 }
-},{}],16:[function(_dereq_,module,exports){
+},{}],16:[function(require,module,exports){
 var Node = module.exports = function MarkupNode() {
   this.type = 'VashMarkup';
   this.name = null;
@@ -1133,7 +1134,7 @@ Node.prototype.endOk = function() {
 
   return false;
 }
-},{}],17:[function(_dereq_,module,exports){
+},{}],17:[function(require,module,exports){
 var Node = module.exports = function MarkupAttributeNode() {
   this.type = 'VashMarkupAttribute';
   this.left = [];
@@ -1152,7 +1153,7 @@ Node.prototype.endOk = function() {
     ? true
     : false;
 }
-},{}],18:[function(_dereq_,module,exports){
+},{}],18:[function(require,module,exports){
 var Node = module.exports = function MarkupCommentNode() {
   this.type = 'VashMarkupComment';
   this.values = [];
@@ -1168,7 +1169,7 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],19:[function(_dereq_,module,exports){
+},{}],19:[function(require,module,exports){
 var Node = module.exports = function MarkupContentNode() {
   this.type = 'VashMarkupContent';
   this.values = [];
@@ -1183,12 +1184,12 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],20:[function(_dereq_,module,exports){
+},{}],20:[function(require,module,exports){
 module.exports = function ProgramNode() {
   this.type = 'VashProgram';
   this.body = [];
 }
-},{}],21:[function(_dereq_,module,exports){
+},{}],21:[function(require,module,exports){
 
 // Need to handle:
 // if (true) /abc/.test()
@@ -1213,14 +1214,14 @@ Node.prototype.endOk = function() {
     ? false
     : true;
 }
-},{}],22:[function(_dereq_,module,exports){
+},{}],22:[function(require,module,exports){
 module.exports = function TextNode() {
   this.type = 'VashText';
   this.value = '';
   this.startloc = null;
   this.endloc = null;
 }
-},{}],23:[function(_dereq_,module,exports){
+},{}],23:[function(require,module,exports){
 function clean(node) {
   return Object.keys(node).reduce(function(out, key) {
     var value = node[key];
@@ -1237,28 +1238,28 @@ function clean(node) {
 
 exports.clean = clean;
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],24:[function(require,module,exports){
 
-var debug = _dereq_('debug');
+var debug = require('debug');
 
-var tks = _dereq_('./tokens');
-var nodestuff = _dereq_('./nodestuff');
-var error = _dereq_('./error');
-var namer = _dereq_('./util/fn-namer');
+var tks = require('./tokens');
+var nodestuff = require('./nodestuff');
+var error = require('./error');
+var namer = require('./util/fn-namer');
 
-var ProgramNode = namer(_dereq_('./nodes/program'));
-var TextNode = namer(_dereq_('./nodes/text'));
-var MarkupNode = namer(_dereq_('./nodes/markup'));
-var MarkupCommentNode = namer(_dereq_('./nodes/markupcomment'));
-var MarkupContentNode = namer(_dereq_('./nodes/markupcontent'));
-var MarkupAttributeNode = namer(_dereq_('./nodes/markupattribute'));
-var ExpressionNode = namer(_dereq_('./nodes/expression'));
-var ExplicitExpressionNode = namer(_dereq_('./nodes/explicitexpression'));
-var IndexExpressionNode = namer(_dereq_('./nodes/indexexpression'));
-var LocationNode = namer(_dereq_('./nodes/location'));
-var BlockNode = namer(_dereq_('./nodes/block'));
-var CommentNode = namer(_dereq_('./nodes/comment'));
-var RegexNode = namer(_dereq_('./nodes/regex'));
+var ProgramNode = namer(require('./nodes/program'));
+var TextNode = namer(require('./nodes/text'));
+var MarkupNode = namer(require('./nodes/markup'));
+var MarkupCommentNode = namer(require('./nodes/markupcomment'));
+var MarkupContentNode = namer(require('./nodes/markupcontent'));
+var MarkupAttributeNode = namer(require('./nodes/markupattribute'));
+var ExpressionNode = namer(require('./nodes/expression'));
+var ExplicitExpressionNode = namer(require('./nodes/explicitexpression'));
+var IndexExpressionNode = namer(require('./nodes/indexexpression'));
+var LocationNode = namer(require('./nodes/location'));
+var BlockNode = namer(require('./nodes/block'));
+var CommentNode = namer(require('./nodes/comment'));
+var RegexNode = namer(require('./nodes/regex'));
 
 function Parser(opts) {
   this.lg = debug('vash:parser');
@@ -1986,6 +1987,7 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
     && pnw
     && pnw.type !== tks.IDENTIFIER
     && pnw.type !== tks.NUMERAL
+    && pnw.type !== tks.PAREN_CLOSE
   ) {
     valueNode = this.openNode(new RegexNode(), node.values);
     updateLoc(valueNode, curr);
@@ -2437,7 +2439,7 @@ function newUnexpectedClosingTagError(parser, tok, tagName) {
 }
 
 
-},{"./error":3,"./nodes/block":10,"./nodes/comment":11,"./nodes/explicitexpression":12,"./nodes/expression":13,"./nodes/indexexpression":14,"./nodes/location":15,"./nodes/markup":16,"./nodes/markupattribute":17,"./nodes/markupcomment":18,"./nodes/markupcontent":19,"./nodes/program":20,"./nodes/regex":21,"./nodes/text":22,"./nodestuff":23,"./tokens":25,"./util/fn-namer":27,"debug":31}],25:[function(_dereq_,module,exports){
+},{"./error":3,"./nodes/block":10,"./nodes/comment":11,"./nodes/explicitexpression":12,"./nodes/expression":13,"./nodes/indexexpression":14,"./nodes/location":15,"./nodes/markup":16,"./nodes/markupattribute":17,"./nodes/markupcomment":18,"./nodes/markupcontent":19,"./nodes/program":20,"./nodes/regex":21,"./nodes/text":22,"./nodestuff":23,"./tokens":25,"./util/fn-namer":27,"debug":29}],25:[function(require,module,exports){
 // The order of these is important, as it is the order in which
 // they are run against the input string.
 // They are separated out here to allow for better minification
@@ -2538,7 +2540,7 @@ exports.tests = TESTS;
 for(var i = 0; i < TESTS.length; i += 2) {
   exports[TESTS[i]] = TESTS[i];
 }
-},{}],26:[function(_dereq_,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = function(obj) {
   // extend works from right to left, using first arg as target
   var next, i, p;
@@ -2553,8 +2555,8 @@ module.exports = function(obj) {
 
   return obj;
 }
-},{}],27:[function(_dereq_,module,exports){
-var lg = _dereq_('debug')('vash:fn-namer');
+},{}],27:[function(require,module,exports){
+var lg = require('debug')('vash:fn-namer');
 var reName = /^function\s+([A-Za-z0-9_]+)\s*\(/;
 
 module.exports = function(fn) {
@@ -2572,64 +2574,505 @@ module.exports = function(fn) {
   lg('set .name as %s', fn.name);
   return fn;
 }
-},{"debug":31}],28:[function(_dereq_,module,exports){
+},{"debug":29}],28:[function(require,module,exports){
 
-},{}],29:[function(_dereq_,module,exports){
-// shim for using process in browser
+},{}],29:[function(require,module,exports){
 
-var process = module.exports = {};
+/**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
 
-process.nextTick = (function () {
-    var canSetImmediate = typeof window !== 'undefined'
-    && window.setImmediate;
-    var canPost = typeof window !== 'undefined'
-    && window.postMessage && window.addEventListener
-    ;
+exports = module.exports = require('./debug');
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
 
-    if (canSetImmediate) {
-        return function (f) { return window.setImmediate(f) };
-    }
+/**
+ * Colors.
+ */
 
-    if (canPost) {
-        var queue = [];
-        window.addEventListener('message', function (ev) {
-            var source = ev.source;
-            if ((source === window || source === null) && ev.data === 'process-tick') {
-                ev.stopPropagation();
-                if (queue.length > 0) {
-                    var fn = queue.shift();
-                    fn();
-                }
-            }
-        }, true);
+exports.colors = [
+  'lightseagreen',
+  'forestgreen',
+  'goldenrod',
+  'dodgerblue',
+  'darkorchid',
+  'crimson'
+];
 
-        return function nextTick(fn) {
-            queue.push(fn);
-            window.postMessage('process-tick', '*');
-        };
-    }
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
 
-    return function nextTick(fn) {
-        setTimeout(fn, 0);
-    };
-})();
-
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
+function useColors() {
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  return ('WebkitAppearance' in document.documentElement.style) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (window.console && (console.firebug || (console.exception && console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
 }
 
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+exports.formatters.j = function(v) {
+  return JSON.stringify(v);
 };
 
-},{}],30:[function(_dereq_,module,exports){
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs() {
+  var args = arguments;
+  var useColors = this.useColors;
+
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return args;
+
+  var c = 'color: ' + this.color;
+  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+  return args;
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage(){
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}
+
+},{"./debug":30}],30:[function(require,module,exports){
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = debug;
+exports.coerce = coerce;
+exports.disable = disable;
+exports.enable = enable;
+exports.enabled = enabled;
+exports.humanize = require('ms');
+
+/**
+ * The currently active debug mode names, and names to skip.
+ */
+
+exports.names = [];
+exports.skips = [];
+
+/**
+ * Map of special "%n" handling functions, for the debug "format" argument.
+ *
+ * Valid key names are a single, lowercased letter, i.e. "n".
+ */
+
+exports.formatters = {};
+
+/**
+ * Previously assigned color.
+ */
+
+var prevColor = 0;
+
+/**
+ * Previous log timestamp.
+ */
+
+var prevTime;
+
+/**
+ * Select a color.
+ *
+ * @return {Number}
+ * @api private
+ */
+
+function selectColor() {
+  return exports.colors[prevColor++ % exports.colors.length];
+}
+
+/**
+ * Create a debugger with the given `namespace`.
+ *
+ * @param {String} namespace
+ * @return {Function}
+ * @api public
+ */
+
+function debug(namespace) {
+
+  // define the `disabled` version
+  function disabled() {
+  }
+  disabled.enabled = false;
+
+  // define the `enabled` version
+  function enabled() {
+
+    var self = enabled;
+
+    // set `diff` timestamp
+    var curr = +new Date();
+    var ms = curr - (prevTime || curr);
+    self.diff = ms;
+    self.prev = prevTime;
+    self.curr = curr;
+    prevTime = curr;
+
+    // add the `color` if not set
+    if (null == self.useColors) self.useColors = exports.useColors();
+    if (null == self.color && self.useColors) self.color = selectColor();
+
+    var args = Array.prototype.slice.call(arguments);
+
+    args[0] = exports.coerce(args[0]);
+
+    if ('string' !== typeof args[0]) {
+      // anything else let's inspect with %o
+      args = ['%o'].concat(args);
+    }
+
+    // apply any `formatters` transformations
+    var index = 0;
+    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
+      // if we encounter an escaped % then don't increase the array index
+      if (match === '%%') return match;
+      index++;
+      var formatter = exports.formatters[format];
+      if ('function' === typeof formatter) {
+        var val = args[index];
+        match = formatter.call(self, val);
+
+        // now we need to remove `args[index]` since it's inlined in the `format`
+        args.splice(index, 1);
+        index--;
+      }
+      return match;
+    });
+
+    if ('function' === typeof exports.formatArgs) {
+      args = exports.formatArgs.apply(self, args);
+    }
+    var logFn = enabled.log || exports.log || console.log.bind(console);
+    logFn.apply(self, args);
+  }
+  enabled.enabled = true;
+
+  var fn = exports.enabled(namespace) ? enabled : disabled;
+
+  fn.namespace = namespace;
+
+  return fn;
+}
+
+/**
+ * Enables a debug mode by namespaces. This can include modes
+ * separated by a colon and wildcards.
+ *
+ * @param {String} namespaces
+ * @api public
+ */
+
+function enable(namespaces) {
+  exports.save(namespaces);
+
+  var split = (namespaces || '').split(/[\s,]+/);
+  var len = split.length;
+
+  for (var i = 0; i < len; i++) {
+    if (!split[i]) continue; // ignore empty strings
+    namespaces = split[i].replace(/\*/g, '.*?');
+    if (namespaces[0] === '-') {
+      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+    } else {
+      exports.names.push(new RegExp('^' + namespaces + '$'));
+    }
+  }
+}
+
+/**
+ * Disable debug output.
+ *
+ * @api public
+ */
+
+function disable() {
+  exports.enable('');
+}
+
+/**
+ * Returns true if the given mode name is enabled, false otherwise.
+ *
+ * @param {String} name
+ * @return {Boolean}
+ * @api public
+ */
+
+function enabled(name) {
+  var i, len;
+  for (i = 0, len = exports.skips.length; i < len; i++) {
+    if (exports.skips[i].test(name)) {
+      return false;
+    }
+  }
+  for (i = 0, len = exports.names.length; i < len; i++) {
+    if (exports.names[i].test(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Coerce `val`.
+ *
+ * @param {Mixed} val
+ * @return {Mixed}
+ * @api private
+ */
+
+function coerce(val) {
+  if (val instanceof Error) return val.stack || val.message;
+  return val;
+}
+
+},{"ms":31}],31:[function(require,module,exports){
+/**
+ * Helpers.
+ */
+
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var y = d * 365.25;
+
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} options
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function(val, options){
+  options = options || {};
+  if ('string' == typeof val) return parse(val);
+  return options.long
+    ? long(val)
+    : short(val);
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = '' + str;
+  if (str.length > 10000) return;
+  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
+  if (!match) return;
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function short(ms) {
+  if (ms >= d) return Math.round(ms / d) + 'd';
+  if (ms >= h) return Math.round(ms / h) + 'h';
+  if (ms >= m) return Math.round(ms / m) + 'm';
+  if (ms >= s) return Math.round(ms / s) + 's';
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function long(ms) {
+  return plural(ms, d, 'day')
+    || plural(ms, h, 'hour')
+    || plural(ms, m, 'minute')
+    || plural(ms, s, 'second')
+    || ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, n, name) {
+  if (ms < n) return;
+  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
+  return Math.ceil(ms / n) + ' ' + name + 's';
+}
+
+},{}],32:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2856,151 +3299,105 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-}).call(this,_dereq_("/Users/drew/Dropbox/js/vash/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
-},{"/Users/drew/Dropbox/js/vash/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":29}],31:[function(_dereq_,module,exports){
+}).call(this,require('_process'))
+},{"_process":33}],33:[function(require,module,exports){
+// shim for using process in browser
 
-/**
- * Expose `debug()` as the module.
- */
+var process = module.exports = {};
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
 
-module.exports = debug;
-
-/**
- * Create a debugger with the given `name`.
- *
- * @param {String} name
- * @return {Type}
- * @api public
- */
-
-function debug(name) {
-  if (!debug.enabled(name)) return function(){};
-
-  return function(fmt){
-    fmt = coerce(fmt);
-
-    var curr = new Date;
-    var ms = curr - (debug[name] || curr);
-    debug[name] = curr;
-
-    fmt = name
-      + ' '
-      + fmt
-      + ' +' + debug.humanize(ms);
-
-    // This hackery is required for IE8
-    // where `console.log` doesn't have 'apply'
-    window.console
-      && console.log
-      && Function.prototype.apply.call(console.log, console, arguments);
-  }
+function cleanUpNextTick() {
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
 }
 
-/**
- * The currently active debug mode names.
- */
-
-debug.names = [];
-debug.skips = [];
-
-/**
- * Enables a debug mode by name. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} name
- * @api public
- */
-
-debug.enable = function(name) {
-  try {
-    localStorage.debug = name;
-  } catch(e){}
-
-  var split = (name || '').split(/[\s,]+/)
-    , len = split.length;
-
-  for (var i = 0; i < len; i++) {
-    name = split[i].replace('*', '.*?');
-    if (name[0] === '-') {
-      debug.skips.push(new RegExp('^' + name.substr(1) + '$'));
+function drainQueue() {
+    if (draining) {
+        return;
     }
-    else {
-      debug.names.push(new RegExp('^' + name + '$'));
+    var timeout = setTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
     }
-  }
-};
-
-/**
- * Disable debug output.
- *
- * @api public
- */
-
-debug.disable = function(){
-  debug.enable('');
-};
-
-/**
- * Humanize the given `ms`.
- *
- * @param {Number} m
- * @return {String}
- * @api private
- */
-
-debug.humanize = function(ms) {
-  var sec = 1000
-    , min = 60 * 1000
-    , hour = 60 * min;
-
-  if (ms >= hour) return (ms / hour).toFixed(1) + 'h';
-  if (ms >= min) return (ms / min).toFixed(1) + 'm';
-  if (ms >= sec) return (ms / sec | 0) + 's';
-  return ms + 'ms';
-};
-
-/**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-
-debug.enabled = function(name) {
-  for (var i = 0, len = debug.skips.length; i < len; i++) {
-    if (debug.skips[i].test(name)) {
-      return false;
-    }
-  }
-  for (var i = 0, len = debug.names.length; i < len; i++) {
-    if (debug.names[i].test(name)) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * Coerce `val`.
- */
-
-function coerce(val) {
-  if (val instanceof Error) return val.stack || val.message;
-  return val;
+    currentQueue = null;
+    draining = false;
+    clearTimeout(timeout);
 }
 
-// persist
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        setTimeout(drainQueue, 0);
+    }
+};
 
-try {
-  if (window.localStorage) debug.enable(localStorage.debug);
-} catch(e){}
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
 
-},{}],32:[function(_dereq_,module,exports){
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],34:[function(require,module,exports){
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -3030,26 +3427,25 @@ module.exports={
   },
   "dependencies": {
     "commander": "~1.1.1",
-    "uglify-js": "1.0.6",
-    "debug": "^0.7.4"
+    "debug": "^2.2.0",
+    "uglify-js": "^2.6.2"
   },
   "devDependencies": {
-    "browserify": "^3.33.0",
-    "coverify": "~1.0.6",
-    "envify": "^1.2.1",
+    "browserify": "^13.0.0",
+    "coverify": "^1.4.1",
+    "envify": "^3.4.0",
     "jshint": "0.8.0",
     "marked": "~0.2.8",
     "semver": "~1",
-    "uglify-js": "^2.4.13",
     "vows": "^0.8.1"
   }
 }
 
-},{}],33:[function(_dereq_,module,exports){
+},{}],35:[function(require,module,exports){
 
-var error = _dereq_('./lib/error');
+var error = require('./lib/error');
 var runtime = {
-  version: _dereq_('./package.json').version
+  version: require('./package.json').version
 };
 
 var helpers = runtime['helpers'];
@@ -3497,6 +3893,5 @@ runtime['uninstall'] = function( path ){
   }
 };
 
-},{"./lib/error":3,"./package.json":32}]},{},[1])
-(1)
+},{"./lib/error":3,"./package.json":34}]},{},[1])(1)
 });

@@ -1,4 +1,4 @@
-!function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.vash=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.vash = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
 exports.context = function(input, lineno, columnno, linebreak) {
   linebreak = linebreak || '!LB!';
@@ -20,11 +20,11 @@ exports.context = function(input, lineno, columnno, linebreak) {
         + line;
     }).join('\n');
 }
-},{}],2:[function(_dereq_,module,exports){
+},{}],2:[function(require,module,exports){
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -54,26 +54,25 @@ module.exports={
   },
   "dependencies": {
     "commander": "~1.1.1",
-    "uglify-js": "1.0.6",
-    "debug": "^0.7.4"
+    "debug": "^2.2.0",
+    "uglify-js": "^2.6.2"
   },
   "devDependencies": {
-    "browserify": "^3.33.0",
-    "coverify": "~1.0.6",
-    "envify": "^1.2.1",
+    "browserify": "^13.0.0",
+    "coverify": "^1.4.1",
+    "envify": "^3.4.0",
     "jshint": "0.8.0",
     "marked": "~0.2.8",
     "semver": "~1",
-    "uglify-js": "^2.4.13",
     "vows": "^0.8.1"
   }
 }
 
-},{}],3:[function(_dereq_,module,exports){
+},{}],3:[function(require,module,exports){
 
-var error = _dereq_('./lib/error');
+var error = require('./lib/error');
 var runtime = {
-  version: _dereq_('./package.json').version
+  version: require('./package.json').version
 };
 
 var helpers = runtime['helpers'];
@@ -521,6 +520,5 @@ runtime['uninstall'] = function( path ){
   }
 };
 
-},{"./lib/error":1,"./package.json":2}]},{},[3])
-(3)
+},{"./lib/error":1,"./package.json":2}]},{},[3])(3)
 });
