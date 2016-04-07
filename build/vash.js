@@ -2304,7 +2304,10 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead, nnwon) {
 
   valueNode = ensureTextNode(attachmentNode);
 
-  if (curr.val === node._waitingForEndQuote) {
+  if (
+    curr.val === node._waitingForEndQuote
+    && !curr._considerEscaped
+  ) {
     this.flag(node, '_waitingForEndQuote', null);
     appendTextValue(valueNode, curr);
     return true;
@@ -3397,7 +3400,7 @@ process.umask = function() { return 0; };
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.11.1",
+  "version": "0.11.3",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
