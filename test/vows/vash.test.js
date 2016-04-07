@@ -1713,7 +1713,7 @@ vows.describe('vash templating library').addBatch({
 
 		,"escaped single quotes come out": {
 			topic: function(){
-				return '@{ var a = "It\'s followed by primary content."; } @html.raw(a)'
+				return "@{ var a = 'It\\'s followed by primary content.'; } @html.raw(a)"
 			}
 			,"as single quotes": function(topic){
 				var tpl = tryCompile(topic);
