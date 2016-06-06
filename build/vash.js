@@ -180,11 +180,13 @@ gens.VashMarkup = function(node, opts, generate) {
   }
 
   return ''
+    + (parentIsExpression(node) ? '(function () {' : '')
     + dbgstart(node, opts)
     + tagOpen
     + values
     + tagClose
     + dbgend(node, opts)
+    + (parentIsExpression(node) ? '}())' : '')
 }
 
 gens.VashMarkupAttribute = function(node, opts, generate) {
@@ -289,6 +291,12 @@ function parentIsContent(node) {
     || node.parent.type === 'VashMarkupComment'
     || node.parent.type === 'VashMarkupAttribute'
     || node.parent.type === 'VashProgram';
+}
+
+function parentIsExpression(node) {
+  return node.parent.type === 'VashExpression'
+    || node.parent.type === 'VashExplicitExpression'
+    || node.parent.type === 'VashIndexExpression';
 }
 
 function dbgstart(node, opts) {
@@ -420,6 +428,7 @@ function generate(node, opts) {
 }
 
 module.exports = generate;
+
 },{"debug":29}],3:[function(require,module,exports){
 
 exports.context = function(input, lineno, columnno, linebreak) {
@@ -1975,6 +1984,17 @@ Parser.prototype.continueExplicitExpressionNode = function(node, curr, next) {
 
   if (curr.type === tks.FUNCTION && !node._waitingForEndQuote) {
     valueNode = this.openNode(new BlockNode(), node.values);
+    updateLoc(valueNode, curr);
+    return false;
+  }
+
+  if (
+    curr.type === tks.LT_SIGN
+    && next.type === tks.IDENTIFIER
+    && !node._waitingForEndQuote
+  ) {
+    // Markup within expression
+    valueNode = this.openNode(new MarkupNode(), node.values);
     updateLoc(valueNode, curr);
     return false;
   }
