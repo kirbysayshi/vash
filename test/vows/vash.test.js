@@ -1958,6 +1958,18 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'markup within explicit expressions': {
+
+		topic: '@(<p>@model.what @{ var a = "who"; } @a</p>)'
+
+		,'is allowed': function (topic) {
+			var tpl = vash.compile(topic);
+			console.log('tpl', tpl.toClientString());
+			assert.equal(tpl({ what: 'hey' }), '<p>hey  who</p>');
+		}
+
+	}
+
 	,'render options': {
 
 		topic: function(){ return vash.compile('<p></p>') }
