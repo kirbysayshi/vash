@@ -3097,7 +3097,7 @@ function plural(ms, n, name) {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
