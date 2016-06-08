@@ -992,8 +992,8 @@ The Vash runtime is a set of functions that every executing template expects to 
 
 There are two runtime builds:
 
-* [vash-runtime.min.js][]: This is the basic runtime. It contains everything a standard Vash template needs to execute.
-* [vash-runtime-all.min.js][]: This also includes the [Layout Helpers][]. It is roughly twice as large as `vash-runtime.min.js`. Unless you're using the Vash view system in the browser, this is probably not necessary.
+* [vash-runtime.js][]: This is the basic runtime. It contains everything a standard Vash template needs to execute.
+* [vash-runtime-all.js][]: This also includes the [Layout Helpers][]. It is roughly twice as large as `vash-runtime.js`. Unless you're using the Vash view system in the browser, this is probably not necessary.
 
 If you're in a Browserify-like environemnt, you should be able to:
 
@@ -1003,8 +1003,8 @@ var vashruntime = require('vash/runtime');
 
 ..and have access to the [Runtime API][].
 
-[vash-runtime.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime.min.js
-[vash-runtime-all.min.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime-all.min.js
+[vash-runtime.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime.js
+[vash-runtime-all.js]: https://github.com/kirbysayshi/vash/blob/master/build/vash-runtime-all.js
 
 <a name="compile-time-api"></a>Compile-time API 
 =============
