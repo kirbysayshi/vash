@@ -1028,6 +1028,14 @@ vows.describe('vash templating library').addBatch({
 				}
 			}
 
+			,'division within block': {
+				topic: '@{ Math.round(2 * 1) / Number.MAX_VALUE }'
+				,'is not mistaken for regex': function (topic) {
+					var tpl = vash.compile(topic);
+					assert.equal( tpl({}), '' );
+				}
+			}
+
 		}
 	}
 
