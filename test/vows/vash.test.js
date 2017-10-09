@@ -357,6 +357,15 @@ vows.describe('vash templating library').addBatch({
 			assert.equal( topic({ what: { how: 'yes' }}), '<a href="somename_yes[]"></a>');
 		}
 	}
+	,'explicit expression with parens as immediate child': {
+		topic: function(){
+			var str = '@((1) > 0)';
+			return vash.compile(str);
+		}
+		,'create a separate explicit expression': function(topic){
+			assert.equal(topic(), 'true');
+		}
+	}
 
 	,'explicit expressions containing quoted characters': {
 
