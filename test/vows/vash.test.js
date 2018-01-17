@@ -1890,6 +1890,15 @@ vows.describe('vash templating library').addBatch({
 		}
 	}
 
+	,'else followed by another if': {
+		topic: '@if (true) { <span>1</span> } else if (false) { <span>no</span> } else { <span>no</span> }\n\n@if (true) { <span>2</span> }',
+		'outputs': function( topic ) {
+			var tpl = vash.compile(topic);
+			console.log(tpl())
+			assert.equal( tpl(), '<span>1</span><span>2</span>' );
+		}
+	}
+
 	,'switch statement': {
 
 		'without braced cases': {
