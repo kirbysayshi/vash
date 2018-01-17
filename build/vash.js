@@ -2253,19 +2253,6 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead, nnwon) {
   }
 
   if (
-    curr.type === tks.AT
-    && (next.type === tks.BLOCK_KEYWORD
-      || next.type === tks.BRACE_OPEN
-      || next.type === tks.FUNCTION)
-  ) {
-    // Backwards compatibility, allowing for @for() { @for() { @{ } } }
-    valueNode = this.openNode(new BlockNode(), node.values);
-    updateLoc(valueNode, curr);
-    // TODO: shouldn't this need a more accurate target (tail, values, head)?
-    return true;
-  }
-
-  if (
     curr.type === tks.AT && next.type === tks.PAREN_OPEN
   ) {
     // Backwards compatibility, allowing for @for() { @(exp) }
@@ -2285,6 +2272,18 @@ Parser.prototype.continueBlockNode = function(node, curr, next, ahead, nnwon) {
   }
 
   valueNode = attachmentNode[attachmentNode.length-1];
+
+  if (
+    curr.type === tks.AT
+    && (next.type === tks.BLOCK_KEYWORD
+      || next.type === tks.BRACE_OPEN
+      || next.type === tks.FUNCTION)
+  ) {
+    // Backwards compatibility, allowing for @for() { @for() { @{ } } }
+    valueNode = this.openNode(new BlockNode(), attachmentNode);
+    updateLoc(valueNode, curr);
+    return true;
+  }
 
   if (
     curr.type === tks.AT
@@ -3566,7 +3565,7 @@ process.umask = function() { return 0; };
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.3",
+  "version": "0.12.4",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
