@@ -613,6 +613,7 @@ require('./highlight');
 require('./layout');
 module.exports = require('../../runtime');
 },{"../../runtime":35,"./highlight":5,"./layout":7,"./trim":8}],7:[function(require,module,exports){
+(function (global){
 var helpers = require('../../runtime').helpers;
 var copyrtl = require('../util/copyrtl');
 
@@ -624,7 +625,9 @@ module.exports = vash;
 // LAYOUT HELPERS
 
 // semi hacky guard to prevent non-nodejs erroring
-if( typeof window === 'undefined' ){
+// switched from window not existing to global existing
+// to avoid conflict with Jest where window is always defined(!)
+if( typeof global !== 'undefined' ){
   var  fs = require('fs')
     ,path = require('path')
 }
@@ -905,6 +908,7 @@ helpers.prepend = function(name, ctn){
   this._handlePrependAppend( 'prepends', name, ctn );
 }
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../../index":1,"../../runtime":35,"../util/copyrtl":26,"fs":28,"path":32}],8:[function(require,module,exports){
 var helpers = require('../../runtime').helpers;
 
@@ -3643,7 +3647,7 @@ process.umask = function() { return 0; };
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.4",
+  "version": "0.12.5",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -3681,7 +3685,7 @@ module.exports={
     "coverify": "^1.4.1",
     "envify": "^3.4.0",
     "jshint": "0.8.0",
-    "marked": "~0.2.8",
+    "marked": "^0.5.1",
     "semver": "~1",
     "vows": "^0.8.1"
   }

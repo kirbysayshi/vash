@@ -24,7 +24,7 @@ exports.context = function(input, lineno, columnno, linebreak) {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.4",
+  "version": "0.12.5",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -62,7 +62,7 @@ module.exports={
     "coverify": "^1.4.1",
     "envify": "^3.4.0",
     "jshint": "0.8.0",
-    "marked": "~0.2.8",
+    "marked": "^0.5.1",
     "semver": "~1",
     "vows": "^0.8.1"
   }
