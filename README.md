@@ -16,9 +16,7 @@ Vash is a template engine that offers a swift flow between code and content usin
 
 [![Build Status](https://secure.travis-ci.org/kirbysayshi/vash.png?branch=master)](https://travis-ci.org/kirbysayshi/vash)
 
-[![NPM](https://nodei.co/npm/vash.png?downloads=true&stars=true)](https://nodei.co/npm/vash/) [![NPM](https://nodei.co/npm-dl/vash.png)](https://nodei.co/npm/vash/)
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/kirbysayshi/vash/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+[![NPM](https://nodei.co/npm/vash.png)](https://nodei.co/npm/vash/)
 
 
 - [Features](#features) 
