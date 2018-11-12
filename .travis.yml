@@ -6,4 +6,5 @@ node_js:
  - "6"
  - "8"
  - "10"
+cache: npm
 sudo: false
