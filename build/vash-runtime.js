@@ -24,7 +24,7 @@ exports.context = function(input, lineno, columnno, linebreak) {
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.6",
+  "version": "0.12.9",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
@@ -45,7 +45,7 @@ module.exports={
     "node": ">= 0.10"
   },
   "scripts": {
-    "prepublish": "npm run test && npm run build",
+    "prepublishOnly": "npm run test && npm run build",
     "coverage": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js browserify -t envify -t coverify test/vows/vash.test.js | node | coverify",
     "build": "browserify index.js --standalone vash > build/vash.js && browserify --standalone vash runtime.js > build/vash-runtime.js && browserify --standalone vash --external fs --external path lib/helpers/index.js > build/vash-runtime-all.js",
     "test": "VASHPATH=../../index.js VASHRUNTIMEPATH=../../runtime.js vows test/vows/vash.*.js --spec",
@@ -59,10 +59,10 @@ module.exports={
   },
   "devDependencies": {
     "browserify": "^13.0.0",
-    "coverify": "^1.4.1",
+    "coverify": "^1.5.1",
     "envify": "^3.4.0",
-    "marked": "^0.5.1",
-    "vows": "^0.8.1"
+    "marked": "^0.7.0",
+    "vows": "^0.8.3"
   }
 }
 
