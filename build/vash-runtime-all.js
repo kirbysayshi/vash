@@ -5541,7 +5541,7 @@ process.umask = function() { return 0; };
 module.exports={
   "name": "vash",
   "description": "Razor syntax for JS templating",
-  "version": "0.12.10",
+  "version": "0.13.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
   "bin": {
