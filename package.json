@@ -4,6 +4,7 @@
   "version": "0.13.0",
   "author": "Andrew Petersen <senofpeter@gmail.com>",
   "homepage": "https://github.com/kirbysayshi/vash",
+  "license": "MIT",
   "bin": {
     "vash": "./bin/vash"
   },
