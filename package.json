@@ -39,7 +39,7 @@
     "browserify": "^16.5.0",
     "coverify": "^1.5.1",
     "envify": "^4.1.0",
-    "marked": "^0.8.0",
+    "marked": "^4.0.10",
     "vows": "^0.8.3"
   }
 }
